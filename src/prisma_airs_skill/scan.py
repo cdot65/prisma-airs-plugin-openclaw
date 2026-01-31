@@ -19,6 +19,7 @@ from typing import Any, Optional
 
 import aisecurity
 from aisecurity.generated_openapi_client.models.ai_profile import AiProfile
+from aisecurity.generated_openapi_client.models.metadata import Metadata
 from aisecurity.scan.inline.scanner import Scanner
 from aisecurity.scan.models.content import Content
 
@@ -52,6 +53,8 @@ class ScanResult:
     raw_response: dict[str, Any] = field(default_factory=dict)
     latency_ms: int = 0
     error: Optional[str] = None
+    tr_id: Optional[str] = None
+    session_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -166,6 +169,11 @@ class PrismaAIRS:
                 "max_requests": 100,
                 "window_seconds": 60,
             },
+            "metadata": {
+                "app_name": "openclaw",
+                "app_user": None,
+                "ai_model": None,
+            },
         }
 
     def _setup_logging(self):
@@ -213,6 +221,11 @@ class PrismaAIRS:
         prompt: Optional[str] = None,
         response: Optional[str] = None,
         context: Optional[dict] = None,
+        session_id: Optional[str] = None,
+        tr_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        app_user: Optional[str] = None,
+        ai_model: Optional[str] = None,
     ) -> ScanResult:
         """
         Synchronously scan prompt and/or response through Prisma AIRS.
@@ -221,6 +234,11 @@ class PrismaAIRS:
             prompt: User prompt to scan
             response: AI response to scan (optional)
             context: Additional context (user_id, etc.)
+            session_id: Session ID for grouping related scans
+            tr_id: Transaction ID for prompt/response correlation
+            app_name: Application name for metadata
+            app_user: Application user for metadata
+            ai_model: AI model name for metadata
 
         Returns:
             ScanResult with action, severity, and details
@@ -248,16 +266,35 @@ class PrismaAIRS:
                 response=response or "",
             )
 
+            # Build metadata - use config defaults if params not provided
+            metadata_config = self.config.get("metadata", {})
+            effective_app_name = app_name or metadata_config.get("app_name", "openclaw")
+            effective_app_user = app_user or metadata_config.get("app_user")
+            effective_ai_model = ai_model or metadata_config.get("ai_model")
+
+            metadata = None
+            if effective_app_name or effective_app_user or effective_ai_model:
+                metadata = Metadata(
+                    app_name=effective_app_name,
+                    app_user=effective_app_user,
+                    ai_model=effective_ai_model,
+                )
+
             # Perform sync scan
             scan_response = self._scanner.sync_scan(
                 ai_profile=self._ai_profile,
                 content=content,
+                session_id=session_id,
+                tr_id=tr_id,
+                metadata=metadata,
             )
 
             latency_ms = int((time.time() - start_time) * 1000)
 
             # Parse response
-            result = self._parse_response(scan_response, latency_ms)
+            result = self._parse_response(
+                scan_response, latency_ms, session_id=session_id, tr_id=tr_id
+            )
 
             # Log
             self._log_scan(result, user_id, context)
@@ -278,7 +315,13 @@ class PrismaAIRS:
                 error=str(e),
             )
 
-    def _parse_response(self, resp: Any, latency_ms: int) -> ScanResult:
+    def _parse_response(
+        self,
+        resp: Any,
+        latency_ms: int,
+        session_id: Optional[str] = None,
+        tr_id: Optional[str] = None,
+    ) -> ScanResult:
         """Parse SDK response into ScanResult."""
         # Extract fields from response
         raw = resp.to_dict() if hasattr(resp, "to_dict") else {}
@@ -342,6 +385,11 @@ class PrismaAIRS:
         else:
             action = Action.ALLOW
 
+        # Extract tr_id from response if returned (may override input)
+        resp_tr_id = getattr(resp, "tr_id", None)
+        if resp_tr_id:
+            tr_id = resp_tr_id
+
         return ScanResult(
             action=action,
             severity=severity,
@@ -353,6 +401,8 @@ class PrismaAIRS:
             response_detected=response_detected,
             raw_response=raw,
             latency_ms=latency_ms,
+            tr_id=tr_id,
+            session_id=session_id,
         )
 
     def _log_scan(self, result: ScanResult, user_id: str, context: dict):
@@ -392,6 +442,11 @@ def main():
     parser.add_argument("--config", type=str, help="Path to config YAML")
     parser.add_argument("--profile", type=str, help="Prisma AIRS profile name")
     parser.add_argument("--context", type=str, help="Context as JSON string")
+    parser.add_argument("--session-id", type=str, help="Session ID for grouping scans")
+    parser.add_argument("--tr-id", type=str, help="Transaction ID for correlation")
+    parser.add_argument("--app-name", type=str, help="Application name for metadata")
+    parser.add_argument("--app-user", type=str, help="Application user for metadata")
+    parser.add_argument("--ai-model", type=str, help="AI model name for metadata")
 
     args = parser.parse_args()
 
@@ -419,7 +474,16 @@ def main():
     )
 
     # Scan
-    result = scanner.scan(prompt=prompt, response=response, context=context)
+    result = scanner.scan(
+        prompt=prompt,
+        response=response,
+        context=context,
+        session_id=args.session_id,
+        tr_id=args.tr_id,
+        app_name=args.app_name,
+        app_user=args.app_user,
+        ai_model=args.ai_model,
+    )
 
     if args.json:
         print(json.dumps(result.to_dict(), indent=2))
@@ -439,6 +503,10 @@ def main():
             print(f"Scan ID: {result.scan_id}")
         if result.report_id:
             print(f"Report ID: {result.report_id}")
+        if result.session_id:
+            print(f"Session ID: {result.session_id}")
+        if result.tr_id:
+            print(f"Transaction ID: {result.tr_id}")
         print(f"Profile: {result.profile_name}")
         print(f"Latency: {result.latency_ms}ms")
         if result.error:

@@ -93,6 +93,12 @@ prisma_airs:
     enabled: true
     max_requests: 100
     window_seconds: 60
+
+  # Metadata defaults (sent with each scan)
+  metadata:
+    app_name: "openclaw"  # Default if not passed to scan()
+    # app_user: ""        # Optional
+    # ai_model: ""        # Optional
 ```
 
 ## Usage
@@ -112,6 +118,12 @@ uv run prisma-airs-scan --profile strict "message"
 # Scan prompt and response
 uv run prisma-airs-scan --prompt "user msg" --response "ai response"
 
+# Session tracking
+uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "message"
+
+# With metadata
+uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "message"
+
 # Run configuration audit
 uv run prisma-airs-audit
 ```
@@ -125,13 +137,21 @@ scanner = PrismaAIRS(profile_name="default")
 result = scanner.scan(
     prompt="user message",
     response="ai response",
-    context={"user_id": "123"}
+    context={"user_id": "123"},
+    # Session tracking (optional)
+    session_id="conversation-123",
+    tr_id="tx-001",
+    # Metadata (optional)
+    app_name="my-agent",
+    app_user="user@example.com",
+    ai_model="gpt-4",
 )
 
 if result.action == Action.BLOCK:
     print("Request blocked for security reasons.")
 else:
     print(f"Scan passed: {result.categories}")
+    print(f"Session: {result.session_id}, Transaction: {result.tr_id}")
 ```
 
 ## Detection Categories
