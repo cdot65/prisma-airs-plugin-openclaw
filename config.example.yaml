@@ -2,33 +2,21 @@
 # Copy to config.yaml and customize
 
 prisma_airs:
-  # API endpoint
-  api_url: "https://service.api.aisecurity.paloaltonetworks.com"
+  # API key - use environment variable (recommended) or direct value
+  # The SDK looks for PANW_AI_SEC_API_KEY by default
+  # export PANW_AI_SEC_API_KEY="your-key"
+  api_key: "${PANW_AI_SEC_API_KEY}"
 
-  # API key - use environment variable or direct value
-  # Recommended: export PRISMA_AIRS_API_KEY="your-key"
-  api_key: "${PRISMA_AIRS_API_KEY}"
-
-  # Security profile name configured in Prisma AIRS
+  # Security profile name configured in Prisma AIRS console
   profile_name: "default"
-
-  # AI model identifier for scanning context
-  ai_model: "openclaw-agent"
-
-  # Application name for logging/reporting
-  app_name: "openclaw"
-
-  # Request timeout in seconds
-  timeout: 30
 
   # Actions per detection category
   actions:
-    prompt_injection: block
-    data_leakage: block
-    malicious_content: block
-    pii_detected: warn
-    url_filtering: warn
-    safe: allow
+    injection: block
+    dlp: block
+    url_cats: block
+    malicious: block
+    benign: allow
 
   # Owner user IDs (bypass some restrictions)
   owner_ids:

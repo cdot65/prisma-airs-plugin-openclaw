@@ -4,38 +4,64 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/ai-run
 
 ## Overview
 
-Integrates Prisma AIRS security scanning into OpenClaw agents for:
+Integrates Prisma AIRS security scanning into OpenClaw agents using the official `pan-aisecurity` SDK:
 - Prompt injection detection
-- Data leakage prevention
-- Malicious content detection
+- Data leakage prevention (DLP)
+- Malicious URL filtering
 - PII/sensitive data protection
 
 ## Quick Start
 
 ```bash
-# Install
-clawdhub install prisma-airs
+# Install with uv
+uv sync
 
-# Configure
-cp config.example.yaml config.yaml
-# Edit config.yaml with your Prisma AIRS credentials
+# Set API key
+export PANW_AI_SEC_API_KEY="your-api-key"
 
-# Test
-python3 scripts/scan.py "test message"
+# Test scan
+uv run prisma-airs-scan "test message"
+
+# Or run directly
+uv run python -m prisma_airs_skill.scan "test message"
+```
+
+## Installation
+
+```bash
+# Clone and install
+git clone https://github.com/cdot65/prisma-airs-skill.git
+cd prisma-airs-skill
+uv sync
+
+# Install dev dependencies
+uv sync --dev
 ```
 
 ## Configuration
 
+Set the API key via environment variable (recommended):
+
+```bash
+export PANW_AI_SEC_API_KEY="your-api-key"
+```
+
+Or use a config file:
+
+```bash
+cp config.example.yaml config.yaml
+```
+
 ```yaml
 prisma_airs:
-  api_url: "https://service.api.aisecurity.paloaltonetworks.com"
-  api_key: "${PRISMA_AIRS_API_KEY}"
+  api_key: "${PANW_AI_SEC_API_KEY}"
   profile_name: "default"
 
   actions:
-    detected: block
-    error: warn
-    safe: allow
+    injection: block
+    dlp: block
+    url_cats: block
+    benign: allow
 ```
 
 ## Usage
@@ -43,59 +69,92 @@ prisma_airs:
 ### CLI
 
 ```bash
-# Scan a message
-python3 scripts/scan.py "user input to scan"
+# Scan a prompt
+uv run prisma-airs-scan "user input to scan"
 
 # JSON output
-python3 scripts/scan.py --json "message"
+uv run prisma-airs-scan --json "message"
 
-# With profile
-python3 scripts/scan.py --profile strict "message"
+# Specify profile
+uv run prisma-airs-scan --profile strict "message"
+
+# Scan prompt and response
+uv run prisma-airs-scan --prompt "user msg" --response "ai response"
+
+# Run audit
+uv run prisma-airs-audit
 ```
 
 ### Python API
 
 ```python
-from scripts.scan import PrismaAIRS
+from prisma_airs_skill import PrismaAIRS
 
-scanner = PrismaAIRS(config_path="config.yaml")
+scanner = PrismaAIRS(profile_name="default")
 result = scanner.scan(
     prompt="user message",
-    context={"user_id": "123", "is_group": True}
+    response="ai response",
+    context={"user_id": "123"}
 )
 
-if result.action == "block":
-    return "Request blocked for security reasons."
+if result.action.value == "block":
+    print("Request blocked for security reasons.")
+else:
+    print(f"Scan passed: {result.categories}")
 ```
 
-## Security Levels
+## Detection Categories
 
 | Category | Description | Default Action |
 |----------|-------------|----------------|
-| prompt_injection | Injection attack detected | Block |
-| data_leakage | Sensitive data exposure | Block |
-| malicious_content | Harmful content detected | Block |
-| pii_detected | PII in prompt | Warn |
-| safe | No issues detected | Allow |
+| `prompt_injection` | Injection attack detected | Block |
+| `dlp_prompt` | Sensitive data in prompt | Block |
+| `dlp_response` | Sensitive data in response | Block |
+| `url_filtering_prompt` | Malicious URL in prompt | Block |
+| `url_filtering_response` | Malicious URL in response | Block |
+| `safe` | No issues detected | Allow |
 
 ## Project Structure
 
 ```
 prisma-airs-skill/
-├── README.md              # This file
-├── SKILL.md               # OpenClaw skill documentation
-├── config.example.yaml    # Configuration template
-├── requirements.txt       # Python dependencies
-└── scripts/
-    ├── scan.py            # Main scanning engine
-    └── audit.py           # Configuration audit
+├── README.md
+├── SKILL.md
+├── pyproject.toml
+├── config.example.yaml
+└── src/
+    └── prisma_airs_skill/
+        ├── __init__.py
+        ├── scan.py
+        └── audit.py
+```
+
+## Development
+
+```bash
+# Install dev dependencies
+uv sync --dev
+
+# Run linting
+uv run ruff check src/
+uv run flake8 src/
+uv run mypy src/
+
+# Run tests
+uv run pytest
 ```
 
 ## Requirements
 
-- Python 3.8+
-- Prisma AIRS API credentials
+- Python 3.9+
+- Prisma AIRS API credentials (`PANW_AI_SEC_API_KEY`)
 - Valid Palo Alto Networks subscription
+
+## Links
+
+- [Prisma AIRS Documentation](https://docs.paloaltonetworks.com/prisma/prisma-cloud/prisma-cloud-ai-security)
+- [pan-aisecurity SDK](https://pypi.org/project/pan-aisecurity/)
+- [API Reference](https://pan.dev/prisma-airs/api/)
 
 ## License
 

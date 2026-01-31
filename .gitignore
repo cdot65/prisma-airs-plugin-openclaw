@@ -9,6 +9,9 @@ venv/
 env/
 .env
 
+# uv
+.python-version
+
 # Config with secrets
 config.yaml
 config.yml
@@ -32,3 +35,14 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Type checking
+.mypy_cache/
+
+# Ruff
+.ruff_cache/

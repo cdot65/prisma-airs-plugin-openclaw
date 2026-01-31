@@ -8,21 +8,16 @@ Validates configuration and connectivity for Prisma AIRS integration.
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple
-
-try:
-    import requests
-except ImportError:
-    requests = None
+from typing import Tuple
 
 
 def check_api_key() -> Tuple[bool, str]:
     """Check if API key is configured."""
-    api_key = os.environ.get("PRISMA_AIRS_API_KEY", "")
+    api_key = os.environ.get("PANW_AI_SEC_API_KEY", "")
     if api_key:
         masked = api_key[:4] + "..." + api_key[-4:] if len(api_key) > 8 else "***"
         return True, f"API key configured: {masked}"
-    return False, "PRISMA_AIRS_API_KEY environment variable not set"
+    return False, "PANW_AI_SEC_API_KEY environment variable not set"
 
 
 def check_config_file() -> Tuple[bool, str]:
@@ -33,31 +28,50 @@ def check_config_file() -> Tuple[bool, str]:
     return False, "No config.yaml found (using defaults)"
 
 
-def check_connectivity() -> Tuple[bool, str]:
-    """Check API connectivity."""
-    if not requests:
-        return False, "requests library not installed"
+def check_sdk_installed() -> Tuple[bool, str]:
+    """Check if pan-aisecurity SDK is installed."""
+    try:
+        import aisecurity
+        version = getattr(aisecurity, "__version__", "unknown")
+        return True, f"pan-aisecurity SDK installed: v{version}"
+    except ImportError:
+        return False, "pan-aisecurity SDK not installed"
 
-    api_key = os.environ.get("PRISMA_AIRS_API_KEY", "")
+
+def check_connectivity() -> Tuple[bool, str]:
+    """Check API connectivity with a test scan."""
+    api_key = os.environ.get("PANW_AI_SEC_API_KEY", "")
     if not api_key:
         return False, "Cannot test connectivity without API key"
 
     try:
-        url = "https://service.api.aisecurity.paloaltonetworks.com/v1/scan/health"
-        headers = {"x-pan-token": api_key}
-        resp = requests.get(url, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            return True, "API connectivity OK"
-        elif resp.status_code == 401:
-            return False, "API key invalid or expired"
-        else:
-            return False, f"API returned status {resp.status_code}"
-    except requests.exceptions.Timeout:
-        return False, "API request timed out"
-    except requests.exceptions.ConnectionError:
-        return False, "Cannot connect to API endpoint"
+        import aisecurity
+        from aisecurity.generated_openapi_client.models.ai_profile import AiProfile
+        from aisecurity.scan.inline.scanner import Scanner
+        from aisecurity.scan.models.content import Content
+
+        aisecurity.init(api_key=api_key)
+        scanner = Scanner()
+
+        # Try a simple scan
+        profile = AiProfile(profile_name="default")
+        content = Content(prompt="test", response="")
+
+        result = scanner.sync_scan(ai_profile=profile, content=content)
+
+        if hasattr(result, "scan_id"):
+            return True, f"API connectivity OK (scan_id: {result.scan_id[:8]}...)"
+        return True, "API connectivity OK"
+
     except Exception as e:
-        return False, f"Connectivity check failed: {e}"
+        error_msg = str(e)
+        if "401" in error_msg or "unauthorized" in error_msg.lower():
+            return False, "API key invalid or expired"
+        elif "timeout" in error_msg.lower():
+            return False, "API request timed out"
+        elif "connection" in error_msg.lower():
+            return False, "Cannot connect to API endpoint"
+        return False, f"Connectivity check failed: {error_msg[:100]}"
 
 
 def check_log_directory() -> Tuple[bool, str]:
@@ -77,8 +91,10 @@ def check_dependencies() -> Tuple[bool, str]:
     """Check required dependencies."""
     missing = []
 
-    if not requests:
-        missing.append("requests")
+    try:
+        import aisecurity
+    except ImportError:
+        missing.append("pan-aisecurity")
 
     try:
         import yaml
@@ -90,7 +106,7 @@ def check_dependencies() -> Tuple[bool, str]:
     return True, "All dependencies installed"
 
 
-def run_audit(verbose: bool = False, fix: bool = False) -> int:
+def run_audit(verbose: bool = False, quick: bool = False) -> int:
     """Run all audit checks."""
     print("=" * 60)
     print("PRISMA AIRS CONFIGURATION AUDIT")
@@ -100,13 +116,17 @@ def run_audit(verbose: bool = False, fix: bool = False) -> int:
     checks = [
         ("API Key", check_api_key),
         ("Config File", check_config_file),
+        ("SDK Installed", check_sdk_installed),
         ("Dependencies", check_dependencies),
         ("Log Directory", check_log_directory),
-        ("API Connectivity", check_connectivity),
     ]
+
+    if not quick:
+        checks.append(("API Connectivity", check_connectivity))
 
     passed = []
     failed = []
+    warnings = []
 
     for name, check_fn in checks:
         try:
@@ -116,9 +136,15 @@ def run_audit(verbose: bool = False, fix: bool = False) -> int:
                 if verbose:
                     print(f"[OK] {name}: {message}")
             else:
-                failed.append((name, message))
-                if verbose:
-                    print(f"[FAIL] {name}: {message}")
+                # Some failures are warnings
+                if name == "Config File":
+                    warnings.append((name, message))
+                    if verbose:
+                        print(f"[WARN] {name}: {message}")
+                else:
+                    failed.append((name, message))
+                    if verbose:
+                        print(f"[FAIL] {name}: {message}")
         except Exception as e:
             failed.append((name, str(e)))
             if verbose:
@@ -132,6 +158,11 @@ def run_audit(verbose: bool = False, fix: bool = False) -> int:
         for name, msg in passed:
             print(f"  [OK] {name}")
 
+    if warnings:
+        print(f"\nWARNINGS ({len(warnings)})")
+        for name, msg in warnings:
+            print(f"  [!] {name}: {msg}")
+
     if failed:
         print(f"\nFAILED ({len(failed)})")
         for name, msg in failed:
@@ -140,7 +171,10 @@ def run_audit(verbose: bool = False, fix: bool = False) -> int:
     print()
     print("=" * 60)
     if not failed:
-        print(f"All {len(passed)} checks passed!")
+        total = len(passed) + len(warnings)
+        print(f"All {len(passed)} critical checks passed!")
+        if warnings:
+            print(f"({len(warnings)} warnings)")
     else:
         print(f"{len(passed)} passed, {len(failed)} failed")
     print("=" * 60)
@@ -153,12 +187,11 @@ def main():
 
     parser = argparse.ArgumentParser(description="Prisma AIRS Configuration Audit")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    parser.add_argument("--fix", action="store_true", help="Attempt to fix issues")
-    parser.add_argument("--quick", action="store_true", help="Quick check (skip connectivity)")
+    parser.add_argument("--quick", action="store_true", help="Skip connectivity test")
 
     args = parser.parse_args()
 
-    sys.exit(run_audit(verbose=args.verbose, fix=args.fix))
+    sys.exit(run_audit(verbose=args.verbose, quick=args.quick))
 
 
 if __name__ == "__main__":

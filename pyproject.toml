@@ -1,0 +1,47 @@
+[project]
+name = "prisma-airs-skill"
+version = "0.1.0"
+description = "OpenClaw plugin for Prisma AIRS (AI Runtime Security) from Palo Alto Networks"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    { name = "cdot65" }
+]
+keywords = ["prisma", "airs", "ai-security", "openclaw", "palo-alto"]
+dependencies = [
+    "pan-aisecurity>=0.8.0.5.post2",
+    "pyyaml>=6.0.3",
+]
+
+[project.scripts]
+prisma-airs-scan = "prisma_airs_skill.scan:main"
+prisma-airs-audit = "prisma_airs_skill.audit:main"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+    "flake8>=7.0.0",
+    "mypy>=1.10.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/prisma_airs_skill"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
