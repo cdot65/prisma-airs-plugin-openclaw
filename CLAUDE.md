@@ -90,6 +90,8 @@ Agent → prisma_airs_scan tool → scan() → fetch() → AIRS API
 | `toxic_content` | Toxic Content |
 | `db_security` | Database Security |
 | `malicious_code` | Malicious Code |
+| `ungrounded` | Contextual Grounding |
+| `topic_violation` | Custom Topic Guardrails |
 | `safe` | No threats detected |
 
 ## Development

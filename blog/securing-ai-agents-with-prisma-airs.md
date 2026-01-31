@@ -39,7 +39,7 @@ export PANW_AI_SEC_API_KEY="your-api-key"
 
 ### Strata Cloud Manager Console
 
-Detection services and security policies are configured **in SCM**, not in the skill:
+Detection services and security policies are configured **in SCM**, not in the plugin:
 
 | Setting | Where to Configure |
 |---------|-------------------|
