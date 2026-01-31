@@ -38,3 +38,10 @@ prisma_airs:
   retry:
     max_attempts: 3
     backoff_seconds: 1
+
+  # Metadata sent with each scan (optional)
+  # These are used for analytics and tracking in Prisma AIRS
+  metadata:
+    app_name: "openclaw"        # Application name (default: openclaw)
+    # app_user: ""              # User identifier (optional, can override per-scan)
+    # ai_model: ""              # AI model name (optional, can override per-scan)

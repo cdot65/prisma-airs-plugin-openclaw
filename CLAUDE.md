@@ -22,6 +22,8 @@ make test     # pytest
 uv run prisma-airs-scan "message"
 uv run prisma-airs-scan --json "message"
 uv run prisma-airs-scan --prompt "user msg" --response "ai response"
+uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "message"
+uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "message"
 uv run prisma-airs-audit        # config validation
 uv run prisma-airs-audit --quick  # skip connectivity test
 
@@ -41,13 +43,13 @@ OpenClaw skill plugin wrapping the official `pan-aisecurity` SDK from Palo Alto 
 
 **Data flow:**
 1. `PrismaAIRS.__init__` loads config from YAML or defaults, initializes `aisecurity` SDK
-2. `scan()` builds `Content` object, calls `Scanner.sync_scan()`, returns `ScanResult`
+2. `scan()` builds `Content` + `Metadata` objects, calls `Scanner.sync_scan()`, returns `ScanResult`
 3. SDK response parsed into categories based on detection flags
 
 **Key types:**
 - `Action` enum: ALLOW, WARN, BLOCK
 - `Severity` enum: SAFE, LOW, MEDIUM, HIGH, CRITICAL
-- `ScanResult` dataclass with action, severity, categories, scan_id, report_id, detection dicts
+- `ScanResult` dataclass with action, severity, categories, scan_id, report_id, session_id, tr_id, detection dicts
 
 ## Config: Skill vs Strata Cloud Manager
 
@@ -58,6 +60,7 @@ OpenClaw skill plugin wrapping the official `pan-aisecurity` SDK from Palo Alto 
 | API key | `config.yaml` or env var `PANW_AI_SEC_API_KEY` |
 | Profile name | `config.yaml` |
 | Rate limiting, logging | `config.yaml` |
+| Metadata defaults (app_name, app_user, ai_model) | `config.yaml` |
 | Detection services (enable/disable) | Strata Cloud Manager |
 | Actions (allow/block/alert) | Strata Cloud Manager |
 | DLP patterns, URL categories | Strata Cloud Manager |

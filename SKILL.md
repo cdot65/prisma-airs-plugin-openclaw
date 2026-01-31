@@ -1,12 +1,19 @@
 ---
 name: prisma-airs
-version: 0.1.0
+version: 0.2.0
 description: Prisma AIRS (AI Runtime Security) integration for OpenClaw using the official pan-aisecurity SDK. Scans prompts and responses through Palo Alto Networks AI security service for injection attacks, data leakage, malicious URLs, and PII detection.
 ---
 
 # Prisma AIRS Skill
 
 AI Runtime Security scanning for OpenClaw agents via Palo Alto Networks Prisma AIRS.
+
+## What's New in 0.2.0
+
+- Session tracking with `session_id` parameter for grouping related scans
+- Transaction correlation with `tr_id` for prompt/response pairing
+- Metadata support: `app_name`, `app_user`, `ai_model`
+- New CLI args: `--session-id`, `--tr-id`, `--app-name`, `--app-user`, `--ai-model`
 
 ## What's New in 0.1.0
 
@@ -75,6 +82,12 @@ export PANW_AI_SEC_API_KEY="your-api-key-here"
 prisma_airs:
   api_key: "${PANW_AI_SEC_API_KEY}"  # Still uses env var
   profile_name: "default"
+
+  # Metadata defaults (optional)
+  metadata:
+    app_name: "openclaw"  # Defaults to "openclaw" if not set
+    # app_user: ""
+    # ai_model: ""
 ```
 
 **Option 3: Direct in code** (not recommended for production)
@@ -122,7 +135,14 @@ result = scanner.scan(
     context={
         "user_id": "123",
         "is_group": True,
-    }
+    },
+    # Session/transaction tracking (optional):
+    session_id="openclaw-conversation-123",  # Group related scans
+    tr_id="tx-001",                          # Correlate prompt/response
+    # Metadata (optional):
+    app_name="my-ai-agent",
+    app_user="user@example.com",
+    ai_model="gpt-4",
 )
 ```
 
@@ -133,6 +153,8 @@ result = scanner.scan(
 - `categories`: List of detected issues
 - `scan_id`: Prisma AIRS scan ID
 - `report_id`: Prisma AIRS report ID
+- `session_id`: Session ID for grouping scans
+- `tr_id`: Transaction ID for correlation
 - `prompt_detected`: Dict of prompt detections
 - `response_detected`: Dict of response detections
 
@@ -150,6 +172,12 @@ uv run prisma-airs-scan --profile strict "message"
 
 # Scan with response
 uv run prisma-airs-scan --prompt "user msg" --response "ai response"
+
+# Session tracking
+uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "message"
+
+# With metadata
+uv run prisma-airs-scan --app-name "myapp" --app-user "user@example.com" --ai-model "gpt-4" "message"
 
 # Configuration audit
 uv run prisma-airs-audit
