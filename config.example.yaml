@@ -1,41 +1,40 @@
 # Prisma AIRS Skill Configuration
 # Copy to config.yaml and customize
+#
+# NOTE: Detection services (prompt injection, DLP, URL filtering, etc.)
+# and their actions (allow/block) are configured in Strata Cloud Manager,
+# NOT in this file. This file only handles connection and runtime settings.
 
 prisma_airs:
   # API key - use environment variable (recommended) or direct value
+  # Generate your API key in Strata Cloud Manager: Settings → Access Keys
   # The SDK looks for PANW_AI_SEC_API_KEY by default
-  # export PANW_AI_SEC_API_KEY="your-key"
   api_key: "${PANW_AI_SEC_API_KEY}"
 
-  # Security profile name configured in Prisma AIRS console
+  # Security profile name configured in Strata Cloud Manager
+  # This profile controls which detection services are enabled and their actions
+  # Create profiles in SCM: AI Runtime Security → API Security Profiles
   profile_name: "default"
 
-  # Actions per detection category
-  actions:
-    injection: block
-    dlp: block
-    url_cats: block
-    malicious: block
-    benign: allow
+  # Regional API endpoint (optional)
+  # US (default): https://service.api.aisecurity.paloaltonetworks.com
+  # EU (Germany): https://service-de.api.aisecurity.paloaltonetworks.com
+  # api_endpoint: "https://service.api.aisecurity.paloaltonetworks.com"
 
-  # Owner user IDs (bypass some restrictions)
-  owner_ids:
-    - "YOUR_USER_ID"
-
-  # Logging configuration
+  # Logging configuration (local to this skill)
   logging:
     enabled: true
     path: "logs/prisma-airs.log"
-    include_prompt: false  # Privacy: don't log actual prompts
+    include_prompt: false # Privacy: don't log actual prompts
     include_response: false
 
-  # Rate limiting
+  # Rate limiting (local to this skill)
   rate_limit:
     enabled: true
     max_requests: 100
     window_seconds: 60
 
-  # Retry configuration
+  # Retry configuration for API calls
   retry:
     max_attempts: 3
     backoff_seconds: 1

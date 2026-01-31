@@ -8,15 +8,38 @@ description: Prisma AIRS (AI Runtime Security) integration for OpenClaw using th
 
 AI Runtime Security scanning for OpenClaw agents via Palo Alto Networks Prisma AIRS.
 
+## What's New in 0.1.0
+
+- Initial release with official `pan-aisecurity` SDK
+- Sync scanning for prompts and responses
+- CLI tools for testing and configuration validation
+- YAML config with environment variable support
+- Per-user rate limiting
+
 ## What It Does
 
 Uses the official `pan-aisecurity` SDK to scan prompts/responses:
+
 - **Prompt Injection Detection** - Catches manipulation attempts
 - **Data Leakage Prevention (DLP)** - Blocks sensitive data exposure
 - **URL Filtering** - Identifies malicious URLs
 - **PII Protection** - Detects personally identifiable information
 
 ## Quick Start
+
+### ClawHub Install
+
+```bash
+claw install prisma-airs
+```
+
+### Manual Install
+
+```bash
+pip install -r requirements.txt
+```
+
+### Basic Usage
 
 ```python
 from prisma_airs_skill import PrismaAIRS
@@ -30,19 +53,53 @@ if result.action.value == "block":
 
 ## Configuration
 
-Set credentials via environment:
+### Getting Your API Key
+
+1. Log in to [Prisma Cloud Console](https://apps.paloaltonetworks.com/)
+2. Navigate to **Settings** → **Access Keys**
+3. Create a new access key for AI Security
+4. Copy the API key (shown only once)
+
+### Setting the API Key
+
+**Option 1: Environment Variable (Recommended)**
 
 ```bash
-export PANW_AI_SEC_API_KEY="your-api-key"
+# Add to ~/.bashrc, ~/.zshrc, or your shell profile
+export PANW_AI_SEC_API_KEY="your-api-key-here"
 ```
 
-Or in `config.yaml`:
+**Option 2: Local config.yaml** (not uploaded to ClawHub)
 
 ```yaml
 prisma_airs:
-  api_key: "${PANW_AI_SEC_API_KEY}"
+  api_key: "${PANW_AI_SEC_API_KEY}"  # Still uses env var
   profile_name: "default"
 ```
+
+**Option 3: Direct in code** (not recommended for production)
+
+```python
+scanner = PrismaAIRS(api_key="your-key")
+```
+
+### Verify Setup
+
+```bash
+uv run prisma-airs-audit
+# Or standalone:
+python3 scripts/audit.py
+```
+
+## Security Levels
+
+| Severity | Description | Typical Response |
+|----------|-------------|------------------|
+| SAFE | No threats detected | Process normally |
+| LOW | Minor concern | Log for review |
+| MEDIUM | Detection triggered | Review recommended |
+| HIGH | Significant threat | Block + investigate |
+| CRITICAL | Active attack/severe exposure | Block + alert |
 
 ## Security Actions
 
@@ -70,6 +127,7 @@ result = scanner.scan(
 ```
 
 **Returns:** `ScanResult` with:
+
 - `action`: Action enum (ALLOW, WARN, BLOCK)
 - `severity`: Severity enum (SAFE, LOW, MEDIUM, HIGH, CRITICAL)
 - `categories`: List of detected issues
@@ -97,6 +155,14 @@ uv run prisma-airs-scan --prompt "user msg" --response "ai response"
 uv run prisma-airs-audit
 uv run prisma-airs-audit --verbose
 uv run prisma-airs-audit --quick  # Skip connectivity test
+```
+
+### Standalone Scripts
+
+```bash
+# Direct execution (no uv required)
+python3 scripts/scan.py --help
+python3 scripts/audit.py --help
 ```
 
 ## Integration Example
@@ -147,16 +213,25 @@ BLOCK (url filtering):
 ## Troubleshooting
 
 ### API Connection Failed
+
 - Verify `PANW_AI_SEC_API_KEY` is set
 - Run `uv run prisma-airs-audit` to diagnose
 - Check network connectivity to API endpoint
 - Confirm API subscription is active
 
 ### Profile Not Found
+
 - Verify profile name exists in Prisma AIRS console
 - Check profile_name in config matches exactly
 
+### Rate Limit Exceeded
+
+- Default: 100 requests per 60 seconds per user
+- Adjust in config.yaml under `rate_limit` section
+- Consider implementing request queuing
+
 ### False Positives
+
 - Adjust profile sensitivity in Prisma AIRS console
 - Contact Palo Alto support for tuning
 

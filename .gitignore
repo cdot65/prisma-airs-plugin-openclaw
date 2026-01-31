@@ -46,3 +46,6 @@ build/
 
 # Ruff
 .ruff_cache/
+
+# Claude Code
+.claude/
