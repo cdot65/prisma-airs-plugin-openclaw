@@ -8,10 +8,9 @@ Validates configuration and connectivity for Prisma AIRS integration.
 import os
 import sys
 from pathlib import Path
-from typing import Tuple
 
 
-def check_api_key() -> Tuple[bool, str]:
+def check_api_key() -> tuple[bool, str]:
     """Check if API key is configured."""
     api_key = os.environ.get("PANW_AI_SEC_API_KEY", "")
     if api_key:
@@ -20,7 +19,7 @@ def check_api_key() -> Tuple[bool, str]:
     return False, "PANW_AI_SEC_API_KEY environment variable not set"
 
 
-def check_config_file() -> Tuple[bool, str]:
+def check_config_file() -> tuple[bool, str]:
     """Check if config file exists."""
     for path in ["config.yaml", "config.yml"]:
         if Path(path).exists():
@@ -28,17 +27,18 @@ def check_config_file() -> Tuple[bool, str]:
     return False, "No config.yaml found (using defaults)"
 
 
-def check_sdk_installed() -> Tuple[bool, str]:
+def check_sdk_installed() -> tuple[bool, str]:
     """Check if pan-aisecurity SDK is installed."""
     try:
         import aisecurity
+
         version = getattr(aisecurity, "__version__", "unknown")
         return True, f"pan-aisecurity SDK installed: v{version}"
     except ImportError:
         return False, "pan-aisecurity SDK not installed"
 
 
-def check_connectivity() -> Tuple[bool, str]:
+def check_connectivity() -> tuple[bool, str]:
     """Check API connectivity with a test scan."""
     api_key = os.environ.get("PANW_AI_SEC_API_KEY", "")
     if not api_key:
@@ -74,7 +74,7 @@ def check_connectivity() -> Tuple[bool, str]:
         return False, f"Connectivity check failed: {error_msg[:100]}"
 
 
-def check_log_directory() -> Tuple[bool, str]:
+def check_log_directory() -> tuple[bool, str]:
     """Check if log directory is writable."""
     log_path = Path("logs")
     try:
@@ -87,18 +87,16 @@ def check_log_directory() -> Tuple[bool, str]:
         return False, f"Cannot write to log directory: {e}"
 
 
-def check_dependencies() -> Tuple[bool, str]:
+def check_dependencies() -> tuple[bool, str]:
     """Check required dependencies."""
+    import importlib.util
+
     missing = []
 
-    try:
-        import aisecurity
-    except ImportError:
+    if importlib.util.find_spec("aisecurity") is None:
         missing.append("pan-aisecurity")
 
-    try:
-        import yaml
-    except ImportError:
+    if importlib.util.find_spec("yaml") is None:
         missing.append("pyyaml")
 
     if missing:
@@ -155,7 +153,7 @@ def run_audit(verbose: bool = False, quick: bool = False) -> int:
 
     if passed:
         print(f"\nPASSED ({len(passed)})")
-        for name, msg in passed:
+        for name, _ in passed:
             print(f"  [OK] {name}")
 
     if warnings:
@@ -171,7 +169,6 @@ def run_audit(verbose: bool = False, quick: bool = False) -> int:
     print()
     print("=" * 60)
     if not failed:
-        total = len(passed) + len(warnings)
         print(f"All {len(passed)} critical checks passed!")
         if warnings:
             print(f"({len(warnings)} warnings)")

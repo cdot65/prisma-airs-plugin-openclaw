@@ -37,9 +37,16 @@ packages = ["src/prisma_airs_skill"]
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]
+select = ["E", "F", "I", "W", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["prisma_airs_skill"]
+force-single-line = false
+combine-as-imports = true
+split-on-trailing-comma = true
 
 [tool.mypy]
 python_version = "3.9"

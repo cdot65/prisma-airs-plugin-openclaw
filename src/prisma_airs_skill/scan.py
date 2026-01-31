@@ -7,16 +7,15 @@ prompts and responses for security threats including prompt injection,
 data leakage, malicious URLs, and PII detection.
 """
 
+import json
+import logging
 import os
 import sys
-import json
 import time
-import logging
-from datetime import datetime
-from pathlib import Path
-from dataclasses import dataclass, asdict, field
-from typing import Optional, Dict, List, Any
+from dataclasses import asdict, dataclass, field
 from enum import Enum
+from pathlib import Path
+from typing import Any, Optional
 
 import aisecurity
 from aisecurity.generated_openapi_client.models.ai_profile import AiProfile
@@ -41,19 +40,20 @@ class Action(Enum):
 @dataclass
 class ScanResult:
     """Result from Prisma AIRS scan."""
+
     action: Action
     severity: Severity
-    categories: List[str]
+    categories: list[str]
     scan_id: str
     report_id: str
     profile_name: str
-    prompt_detected: Dict[str, Any] = field(default_factory=dict)
-    response_detected: Dict[str, Any] = field(default_factory=dict)
-    raw_response: Dict[str, Any] = field(default_factory=dict)
+    prompt_detected: dict[str, Any] = field(default_factory=dict)
+    response_detected: dict[str, Any] = field(default_factory=dict)
+    raw_response: dict[str, Any] = field(default_factory=dict)
     latency_ms: int = 0
     error: Optional[str] = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         d = asdict(self)
         d["action"] = self.action.value
         d["severity"] = self.severity.name
@@ -67,7 +67,7 @@ class PrismaAIRS:
         self,
         api_key: Optional[str] = None,
         profile_name: Optional[str] = None,
-        config: Optional[Dict] = None,
+        config: Optional[dict] = None,
         config_path: Optional[str] = None,
     ):
         self.config = self._load_config(config, config_path)
@@ -91,11 +91,11 @@ class PrismaAIRS:
         self._ai_profile = AiProfile(profile_name=self.profile_name)
 
         # Rate limiting
-        self.rate_limits: Dict[str, List[float]] = {}
+        self.rate_limits: dict[str, list[float]] = {}
 
         self._setup_logging()
 
-    def _load_config(self, config: Optional[Dict], config_path: Optional[str]) -> Dict:
+    def _load_config(self, config: Optional[dict], config_path: Optional[str]) -> dict:
         """Load configuration from dict or file."""
         default = self._default_config()
 
@@ -112,10 +112,11 @@ class PrismaAIRS:
 
         return default
 
-    def _load_yaml(self, path: str, default: Dict) -> Dict:
+    def _load_yaml(self, path: str, default: dict) -> dict:
         """Load YAML config file."""
         try:
             import yaml
+
             with open(path) as f:
                 file_config = yaml.safe_load(f) or {}
                 if "prisma_airs" in file_config:
@@ -126,7 +127,7 @@ class PrismaAIRS:
             return default
 
     @staticmethod
-    def _deep_merge(base: Dict, override: Dict) -> Dict:
+    def _deep_merge(base: dict, override: dict) -> dict:
         """Deep merge two dictionaries."""
         result = base.copy()
         for key, value in override.items():
@@ -144,7 +145,7 @@ class PrismaAIRS:
             return os.environ.get(env_var, "")
         return value
 
-    def _default_config(self) -> Dict:
+    def _default_config(self) -> dict:
         return {
             "api_key": "${PANW_AI_SEC_API_KEY}",
             "profile_name": "default",
@@ -183,9 +184,7 @@ class PrismaAIRS:
 
         if not self.logger.handlers:
             handler = logging.FileHandler(log_path)
-            handler.setFormatter(logging.Formatter(
-                "%(asctime)s | %(levelname)s | %(message)s"
-            ))
+            handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
             self.logger.addHandler(handler)
 
     def _check_rate_limit(self, user_id: str) -> bool:
@@ -201,9 +200,7 @@ class PrismaAIRS:
         if user_id not in self.rate_limits:
             self.rate_limits[user_id] = []
 
-        self.rate_limits[user_id] = [
-            t for t in self.rate_limits[user_id] if now - t < window
-        ]
+        self.rate_limits[user_id] = [t for t in self.rate_limits[user_id] if now - t < window]
 
         if len(self.rate_limits[user_id]) >= max_requests:
             return True
@@ -215,7 +212,7 @@ class PrismaAIRS:
         self,
         prompt: Optional[str] = None,
         response: Optional[str] = None,
-        context: Optional[Dict] = None,
+        context: Optional[dict] = None,
     ) -> ScanResult:
         """
         Synchronously scan prompt and/or response through Prisma AIRS.
@@ -358,7 +355,7 @@ class PrismaAIRS:
             latency_ms=latency_ms,
         )
 
-    def _log_scan(self, result: ScanResult, user_id: str, context: Dict):
+    def _log_scan(self, result: ScanResult, user_id: str, context: dict):
         """Log scan result."""
         log_config = self.config.get("logging", {})
         if not log_config.get("enabled", True):
@@ -387,9 +384,7 @@ def main():
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Prisma AIRS Scanner - AI Runtime Security"
-    )
+    parser = argparse.ArgumentParser(description="Prisma AIRS Scanner - AI Runtime Security")
     parser.add_argument("message", nargs="?", help="Message to scan")
     parser.add_argument("--prompt", type=str, help="Prompt to scan")
     parser.add_argument("--response", type=str, help="Response to scan")
