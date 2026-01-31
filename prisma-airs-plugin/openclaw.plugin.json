@@ -7,22 +7,36 @@
   "hooks": ["hooks/prisma-airs-guard"],
   "configSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
       "profile_name": {
         "type": "string",
         "default": "default",
-        "description": "Prisma AIRS profile name from SCM"
+        "description": "Prisma AIRS profile name from Strata Cloud Manager"
       },
       "app_name": {
         "type": "string",
         "default": "openclaw",
-        "description": "Application name for metadata"
+        "description": "Application name for scan metadata"
       },
       "reminder_enabled": {
         "type": "boolean",
         "default": true,
-        "description": "Inject security scanning reminder on bootstrap"
+        "description": "Inject security scanning reminder on agent bootstrap"
       }
+    }
+  },
+  "uiHints": {
+    "profile_name": {
+      "label": "Profile Name",
+      "placeholder": "default"
+    },
+    "app_name": {
+      "label": "Application Name",
+      "placeholder": "openclaw"
+    },
+    "reminder_enabled": {
+      "label": "Enable Bootstrap Reminder"
     }
   },
   "requires": {

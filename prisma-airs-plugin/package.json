@@ -1,5 +1,5 @@
 {
-  "name": "@cdot65/prisma-airs-plugin-openclaw",
+  "name": "@cdot65/prisma-airs",
   "version": "0.1.0",
   "description": "Prisma AIRS (AI Runtime Security) plugin for OpenClaw - bundles security scanning skill with bootstrap reminder hook",
   "type": "module",
@@ -21,6 +21,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "openclaw": {
+    "extensions": ["./index.ts"]
   },
   "devDependencies": {
     "typescript": "^5.0.0"
