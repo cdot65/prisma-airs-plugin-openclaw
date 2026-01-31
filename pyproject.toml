@@ -1,6 +1,6 @@
 [project]
-name = "prisma-airs-skill"
-version = "0.2.0"
+name = "prisma-airs-plugin"
+version = "0.1.0"
 description = "OpenClaw plugin for Prisma AIRS (AI Runtime Security) from Palo Alto Networks"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -34,12 +34,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/prisma_airs_skill"]
+packages = ["prisma-airs-plugin/src/prisma_airs_skill"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py39"
-src = ["src"]
+src = ["prisma-airs-plugin/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
@@ -69,7 +69,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/prisma_airs_skill"]
+source = ["prisma-airs-plugin/src/prisma_airs_skill"]
 omit = ["*/tests/*"]
 
 [tool.coverage.report]

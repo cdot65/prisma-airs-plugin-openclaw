@@ -15,13 +15,13 @@ Unlike simple chat interfaces, modern AI agents:
 
 A prompt injection attack against a basic chatbot might produce a rude message. Against an AI agent with tool access, it could exfiltrate data, execute unauthorized commands, or bypass security controls entirely.
 
-## Configuration: Skill vs Strata Cloud Manager
+## Configuration: Plugin vs Strata Cloud Manager
 
 Understanding where to configure what is critical for effective deployment.
 
-### OpenClaw Skill Configuration (`config.yaml`)
+### OpenClaw Plugin Configuration (`config.yaml`)
 
-The skill handles **connection and runtime settings**:
+The plugin handles **connection and runtime settings**:
 
 ```yaml
 prisma_airs:
@@ -58,7 +58,7 @@ Detection services and security policies are configured **in SCM**, not in the s
 | URL filtering categories | SCM → API Security Profile |
 | Custom topic guardrails | SCM → API Security Profile |
 
-**Key insight**: The skill calls the API with a profile name. All detection logic and actions are determined by that profile's configuration in SCM.
+**Key insight**: The plugin calls the API with a profile name. All detection logic and actions are determined by that profile's configuration in SCM.
 
 ## Detection Services
 
@@ -268,7 +268,7 @@ Block PII, credentials, and confidential data from leaking during AI interaction
 2. **Create API Key**: Generate key in Customer Support Portal
 3. **Create Security Profile**: Configure detection services and actions
 4. **Set Environment Variable**: `export PANW_AI_SEC_API_KEY="your-key"`
-5. **Configure Skill**: Set `profile_name` to match your SCM profile
+5. **Install Plugin**: `openclaw plugins install ./prisma-airs-plugin`
 6. **Verify**: Run `prisma-airs-audit` to validate connectivity
 
 ![Onboarding Workflow](https://docs.paloaltonetworks.com/content/dam/techdocs/en_US/dita/_graphics/ai-runtime-security/activation-and-onboarding/airs-apis-onboarding-workflow.png)

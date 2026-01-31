@@ -1,11 +1,15 @@
-# Prisma AIRS Skill
+# Prisma AIRS Plugin
 
 OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/ai-runtime-security) (AI Runtime Security) from Palo Alto Networks.
 
 ## Overview
 
-Integrates Prisma AIRS security scanning into OpenClaw agents using the official `pan-aisecurity` SDK:
+Bundles Prisma AIRS security scanning into OpenClaw agents using the official `pan-aisecurity` SDK:
 
+- **Skill**: `prisma-airs` - Scanning commands and Python API
+- **Hook**: `prisma-airs-guard` - Bootstrap reminder for consistent security scanning
+
+Detection capabilities:
 - Prompt injection detection
 - Data leakage prevention (DLP)
 - Malicious URL filtering
@@ -19,49 +23,78 @@ Integrates Prisma AIRS security scanning into OpenClaw agents using the official
 ## Quick Start
 
 ```bash
-# Install with uv
-uv sync
+# Install plugin
+openclaw plugins install ./prisma-airs-plugin
 
 # Set API key (from Strata Cloud Manager)
 export PANW_AI_SEC_API_KEY="your-api-key"
 
 # Test scan
-uv run prisma-airs-scan "test message"
-
-# Validate configuration
-uv run prisma-airs-audit
+python3 prisma-airs-plugin/skills/prisma-airs/scripts/scan.py "test message"
 ```
 
 ## Installation
 
-### ClawHub
+### Plugin Install
 
 ```bash
-claw install prisma-airs
+openclaw plugins install ./prisma-airs-plugin
 ```
 
-### Manual
+### Development
 
 ```bash
-git clone https://github.com/cdot65/prisma-airs-skill.git
-cd prisma-airs-skill
+git clone https://github.com/cdot65/prisma-airs-plugin-openclaw.git
+cd prisma-airs-plugin-openclaw
 uv sync
 ```
 
+## Plugin Structure
+
+```
+prisma-airs-plugin/
+├── package.json
+├── openclaw.plugin.json          # Plugin manifest
+├── index.ts                      # Plugin entrypoint
+├── src/prisma_airs_skill/        # Python package
+│   ├── __init__.py
+│   ├── scan.py
+│   └── audit.py
+├── skills/prisma-airs/           # Skill definition
+│   ├── SKILL.md
+│   ├── requirements.txt
+│   └── scripts/
+│       ├── scan.py
+│       └── audit.py
+└── hooks/prisma-airs-guard/      # Bootstrap reminder hook
+    ├── HOOK.md
+    └── handler.ts
+```
+
 ## Configuration
+
+### Plugin Config
+
+```yaml
+plugins:
+  prisma-airs:
+    profile_name: "default"       # SCM profile name
+    app_name: "openclaw"          # App metadata
+    reminder_enabled: true        # Enable bootstrap hook
+```
 
 ### Where to Configure What
 
 | Setting | Where |
 |---------|-------|
-| API key | Environment variable or `config.yaml` |
-| Profile name | `config.yaml` |
+| API key | Environment variable `PANW_AI_SEC_API_KEY` |
+| Profile name | Plugin config or `config.yaml` |
 | Rate limiting, logging | `config.yaml` |
 | Detection services | Strata Cloud Manager |
 | Actions (allow/block) | Strata Cloud Manager |
 | DLP patterns | Strata Cloud Manager |
 
-**Important**: Detection services and their actions are configured in [Strata Cloud Manager](https://docs.paloaltonetworks.com/ai-runtime-security/administration/prevent-network-security-threats/api-intercept-create-configure-security-profile), not in this skill's config file.
+**Important**: Detection services and actions are configured in [Strata Cloud Manager](https://docs.paloaltonetworks.com/ai-runtime-security/administration/prevent-network-security-threats/api-intercept-create-configure-security-profile), not in plugin config.
 
 ### API Key Setup
 
@@ -72,33 +105,6 @@ uv sync
 
 ```bash
 export PANW_AI_SEC_API_KEY="your-api-key"
-```
-
-### Config File (Optional)
-
-```bash
-cp config.example.yaml config.yaml
-```
-
-```yaml
-prisma_airs:
-  api_key: "${PANW_AI_SEC_API_KEY}"
-  profile_name: "default"  # Must match profile in SCM
-
-  logging:
-    enabled: true
-    path: "logs/prisma-airs.log"
-
-  rate_limit:
-    enabled: true
-    max_requests: 100
-    window_seconds: 60
-
-  # Metadata defaults (sent with each scan)
-  metadata:
-    app_name: "openclaw"  # Default if not passed to scan()
-    # app_user: ""        # Optional
-    # ai_model: ""        # Optional
 ```
 
 ## Usage
@@ -138,10 +144,8 @@ result = scanner.scan(
     prompt="user message",
     response="ai response",
     context={"user_id": "123"},
-    # Session tracking (optional)
     session_id="conversation-123",
     tr_id="tx-001",
-    # Metadata (optional)
     app_name="my-agent",
     app_user="user@example.com",
     ai_model="gpt-4",
@@ -151,12 +155,24 @@ if result.action == Action.BLOCK:
     print("Request blocked for security reasons.")
 else:
     print(f"Scan passed: {result.categories}")
-    print(f"Session: {result.session_id}, Transaction: {result.tr_id}")
+```
+
+## Bootstrap Hook
+
+The `prisma-airs-guard` hook injects a security reminder into agent bootstrap, instructing agents to:
+
+1. Scan suspicious content before processing
+2. Block requests with `action=BLOCK` response
+3. Scan content involving code, URLs, or sensitive data
+
+Disable via config:
+```yaml
+plugins:
+  prisma-airs:
+    reminder_enabled: false
 ```
 
 ## Detection Categories
-
-Categories returned depend on which services are enabled in your SCM profile:
 
 | Category | Description |
 |----------|-------------|
@@ -171,28 +187,6 @@ Categories returned depend on which services are enabled in your SCM profile:
 | `ungrounded` | Response not grounded in context |
 | `topic_violation` | Topic guardrail triggered |
 | `safe` | No issues detected |
-
-## Project Structure
-
-```
-prisma-airs-skill/
-├── README.md
-├── SKILL.md              # ClawHub skill documentation
-├── CHANGELOG.md
-├── SECURITY.md
-├── pyproject.toml
-├── requirements.txt
-├── config.example.yaml
-├── blog/                 # Educational content
-├── scripts/              # Standalone entry points
-│   ├── scan.py
-│   └── audit.py
-└── src/
-    └── prisma_airs_skill/
-        ├── __init__.py
-        ├── scan.py
-        └── audit.py
-```
 
 ## Development
 
@@ -213,19 +207,9 @@ make test     # pytest
 ## Requirements
 
 - Python 3.9+
+- Node.js 18+ (for hook)
 - Prisma AIRS API key (from Strata Cloud Manager)
 - API Security Profile configured in SCM
-- Valid Palo Alto Networks subscription
-
-## Service Limitations
-
-| Limitation | Value |
-|------------|-------|
-| Sync request payload | 2 MB max |
-| Async request payload | 5 MB max |
-| URLs per request | 100 max |
-| API keys per profile | 1 |
-| Cross-region API keys | Not supported |
 
 ## Links
 

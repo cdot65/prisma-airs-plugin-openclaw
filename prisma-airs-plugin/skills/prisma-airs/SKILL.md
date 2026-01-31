@@ -1,6 +1,6 @@
 ---
 name: prisma-airs
-version: 0.2.0
+version: 0.1.0
 description: Prisma AIRS (AI Runtime Security) integration for OpenClaw using the official pan-aisecurity SDK. Scans prompts and responses through Palo Alto Networks AI security service for injection attacks, data leakage, malicious URLs, and PII detection.
 ---
 
@@ -8,16 +8,17 @@ description: Prisma AIRS (AI Runtime Security) integration for OpenClaw using th
 
 AI Runtime Security scanning for OpenClaw agents via Palo Alto Networks Prisma AIRS.
 
-## What's New in 0.2.0
+> **Note**: This skill is bundled in the `prisma-airs` plugin alongside the `prisma-airs-guard` bootstrap hook.
 
+## Features
+
+- OpenClaw plugin architecture with bundled `prisma-airs-guard` bootstrap hook
+- Plugin config schema for `profile_name`, `app_name`, `reminder_enabled`
 - Session tracking with `session_id` parameter for grouping related scans
 - Transaction correlation with `tr_id` for prompt/response pairing
 - Metadata support: `app_name`, `app_user`, `ai_model`
-- New CLI args: `--session-id`, `--tr-id`, `--app-name`, `--app-user`, `--ai-model`
-
-## What's New in 0.1.0
-
-- Initial release with official `pan-aisecurity` SDK
+- CLI args: `--session-id`, `--tr-id`, `--app-name`, `--app-user`, `--ai-model`
+- Official `pan-aisecurity` SDK integration
 - Sync scanning for prompts and responses
 - CLI tools for testing and configuration validation
 - YAML config with environment variable support
@@ -34,13 +35,13 @@ Uses the official `pan-aisecurity` SDK to scan prompts/responses:
 
 ## Quick Start
 
-### ClawHub Install
+### Plugin Install
 
 ```bash
-claw install prisma-airs
+openclaw plugins install ./prisma-airs-plugin
 ```
 
-### Manual Install
+### Development Install
 
 ```bash
 pip install -r requirements.txt
@@ -188,7 +189,7 @@ uv run prisma-airs-audit --quick  # Skip connectivity test
 ### Standalone Scripts
 
 ```bash
-# Direct execution (no uv required)
+# Direct execution from plugin directory
 python3 scripts/scan.py --help
 python3 scripts/audit.py --help
 ```

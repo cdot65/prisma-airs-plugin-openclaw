@@ -5,17 +5,17 @@ all: format lint mypy test
 
 # Format code with ruff
 format:
-	uv run ruff format src/
-	uv run ruff check --fix src/
+	uv run ruff format prisma-airs-plugin/src/
+	uv run ruff check --fix prisma-airs-plugin/src/
 
 # Lint with ruff and flake8
 lint:
-	uv run ruff check src/
-	uv run flake8 src/
+	uv run ruff check prisma-airs-plugin/src/
+	uv run flake8 prisma-airs-plugin/src/
 
 # Type check with mypy
 mypy:
-	uv run mypy src/
+	uv run mypy prisma-airs-plugin/src/
 
 # Run tests
 test:

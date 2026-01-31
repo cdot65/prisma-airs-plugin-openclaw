@@ -1,0 +1,31 @@
+{
+  "id": "prisma-airs",
+  "name": "Prisma AIRS Security",
+  "description": "AI Runtime Security scanning via Palo Alto Networks - includes scanning skill and bootstrap reminder hook",
+  "version": "0.1.0",
+  "skills": ["skills/prisma-airs"],
+  "hooks": ["hooks/prisma-airs-guard"],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "profile_name": {
+        "type": "string",
+        "default": "default",
+        "description": "Prisma AIRS profile name from SCM"
+      },
+      "app_name": {
+        "type": "string",
+        "default": "openclaw",
+        "description": "Application name for metadata"
+      },
+      "reminder_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Inject security scanning reminder on bootstrap"
+      }
+    }
+  },
+  "requires": {
+    "env": ["PANW_AI_SEC_API_KEY"]
+  }
+}

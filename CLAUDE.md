@@ -27,19 +27,19 @@ uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "message"
 uv run prisma-airs-audit        # config validation
 uv run prisma-airs-audit --quick  # skip connectivity test
 
-# Standalone scripts (for ClawHub)
-python3 scripts/scan.py --help
-python3 scripts/audit.py --help
+# Standalone scripts (in plugin)
+python3 prisma-airs-plugin/skills/prisma-airs/scripts/scan.py --help
+python3 prisma-airs-plugin/skills/prisma-airs/scripts/audit.py --help
 ```
 
 ## Architecture
 
-OpenClaw skill plugin wrapping the official `pan-aisecurity` SDK from Palo Alto Networks.
+OpenClaw plugin wrapping the official `pan-aisecurity` SDK from Palo Alto Networks. Bundles a skill and bootstrap reminder hook.
 
 **Core components:**
-- `src/prisma_airs_skill/scan.py` - Main `PrismaAIRS` class and `ScanResult` dataclass. Handles SDK initialization, config loading, rate limiting, and response parsing.
-- `src/prisma_airs_skill/audit.py` - Config validation CLI (`prisma-airs-audit`)
-- `scripts/scan.py`, `scripts/audit.py` - Standalone entry points for ClawHub
+- `prisma-airs-plugin/src/prisma_airs_skill/scan.py` - Main `PrismaAIRS` class and `ScanResult` dataclass. Handles SDK initialization, config loading, rate limiting, and response parsing.
+- `prisma-airs-plugin/src/prisma_airs_skill/audit.py` - Config validation CLI (`prisma-airs-audit`)
+- `prisma-airs-plugin/hooks/prisma-airs-guard/` - Bootstrap reminder hook
 
 **Data flow:**
 1. `PrismaAIRS.__init__` loads config from YAML or defaults, initializes `aisecurity` SDK
@@ -88,18 +88,25 @@ Categories returned depend on SCM profile configuration:
 ## Project Structure
 
 ```
-prisma-airs-skill/
-├── src/prisma_airs_skill/   # Main package
-│   ├── __init__.py
-│   ├── scan.py              # PrismaAIRS class, CLI
-│   └── audit.py             # Config audit CLI
-├── scripts/                  # ClawHub standalone entry points
-│   ├── scan.py
-│   └── audit.py
-├── blog/                     # Educational content
-├── config.example.yaml       # Local config template
-├── requirements.txt          # pip-compatible deps
-├── SKILL.md                  # ClawHub skill documentation
+prisma-airs-plugin-openclaw/
+├── prisma-airs-plugin/           # OpenClaw plugin (self-contained)
+│   ├── openclaw.plugin.json      # Plugin manifest
+│   ├── package.json
+│   ├── index.ts                  # Plugin entrypoint
+│   ├── src/prisma_airs_skill/    # Python package
+│   │   ├── __init__.py
+│   │   ├── scan.py               # PrismaAIRS class, CLI
+│   │   └── audit.py              # Config audit CLI
+│   ├── skills/prisma-airs/       # Scanning skill
+│   │   ├── SKILL.md
+│   │   ├── requirements.txt
+│   │   └── scripts/
+│   └── hooks/prisma-airs-guard/  # Bootstrap reminder hook
+│       ├── HOOK.md
+│       └── handler.ts
+├── tests/                        # Development tests
+├── blog/                         # Educational content
+├── config.example.yaml
 ├── CHANGELOG.md
 └── SECURITY.md
 ```

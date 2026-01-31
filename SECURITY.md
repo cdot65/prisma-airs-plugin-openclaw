@@ -32,14 +32,14 @@ If you discover a security vulnerability in this project, please report it respo
 
 This security policy covers vulnerabilities in:
 
-- **In scope**: The prisma-airs-skill code itself
+- **In scope**: The prisma-airs-plugin code itself (skill, hook, Python package)
 - **Out of scope**: The Prisma AIRS service (report to Palo Alto Networks)
 - **Out of scope**: The pan-aisecurity SDK (report to Palo Alto Networks)
 - **Out of scope**: Dependencies (report to respective maintainers)
 
 ## Security Best Practices
 
-When using this skill:
+When using this plugin:
 
 1. Never commit `config.yaml` with API keys (it's in `.gitignore`)
 2. Use environment variables for credentials

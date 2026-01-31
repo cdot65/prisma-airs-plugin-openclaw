@@ -1,4 +1,4 @@
-"""Prisma AIRS Skill - OpenClaw plugin for AI Runtime Security."""
+"""Prisma AIRS Plugin - OpenClaw plugin for AI Runtime Security."""
 
 __version__ = "0.1.0"
 

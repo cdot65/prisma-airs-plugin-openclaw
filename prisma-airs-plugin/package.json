@@ -1,0 +1,28 @@
+{
+  "name": "@cdot65/prisma-airs-plugin-openclaw",
+  "version": "0.1.0",
+  "description": "Prisma AIRS (AI Runtime Security) plugin for OpenClaw - bundles security scanning skill with bootstrap reminder hook",
+  "type": "module",
+  "main": "index.ts",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "prisma",
+    "airs",
+    "security",
+    "ai-security",
+    "palo-alto"
+  ],
+  "author": "cdot65",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdot65/prisma-airs-plugin-openclaw"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
