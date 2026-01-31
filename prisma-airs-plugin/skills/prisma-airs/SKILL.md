@@ -44,7 +44,7 @@ openclaw plugins install ./prisma-airs-plugin
 ### Development Install
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### Basic Usage

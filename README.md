@@ -30,7 +30,7 @@ openclaw plugins install ./prisma-airs-plugin
 export PANW_AI_SEC_API_KEY="your-api-key"
 
 # Test scan
-python3 prisma-airs-plugin/skills/prisma-airs/scripts/scan.py "test message"
+prisma-airs-scan "test message"
 ```
 
 ## Installation
