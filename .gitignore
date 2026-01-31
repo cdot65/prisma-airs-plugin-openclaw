@@ -41,6 +41,9 @@ dist/
 build/
 *.egg-info/
 
+# Node
+node_modules/
+
 # Type checking
 .mypy_cache/
 

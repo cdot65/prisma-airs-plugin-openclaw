@@ -50,12 +50,12 @@ pip install -r requirements.txt
 ### Basic Usage
 
 ```python
-from prisma_airs_skill import PrismaAIRS
+from prisma_airs_skill import PrismaAIRS, Action
 
 scanner = PrismaAIRS()
 result = scanner.scan("user message", context={"user_id": "123"})
 
-if result.action.value == "block":
+if result.action == Action.BLOCK:
     return "Request blocked by security policy."
 ```
 
@@ -266,6 +266,7 @@ BLOCK (url filtering):
 
 ## Links
 
-- [Prisma AIRS Documentation](https://docs.paloaltonetworks.com/prisma/prisma-cloud/prisma-cloud-ai-security)
+- [Prisma AIRS Documentation](https://docs.paloaltonetworks.com/ai-runtime-security)
+- [API Security Profile Setup](https://docs.paloaltonetworks.com/ai-runtime-security/administration/prevent-network-security-threats/api-intercept-create-configure-security-profile)
 - [pan-aisecurity SDK](https://pypi.org/project/pan-aisecurity/)
 - [API Reference](https://pan.dev/prisma-airs/)

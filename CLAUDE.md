@@ -6,8 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Install dependencies
-uv sync
-uv sync --dev  # includes dev tools
+uv sync --dev
 
 # Run all checks
 make all  # format -> lint -> mypy -> test
@@ -16,20 +15,21 @@ make all  # format -> lint -> mypy -> test
 make format   # ruff format + fix
 make lint     # ruff check + flake8
 make mypy     # type checking
-make test     # pytest
+make test     # pytest (unit tests only, mocked)
+
+# Run single test
+uv run pytest tests/test_scan.py::TestPrismaAIRSScan::test_scan_with_session_id -v
+
+# Integration tests (requires PANW_AI_SEC_API_KEY + config.yaml)
+uv run pytest -m integration
 
 # CLI tools
 uv run prisma-airs-scan "message"
 uv run prisma-airs-scan --json "message"
 uv run prisma-airs-scan --prompt "user msg" --response "ai response"
 uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "message"
-uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "message"
 uv run prisma-airs-audit        # config validation
 uv run prisma-airs-audit --quick  # skip connectivity test
-
-# Standalone scripts (in plugin)
-python3 prisma-airs-plugin/skills/prisma-airs/scripts/scan.py --help
-python3 prisma-airs-plugin/skills/prisma-airs/scripts/audit.py --help
 ```
 
 ## Architecture
@@ -85,28 +85,10 @@ Categories returned depend on SCM profile configuration:
 | `topic_violation` | Custom Topic Guardrails |
 | `safe` | No threats detected |
 
-## Project Structure
+## Testing
 
-```
-prisma-airs-plugin-openclaw/
-├── prisma-airs-plugin/           # OpenClaw plugin (self-contained)
-│   ├── openclaw.plugin.json      # Plugin manifest
-│   ├── package.json
-│   ├── index.ts                  # Plugin entrypoint
-│   ├── src/prisma_airs_skill/    # Python package
-│   │   ├── __init__.py
-│   │   ├── scan.py               # PrismaAIRS class, CLI
-│   │   └── audit.py              # Config audit CLI
-│   ├── skills/prisma-airs/       # Scanning skill
-│   │   ├── SKILL.md
-│   │   ├── requirements.txt
-│   │   └── scripts/
-│   └── hooks/prisma-airs-guard/  # Bootstrap reminder hook
-│       ├── HOOK.md
-│       └── handler.ts
-├── tests/                        # Development tests
-├── blog/                         # Educational content
-├── config.example.yaml
-├── CHANGELOG.md
-└── SECURITY.md
-```
+- Unit tests mock the `aisecurity` SDK entirely via `patch("aisecurity.init")`, `patch("prisma_airs_skill.scan.Scanner")`, etc.
+- Integration tests (`@pytest.mark.integration`) require live API key and skip automatically if not set
+- `live_api` fixture: skips if `PANW_AI_SEC_API_KEY` not set
+- `live_api_with_config`: also requires `config.yaml` to exist
+- Coverage target: 90% (enforced via `--cov-fail-under=90`)

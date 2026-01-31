@@ -2,6 +2,6 @@
 
 __version__ = "0.1.0"
 
-from .scan import PrismaAIRS, ScanResult
+from .scan import Action, PrismaAIRS, ScanResult, Severity
 
-__all__ = ["PrismaAIRS", "ScanResult"]
+__all__ = ["Action", "PrismaAIRS", "ScanResult", "Severity"]
