@@ -37,6 +37,12 @@ prisma_airs:
   logging:
     enabled: true
     path: logs/prisma-airs.log
+
+  # Metadata defaults (sent with each scan)
+  metadata:
+    app_name: "openclaw"    # Defaults to "openclaw" if not set
+    # app_user: ""          # Optional user identifier
+    # ai_model: ""          # Optional AI model name
 ```
 
 ### Strata Cloud Manager Console
@@ -173,6 +179,29 @@ if output_result.action == Action.BLOCK:
 return response
 ```
 
+### Session Tracking
+
+Group related scans and correlate prompt/response pairs:
+
+```python
+# Use session_id to group scans in a conversation
+# Use tr_id to correlate a prompt scan with its response scan
+result = scanner.scan(
+    prompt=user_message,
+    session_id="conversation-123",  # Group related scans
+    tr_id="tx-001",                 # Correlate prompt/response
+    app_user="user@example.com",    # Override config default
+    ai_model="gpt-4",
+)
+
+# Same tr_id links the response scan to the prompt scan
+output_result = scanner.scan(
+    response=response,
+    session_id="conversation-123",
+    tr_id="tx-001",
+)
+```
+
 ## API Response Structure
 
 When a threat is detected:
@@ -189,13 +218,17 @@ When a threat is detected:
   },
   "response_detected": {},
   "scan_id": "...",
-  "report_id": "..."
+  "report_id": "...",
+  "session_id": "conversation-123",
+  "tr_id": "tx-001"
 }
 ```
 
 - `category`: `malicious` (threat detected) or `benign` (clean)
 - `action`: Based on your SCM profile settings
 - `*_detected`: Boolean flags for each detection type
+- `session_id`: Groups related scans in a conversation
+- `tr_id`: Correlates prompt/response scan pairs
 
 ## Service Limitations
 
@@ -251,6 +284,12 @@ uv run prisma-airs-scan --json "test message"
 
 # Scan with specific profile
 uv run prisma-airs-scan --profile strict "test message"
+
+# Session tracking
+uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "test message"
+
+# With metadata
+uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "test message"
 
 # Validate configuration
 uv run prisma-airs-audit
