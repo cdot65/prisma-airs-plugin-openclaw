@@ -32,16 +32,15 @@ If you discover a security vulnerability in this project, please report it respo
 
 This security policy covers vulnerabilities in:
 
-- **In scope**: The prisma-airs-plugin code itself (skill, hook, Python package)
+- **In scope**: The prisma-airs-plugin code itself (TypeScript scanner, hook, RPC handlers)
 - **Out of scope**: The Prisma AIRS service (report to Palo Alto Networks)
-- **Out of scope**: The pan-aisecurity SDK (report to Palo Alto Networks)
 - **Out of scope**: Dependencies (report to respective maintainers)
 
 ## Security Best Practices
 
 When using this plugin:
 
-1. Never commit `config.yaml` with API keys (it's in `.gitignore`)
-2. Use environment variables for credentials
-3. Review logs for unusual scan patterns
-4. Keep the `pan-aisecurity` SDK updated
+1. Use environment variables for credentials (`PANW_AI_SEC_API_KEY`)
+2. Never commit API keys to version control
+3. Monitor scan results for unusual patterns
+4. Keep plugin dependencies updated (`npm update`)

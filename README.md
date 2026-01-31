@@ -4,12 +4,14 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/ai-run
 
 ## Overview
 
-Bundles Prisma AIRS security scanning into OpenClaw agents using the official `pan-aisecurity` SDK:
+Pure TypeScript plugin with direct AIRS API integration via `fetch()`.
 
-- **Skill**: `prisma-airs` - Scanning commands and Python API
-- **Hook**: `prisma-airs-guard` - Bootstrap reminder for consistent security scanning
+**Provides:**
+- **Gateway RPC**: `prisma-airs.scan` - Programmatic scanning
+- **Agent Tool**: `prisma_airs_scan` - Agent-initiated scans
+- **Bootstrap Hook**: `prisma-airs-guard` - Reminds agents to scan suspicious content
 
-Detection capabilities:
+**Detection capabilities:**
 - Prompt injection detection
 - Data leakage prevention (DLP)
 - Malicious URL filtering
@@ -29,24 +31,11 @@ openclaw plugins install ./prisma-airs-plugin
 # Set API key (from Strata Cloud Manager)
 export PANW_AI_SEC_API_KEY="your-api-key"
 
-# Test scan
-prisma-airs-scan "test message"
-```
+# Test via CLI
+openclaw prisma-airs-scan "test message"
 
-## Installation
-
-### Plugin Install
-
-```bash
-openclaw plugins install ./prisma-airs-plugin
-```
-
-### Development
-
-```bash
-git clone https://github.com/cdot65/prisma-airs-plugin-openclaw.git
-cd prisma-airs-plugin-openclaw
-uv sync
+# Test via RPC
+openclaw gateway call prisma-airs.scan --params '{"prompt":"test"}'
 ```
 
 ## Plugin Structure
@@ -56,16 +45,8 @@ prisma-airs-plugin/
 ├── package.json
 ├── openclaw.plugin.json          # Plugin manifest
 ├── index.ts                      # Plugin entrypoint
-├── src/prisma_airs_skill/        # Python package
-│   ├── __init__.py
-│   ├── scan.py
-│   └── audit.py
-├── skills/prisma-airs/           # Skill definition
-│   ├── SKILL.md
-│   ├── requirements.txt
-│   └── scripts/
-│       ├── scan.py
-│       └── audit.py
+├── src/
+│   └── scanner.ts                # TypeScript scanner
 └── hooks/prisma-airs-guard/      # Bootstrap reminder hook
     ├── HOOK.md
     └── handler.ts
@@ -88,8 +69,7 @@ plugins:
 | Setting | Where |
 |---------|-------|
 | API key | Environment variable `PANW_AI_SEC_API_KEY` |
-| Profile name | Plugin config or `config.yaml` |
-| Rate limiting, logging | `config.yaml` |
+| Profile name | Plugin config |
 | Detection services | Strata Cloud Manager |
 | Actions (allow/block) | Strata Cloud Manager |
 | DLP patterns | Strata Cloud Manager |
@@ -109,61 +89,76 @@ export PANW_AI_SEC_API_KEY="your-api-key"
 
 ## Usage
 
-### CLI
+### Gateway RPC
 
 ```bash
 # Scan a prompt
-uv run prisma-airs-scan "user input to scan"
-
-# JSON output
-uv run prisma-airs-scan --json "message"
-
-# Specify profile
-uv run prisma-airs-scan --profile strict "message"
+openclaw gateway call prisma-airs.scan --params '{"prompt":"user input"}'
 
 # Scan prompt and response
-uv run prisma-airs-scan --prompt "user msg" --response "ai response"
+openclaw gateway call prisma-airs.scan --params '{"prompt":"user input","response":"ai output"}'
 
-# Session tracking
-uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "message"
-
-# With metadata
-uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "message"
-
-# Run configuration audit
-uv run prisma-airs-audit
+# Check status
+openclaw gateway call prisma-airs.status
 ```
 
-### Python API
+### Agent Tool
 
-```python
-from prisma_airs_skill import PrismaAIRS, Action
+Agents can use the `prisma_airs_scan` tool directly:
 
-scanner = PrismaAIRS(profile_name="default")
-result = scanner.scan(
-    prompt="user message",
-    response="ai response",
-    context={"user_id": "123"},
-    session_id="conversation-123",
-    tr_id="tx-001",
-    app_name="my-agent",
-    app_user="user@example.com",
-    ai_model="gpt-4",
-)
+```json
+{
+  "tool": "prisma_airs_scan",
+  "params": {
+    "prompt": "content to scan",
+    "response": "optional AI response",
+    "sessionId": "conversation-123",
+    "trId": "tx-001"
+  }
+}
+```
 
-if result.action == Action.BLOCK:
-    print("Request blocked for security reasons.")
-else:
-    print(f"Scan passed: {result.categories}")
+### CLI
+
+```bash
+# Scan text
+openclaw prisma-airs-scan "message to scan"
+
+# JSON output
+openclaw prisma-airs-scan --json "message"
+
+# Specify profile
+openclaw prisma-airs-scan --profile strict "message"
+
+# Check status
+openclaw prisma-airs
+```
+
+### Programmatic (TypeScript)
+
+```typescript
+import { scan, ScanResult } from "prisma-airs-plugin";
+
+const result: ScanResult = await scan({
+  prompt: "user message",
+  response: "ai response",
+  sessionId: "conv-123",
+  trId: "tx-001",
+  appName: "my-agent",
+});
+
+if (result.action === "block") {
+  console.log("Blocked:", result.categories);
+}
 ```
 
 ## Bootstrap Hook
 
 The `prisma-airs-guard` hook injects a security reminder into agent bootstrap, instructing agents to:
 
-1. Scan suspicious content before processing
-2. Block requests with `action=BLOCK` response
-3. Scan content involving code, URLs, or sensitive data
+1. Scan suspicious content using `prisma_airs_scan` tool
+2. Block requests with `action="block"` response
+3. Handle warnings appropriately
 
 Disable via config:
 ```yaml
@@ -188,26 +183,28 @@ plugins:
 | `topic_violation` | Topic guardrail triggered |
 | `safe` | No issues detected |
 
-## Development
+## ScanResult
 
-```bash
-# Install dev dependencies
-uv sync --dev
-
-# Run all checks
-make all
-
-# Individual commands
-make format   # ruff format + fix
-make lint     # ruff check + flake8
-make mypy     # type checking
-make test     # pytest
+```typescript
+interface ScanResult {
+  action: "allow" | "warn" | "block";
+  severity: "SAFE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  categories: string[];
+  scanId: string;
+  reportId: string;
+  profileName: string;
+  promptDetected: { injection: boolean; dlp: boolean; urlCats: boolean };
+  responseDetected: { dlp: boolean; urlCats: boolean };
+  sessionId?: string;
+  trId?: string;
+  latencyMs: number;
+  error?: string;
+}
 ```
 
 ## Requirements
 
-- Python 3.9+
-- Node.js 18+ (for hook)
+- Node.js 18+
 - Prisma AIRS API key (from Strata Cloud Manager)
 - API Security Profile configured in SCM
 
@@ -215,7 +212,6 @@ make test     # pytest
 
 - [Prisma AIRS Documentation](https://docs.paloaltonetworks.com/ai-runtime-security)
 - [API Security Profile Setup](https://docs.paloaltonetworks.com/ai-runtime-security/administration/prevent-network-security-threats/api-intercept-create-configure-security-profile)
-- [pan-aisecurity SDK](https://pypi.org/project/pan-aisecurity/)
 - [API Reference](https://pan.dev/prisma-airs/)
 
 ## License

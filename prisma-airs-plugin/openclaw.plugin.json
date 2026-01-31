@@ -1,9 +1,8 @@
 {
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
-  "description": "AI Runtime Security scanning via Palo Alto Networks - includes scanning skill and bootstrap reminder hook",
+  "description": "AI Runtime Security scanning via Palo Alto Networks - TypeScript implementation with Gateway RPC, agent tool, and bootstrap reminder hook",
   "version": "0.1.0",
-  "skills": ["skills/prisma-airs"],
   "hooks": ["hooks/prisma-airs-guard"],
   "configSchema": {
     "type": "object",

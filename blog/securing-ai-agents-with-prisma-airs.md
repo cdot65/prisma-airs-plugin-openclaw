@@ -19,30 +19,22 @@ A prompt injection attack against a basic chatbot might produce a rude message. 
 
 Understanding where to configure what is critical for effective deployment.
 
-### OpenClaw Plugin Configuration (`config.yaml`)
+### OpenClaw Plugin Configuration
 
 The plugin handles **connection and runtime settings**:
 
 ```yaml
-prisma_airs:
-  api_key: "${PANW_AI_SEC_API_KEY}"    # API authentication
-  profile_name: "your-profile"          # Which SCM profile to use
+# OpenClaw plugin config
+plugins:
+  prisma-airs:
+    profile_name: "your-profile"    # Which SCM profile to use
+    app_name: "openclaw"            # App metadata
+    reminder_enabled: true          # Bootstrap hook reminder
+```
 
-  # Local skill settings
-  rate_limit:
-    enabled: true
-    max_requests: 100
-    window_seconds: 60
-
-  logging:
-    enabled: true
-    path: logs/prisma-airs.log
-
-  # Metadata defaults (sent with each scan)
-  metadata:
-    app_name: "openclaw"    # Defaults to "openclaw" if not set
-    # app_user: ""          # Optional user identifier
-    # ai_model: ""          # Optional AI model name
+```bash
+# API key via environment variable
+export PANW_AI_SEC_API_KEY="your-api-key"
 ```
 
 ### Strata Cloud Manager Console
@@ -158,48 +150,50 @@ Define allowed/blocked topics for your use case:
 
 ## Quick Integration
 
-```python
-from prisma_airs_skill import PrismaAIRS, Action
+### TypeScript / OpenClaw Plugin
 
-scanner = PrismaAIRS(profile_name="your-scm-profile")
+```typescript
+import { scan } from "prisma-airs-plugin";
 
-# Scan user input before processing
-result = scanner.scan(prompt=user_message)
-if result.action == Action.BLOCK:
-    return "Request blocked for security reasons."
+// Scan user input before processing
+const result = await scan({ prompt: userMessage });
+if (result.action === "block") {
+  return "Request blocked for security reasons.";
+}
 
-# Process with your LLM
-response = llm.generate(user_message)
+// Process with your LLM
+const response = await llm.generate(userMessage);
 
-# Scan output before returning
-output_result = scanner.scan(response=response)
-if output_result.action == Action.BLOCK:
-    return "Response blocked - contains sensitive data."
+// Scan output before returning
+const outputResult = await scan({ response });
+if (outputResult.action === "block") {
+  return "Response blocked - contains sensitive data.";
+}
 
-return response
+return response;
 ```
 
 ### Session Tracking
 
 Group related scans and correlate prompt/response pairs:
 
-```python
-# Use session_id to group scans in a conversation
-# Use tr_id to correlate a prompt scan with its response scan
-result = scanner.scan(
-    prompt=user_message,
-    session_id="conversation-123",  # Group related scans
-    tr_id="tx-001",                 # Correlate prompt/response
-    app_user="user@example.com",    # Override config default
-    ai_model="gpt-4",
-)
+```typescript
+// Use sessionId to group scans in a conversation
+// Use trId to correlate a prompt scan with its response scan
+const result = await scan({
+  prompt: userMessage,
+  sessionId: "conversation-123",  // Group related scans
+  trId: "tx-001",                 // Correlate prompt/response
+  appUser: "user@example.com",
+  aiModel: "gpt-4",
+});
 
-# Same tr_id links the response scan to the prompt scan
-output_result = scanner.scan(
-    response=response,
-    session_id="conversation-123",
-    tr_id="tx-001",
-)
+// Same trId links the response scan to the prompt scan
+const outputResult = await scan({
+  response,
+  sessionId: "conversation-123",
+  trId: "tx-001",
+});
 ```
 
 ## API Response Structure
@@ -269,7 +263,7 @@ Block PII, credentials, and confidential data from leaking during AI interaction
 3. **Create Security Profile**: Configure detection services and actions
 4. **Set Environment Variable**: `export PANW_AI_SEC_API_KEY="your-key"`
 5. **Install Plugin**: `openclaw plugins install ./prisma-airs-plugin`
-6. **Verify**: Run `prisma-airs-audit` to validate connectivity
+6. **Verify**: Run `openclaw prisma-airs` to check status
 
 ![Onboarding Workflow](https://docs.paloaltonetworks.com/content/dam/techdocs/en_US/dita/_graphics/ai-runtime-security/activation-and-onboarding/airs-apis-onboarding-workflow.png)
 
@@ -277,22 +271,22 @@ Block PII, credentials, and confidential data from leaking during AI interaction
 
 ```bash
 # Basic scan
-uv run prisma-airs-scan "test message"
+openclaw prisma-airs-scan "test message"
 
 # JSON output
-uv run prisma-airs-scan --json "test message"
+openclaw prisma-airs-scan --json "test message"
 
 # Scan with specific profile
-uv run prisma-airs-scan --profile strict "test message"
+openclaw prisma-airs-scan --profile strict "test message"
 
-# Session tracking
-uv run prisma-airs-scan --session-id "sess-123" --tr-id "tx-001" "test message"
+# Check plugin status
+openclaw prisma-airs
 
-# With metadata
-uv run prisma-airs-scan --app-name "myapp" --ai-model "gpt-4" "test message"
+# RPC scan
+openclaw gateway call prisma-airs.scan --params '{"prompt":"test"}'
 
-# Validate configuration
-uv run prisma-airs-audit
+# RPC status check
+openclaw gateway call prisma-airs.status
 ```
 
 ## Best Practices
@@ -309,4 +303,3 @@ uv run prisma-airs-audit
 - [Prisma AIRS Documentation](https://docs.paloaltonetworks.com/ai-runtime-security)
 - [API Intercept Administration Guide](https://docs.paloaltonetworks.com/ai-runtime-security/administration/prevent-network-security-threats/api-intercept-create-configure-security-profile)
 - [Prisma AIRS API Reference](https://pan.dev/prisma-airs/)
-- [pan-aisecurity SDK on PyPI](https://pypi.org/project/pan-aisecurity/)
