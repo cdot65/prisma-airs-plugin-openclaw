@@ -1,0 +1,53 @@
+# Prisma AIRS Skill Configuration
+# Copy to config.yaml and customize
+
+prisma_airs:
+  # API endpoint
+  api_url: "https://service.api.aisecurity.paloaltonetworks.com"
+
+  # API key - use environment variable or direct value
+  # Recommended: export PRISMA_AIRS_API_KEY="your-key"
+  api_key: "${PRISMA_AIRS_API_KEY}"
+
+  # Security profile name configured in Prisma AIRS
+  profile_name: "default"
+
+  # AI model identifier for scanning context
+  ai_model: "openclaw-agent"
+
+  # Application name for logging/reporting
+  app_name: "openclaw"
+
+  # Request timeout in seconds
+  timeout: 30
+
+  # Actions per detection category
+  actions:
+    prompt_injection: block
+    data_leakage: block
+    malicious_content: block
+    pii_detected: warn
+    url_filtering: warn
+    safe: allow
+
+  # Owner user IDs (bypass some restrictions)
+  owner_ids:
+    - "YOUR_USER_ID"
+
+  # Logging configuration
+  logging:
+    enabled: true
+    path: "logs/prisma-airs.log"
+    include_prompt: false  # Privacy: don't log actual prompts
+    include_response: false
+
+  # Rate limiting
+  rate_limit:
+    enabled: true
+    max_requests: 100
+    window_seconds: 60
+
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_seconds: 1
