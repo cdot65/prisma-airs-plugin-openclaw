@@ -11,6 +11,8 @@
  */
 
 import { scan, isConfigured, ScanRequest, ScanResult } from "./src/scanner";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 // Plugin config interface
 interface PrismaAirsConfig {
@@ -62,6 +64,7 @@ interface PluginApi {
     handler: (params: ScanRequest) => Promise<ScanResult>;
   }) => void;
   registerCli: (setup: (ctx: { program: unknown }) => void, opts: { commands: string[] }) => void;
+  registerPluginHooksFromDir?: (dir: string) => void;
 }
 
 // Get plugin config from OpenClaw config
@@ -90,13 +93,22 @@ export default function register(api: PluginApi): void {
     `Prisma AIRS plugin loaded (reminder_enabled=${config.reminder_enabled ?? true})`
   );
 
+  // Register hooks from the hooks directory
+  if (api.registerPluginHooksFromDir) {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const hooksDir = join(__dirname, "hooks");
+    api.registerPluginHooksFromDir(hooksDir);
+    api.logger.info(`Registered hooks from ${hooksDir}`);
+  }
+
   // Register RPC method for status check
   api.registerGatewayMethod("prisma-airs.status", ({ respond }) => {
     const cfg = getPluginConfig(api);
     const hasApiKey = isConfigured();
     respond(true, {
       plugin: "prisma-airs",
-      version: "0.1.1",
+      version: "0.1.2",
       config: {
         profile_name: cfg.profile_name ?? "default",
         app_name: cfg.app_name ?? "openclaw",
@@ -185,7 +197,7 @@ export default function register(api: PluginApi): void {
           const hasKey = isConfigured();
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 0.1.1`);
+          console.log(`Version: 0.1.2`);
           console.log(`Profile: ${cfg.profile_name ?? "default"}`);
           console.log(`App Name: ${cfg.app_name ?? "openclaw"}`);
           console.log(`Reminder: ${cfg.reminder_enabled ?? true}`);
@@ -236,7 +248,7 @@ export default function register(api: PluginApi): void {
 // Export plugin metadata for discovery
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "0.1.1";
+export const version = "0.1.2";
 
 // Re-export scanner types and functions
 export { scan, isConfigured } from "./src/scanner";
