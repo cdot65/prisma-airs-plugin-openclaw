@@ -24,14 +24,50 @@ Pure TypeScript plugin with direct AIRS API integration via `fetch()`.
 
 ## Quick Start
 
+### 1. Install
+
 ```bash
-# Install plugin
+# From npm (recommended)
+openclaw plugins install @cdot65/prisma-airs
+
+# Or from local directory
 openclaw plugins install ./prisma-airs-plugin
+```
 
-# Set API key (from Strata Cloud Manager)
-export PANW_AI_SEC_API_KEY="your-api-key"
+### 2. Restart Gateway
 
-# Test via CLI
+```bash
+openclaw gateway restart
+```
+
+### 3. Configure API Key
+
+```bash
+export PANW_AI_SEC_API_KEY="your-key-from-strata-cloud-manager"
+```
+
+For systemd service (Linux):
+
+```bash
+mkdir -p ~/.config/systemd/user/openclaw-gateway.service.d
+cat > ~/.config/systemd/user/openclaw-gateway.service.d/env.conf << 'EOF'
+[Service]
+Environment=PANW_AI_SEC_API_KEY=your-key-here
+EOF
+systemctl --user daemon-reload
+openclaw gateway restart
+```
+
+### 4. Verify
+
+```bash
+# Check plugin loaded
+openclaw plugins list | grep prisma
+
+# Check status
+openclaw prisma-airs
+
+# Test scan
 openclaw prisma-airs-scan "test message"
 
 # Test via RPC
