@@ -1,0 +1,11 @@
+# Test files
+**/*.test.ts
+vitest.config.ts
+
+# Dev configs
+.eslintrc*
+.prettierrc*
+tsconfig.json
+
+# Node modules (npm handles this)
+node_modules/

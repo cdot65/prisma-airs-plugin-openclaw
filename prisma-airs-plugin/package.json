@@ -1,0 +1,69 @@
+{
+  "name": "@cdot65/prisma-airs",
+  "version": "0.1.3",
+  "description": "Prisma AIRS (AI Runtime Security) plugin for OpenClaw - TypeScript implementation with Gateway RPC, agent tool, and bootstrap hook",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "prepare": "cd .. && husky prisma-airs-plugin/.husky"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "prisma",
+    "airs",
+    "security",
+    "ai-security",
+    "palo-alto"
+  ],
+  "author": "cdot65",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdot65/prisma-airs-plugin-openclaw"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "files": [
+    "README.md",
+    "index.ts",
+    "src/",
+    "hooks/",
+    "openclaw.plugin.json"
+  ],
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}

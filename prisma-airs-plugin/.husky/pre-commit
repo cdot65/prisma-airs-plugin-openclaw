@@ -1,0 +1,18 @@
+#!/bin/sh
+cd prisma-airs-plugin
+
+echo "Running pre-commit checks..."
+
+# Type check
+echo "→ Type checking..."
+npm run typecheck || exit 1
+
+# Lint staged files
+echo "→ Linting and formatting..."
+npx lint-staged || exit 1
+
+# Run tests
+echo "→ Running tests..."
+npm run test || exit 1
+
+echo "✓ All checks passed!"
