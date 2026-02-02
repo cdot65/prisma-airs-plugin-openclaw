@@ -1,6 +1,6 @@
 # Prisma AIRS Plugin
 
-OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/ai-runtime-security) (AI Runtime Security) from Palo Alto Networks.
+OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma-ai-runtime-security) (AI Runtime Security) from Palo Alto Networks.
 
 ## Overview
 
@@ -110,7 +110,7 @@ plugins:
 | Actions (allow/block) | Strata Cloud Manager |
 | DLP patterns | Strata Cloud Manager |
 
-**Important**: Detection services and actions are configured in [Strata Cloud Manager](https://docs.paloaltonetworks.com/ai-runtime-security/administration/prevent-network-security-threats/api-intercept-create-configure-security-profile), not in plugin config.
+**Important**: Detection services and actions are configured in [Strata Cloud Manager](https://docs.paloaltonetworks.com/ai-runtime-security/activation-and-onboarding/ai-runtime-security-api-intercept-overview/onboard-api-runtime-security-api-intercept-in-scm), not in plugin config.
 
 ### API Key Setup
 
