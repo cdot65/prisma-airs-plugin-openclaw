@@ -13,7 +13,7 @@ jobs:
     environment: npm
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # Required for OIDC trusted publishing
 
     steps:
       - name: Checkout
@@ -40,7 +40,7 @@ jobs:
       - name: Test
         run: npm run test
 
-      - name: Publish to npm
+      - name: Publish to npm with provenance
         run: npm publish --access public --provenance
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
