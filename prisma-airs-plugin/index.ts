@@ -10,7 +10,7 @@
  * - Bootstrap hook: prisma-airs-guard (reminds agent about scanning)
  */
 
-import { scan, isConfigured, ScanRequest, ScanResult } from "./src/scanner";
+import { scan, isConfigured, ScanRequest } from "./src/scanner";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
@@ -31,6 +31,14 @@ interface ToolParameters {
   type: "object";
   properties: Record<string, ToolParameterProperty>;
   required?: string[];
+}
+
+// Tool result format (OpenClaw v2026.2.1+)
+interface ToolResult {
+  content: Array<{
+    type: "text";
+    text: string;
+  }>;
 }
 
 // Plugin API type (subset of full API)
@@ -61,7 +69,7 @@ interface PluginApi {
     name: string;
     description: string;
     parameters: ToolParameters;
-    handler: (params: ScanRequest) => Promise<ScanResult>;
+    execute: (_id: string, params: ScanRequest) => Promise<ToolResult>;
   }) => void;
   registerCli: (setup: (ctx: { program: unknown }) => void, opts: { commands: string[] }) => void;
   registerPluginHooksFromDir?: (dir: string) => void;
@@ -108,7 +116,7 @@ export default function register(api: PluginApi): void {
     const hasApiKey = isConfigured();
     respond(true, {
       plugin: "prisma-airs",
-      version: "0.1.3",
+      version: "0.1.4",
       config: {
         profile_name: cfg.profile_name ?? "default",
         app_name: cfg.app_name ?? "openclaw",
@@ -175,10 +183,20 @@ export default function register(api: PluginApi): void {
       },
       required: ["prompt"],
     },
-    handler: async (params: ScanRequest): Promise<ScanResult> => {
+    async execute(_id: string, params: ScanRequest): Promise<ToolResult> {
       const cfg = getPluginConfig(api);
       const request = buildScanRequest(params, cfg);
-      return scan(request);
+      const result = await scan(request);
+
+      // Return in OpenClaw tool result format (v2026.2.1+)
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
     },
   });
 
@@ -197,7 +215,7 @@ export default function register(api: PluginApi): void {
           const hasKey = isConfigured();
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 0.1.3`);
+          console.log(`Version: 0.1.4`);
           console.log(`Profile: ${cfg.profile_name ?? "default"}`);
           console.log(`App Name: ${cfg.app_name ?? "openclaw"}`);
           console.log(`Reminder: ${cfg.reminder_enabled ?? true}`);
@@ -248,7 +266,7 @@ export default function register(api: PluginApi): void {
 // Export plugin metadata for discovery
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "0.1.3";
+export const version = "0.1.4";
 
 // Re-export scanner types and functions
 export { scan, isConfigured } from "./src/scanner";
