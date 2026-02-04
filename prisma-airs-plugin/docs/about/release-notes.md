@@ -81,6 +81,7 @@ See [Design Decisions](../architecture/design-decisions.md) for detailed rationa
 ### v0.1.x to v0.2.0
 
 1. **Review fail_closed change**:
+
    ```yaml
    plugins:
      prisma-airs:
@@ -89,6 +90,7 @@ See [Design Decisions](../architecture/design-decisions.md) for detailed rationa
    ```
 
 2. **Review new hooks**: All new hooks are enabled by default. Disable if needed:
+
    ```yaml
    plugins:
      prisma-airs:

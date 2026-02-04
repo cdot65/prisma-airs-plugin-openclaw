@@ -27,13 +27,13 @@ openclaw prisma-airs-scan "test message"
 
 The plugin provides defense-in-depth with 5 security hooks:
 
-| Hook | Event | Purpose |
-|------|-------|---------|
-| [prisma-airs-guard](hooks/prisma-airs-guard.md) | `agent:bootstrap` | Reminds agents to scan suspicious content |
-| [prisma-airs-audit](hooks/prisma-airs-audit.md) | `message_received` | Audit logging with scan caching |
-| [prisma-airs-context](hooks/prisma-airs-context.md) | `before_agent_start` | Injects threat warnings into context |
-| [prisma-airs-outbound](hooks/prisma-airs-outbound.md) | `message_sending` | Blocks/masks outbound responses |
-| [prisma-airs-tools](hooks/prisma-airs-tools.md) | `before_tool_call` | Gates dangerous tools |
+| Hook                                                  | Event                | Purpose                                   |
+| ----------------------------------------------------- | -------------------- | ----------------------------------------- |
+| [prisma-airs-guard](hooks/prisma-airs-guard.md)       | `agent:bootstrap`    | Reminds agents to scan suspicious content |
+| [prisma-airs-audit](hooks/prisma-airs-audit.md)       | `message_received`   | Audit logging with scan caching           |
+| [prisma-airs-context](hooks/prisma-airs-context.md)   | `before_agent_start` | Injects threat warnings into context      |
+| [prisma-airs-outbound](hooks/prisma-airs-outbound.md) | `message_sending`    | Blocks/masks outbound responses           |
+| [prisma-airs-tools](hooks/prisma-airs-tools.md)       | `before_tool_call`   | Gates dangerous tools                     |
 
 ### Detection Capabilities
 
@@ -99,15 +99,15 @@ flowchart TB
 ```yaml
 plugins:
   prisma-airs:
-    profile_name: "default"           # AIRS profile
-    app_name: "openclaw"              # App metadata
-    fail_closed: true                 # Block on scan failure
-    dlp_mask_only: true               # Mask instead of block for DLP
-    reminder_enabled: true            # Agent bootstrap reminder
-    audit_enabled: true               # Inbound audit logging
-    context_injection_enabled: true   # Threat warning injection
-    outbound_scanning_enabled: true   # Outbound response scanning
-    tool_gating_enabled: true         # Tool blocking
+    profile_name: "default" # AIRS profile
+    app_name: "openclaw" # App metadata
+    fail_closed: true # Block on scan failure
+    dlp_mask_only: true # Mask instead of block for DLP
+    reminder_enabled: true # Agent bootstrap reminder
+    audit_enabled: true # Inbound audit logging
+    context_injection_enabled: true # Threat warning injection
+    outbound_scanning_enabled: true # Outbound response scanning
+    tool_gating_enabled: true # Tool blocking
 ```
 
 ## Requirements

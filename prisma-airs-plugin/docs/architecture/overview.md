@@ -4,12 +4,12 @@
 
 The Prisma AIRS plugin consists of:
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| **Scanner** | `src/scanner.ts` | Direct AIRS API integration via `fetch()` |
-| **Scan Cache** | `src/scan-cache.ts` | Share scan results between hooks |
-| **Plugin Entry** | `index.ts` | RPC methods, CLI, agent tool registration |
-| **Hooks** | `hooks/*/handler.ts` | Event handlers for security layers |
+| Component        | File                 | Purpose                                   |
+| ---------------- | -------------------- | ----------------------------------------- |
+| **Scanner**      | `src/scanner.ts`     | Direct AIRS API integration via `fetch()` |
+| **Scan Cache**   | `src/scan-cache.ts`  | Share scan results between hooks          |
+| **Plugin Entry** | `index.ts`           | RPC methods, CLI, agent tool registration |
+| **Hooks**        | `hooks/*/handler.ts` | Event handlers for security layers        |
 
 ## Data Flow
 
@@ -72,14 +72,14 @@ flowchart LR
     D --> E[message_sending<br/>sync]
 ```
 
-| Event | Timing | Can Block | Returns |
-|-------|--------|-----------|---------|
-| `message_received` | Async (fire-and-forget) | No | void |
-| `before_agent_start` | Before agent processes | No* | `{ prependContext }` |
-| `before_tool_call` | Before each tool | Yes | `{ block, blockReason }` |
-| `message_sending` | Before sending | Yes | `{ content }` or `{ cancel }` |
+| Event                | Timing                  | Can Block | Returns                       |
+| -------------------- | ----------------------- | --------- | ----------------------------- |
+| `message_received`   | Async (fire-and-forget) | No        | void                          |
+| `before_agent_start` | Before agent processes  | No\*      | `{ prependContext }`          |
+| `before_tool_call`   | Before each tool        | Yes       | `{ block, blockReason }`      |
+| `message_sending`    | Before sending          | Yes       | `{ content }` or `{ cancel }` |
 
-*Cannot directly block, but can inject warnings
+\*Cannot directly block, but can inject warnings
 
 ## Scan Cache Architecture
 
@@ -105,9 +105,9 @@ flowchart TB
 
 ```typescript
 interface CacheEntry {
-  result: ScanResult;    // Scan result
-  timestamp: number;     // Cache time
-  messageHash?: string;  // For stale detection
+  result: ScanResult; // Scan result
+  timestamp: number; // Cache time
+  messageHash?: string; // For stale detection
 }
 ```
 
@@ -131,7 +131,7 @@ export default function register(api: PluginApi): void {
   // 3. Register agent tool
   api.registerTool({
     name: "prisma_airs_scan",
-    execute: async (_id, params) => scan(params)
+    execute: async (_id, params) => scan(params),
   });
 
   // 4. Register CLI commands
@@ -156,27 +156,28 @@ const response = await fetch(AIRS_SCAN_ENDPOINT, {
   body: JSON.stringify({
     ai_profile: { profile_name: "default" },
     contents: [{ prompt: "...", response: "..." }],
-    metadata: { app_name: "openclaw" }
-  })
+    metadata: { app_name: "openclaw" },
+  }),
 });
 ```
 
 ### Response Mapping
 
-| AIRS Field | Plugin Field |
-|------------|--------------|
-| `action` | `action` (allow/warn/block) |
-| `category` | Mapped to severity |
-| `prompt_detected.*` | `promptDetected.*` |
-| `response_detected.*` | `responseDetected.*` |
-| `scan_id` | `scanId` |
-| `report_id` | `reportId` |
+| AIRS Field            | Plugin Field                |
+| --------------------- | --------------------------- |
+| `action`              | `action` (allow/warn/block) |
+| `category`            | Mapped to severity          |
+| `prompt_detected.*`   | `promptDetected.*`          |
+| `response_detected.*` | `responseDetected.*`        |
+| `scan_id`             | `scanId`                    |
+| `report_id`           | `reportId`                  |
 
 ## Error Handling
 
 ### Fail-Closed Mode (Default)
 
 On scan failure:
+
 1. Cache synthetic "block" result
 2. Downstream hooks see threat
 3. Tools blocked, warnings injected
@@ -184,6 +185,7 @@ On scan failure:
 ### Fail-Open Mode
 
 On scan failure:
+
 1. Log error
 2. Allow request through
 3. No cached result

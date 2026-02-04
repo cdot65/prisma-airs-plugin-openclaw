@@ -29,7 +29,7 @@ flowchart TB
 ```yaml
 plugins:
   prisma-airs:
-    tool_gating_enabled: true  # default
+    tool_gating_enabled: true # default
 ```
 
 ### High-Risk Tools
@@ -56,18 +56,18 @@ plugins:
 
 ### Category-Based Blocking
 
-| Category | Blocked Tools |
-|----------|---------------|
-| `agent-threat` | ALL external tools (18 tools) |
-| `sql-injection` / `db-security` / `db_security` | exec, Bash, database, query, sql, eval |
-| `malicious-code` / `malicious_code` | exec, Bash, write, edit, eval, NotebookEdit |
-| `prompt-injection` / `prompt_injection` | exec, Bash, gateway, message, cron |
-| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl |
-| `scan-failure` | exec, Bash, write, edit, gateway, message, cron |
+| Category                                                   | Blocked Tools                                   |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| `agent-threat`                                             | ALL external tools (18 tools)                   |
+| `sql-injection` / `db-security` / `db_security`            | exec, Bash, database, query, sql, eval          |
+| `malicious-code` / `malicious_code`                        | exec, Bash, write, edit, eval, NotebookEdit     |
+| `prompt-injection` / `prompt_injection`                    | exec, Bash, gateway, message, cron              |
+| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl     |
+| `scan-failure`                                             | exec, Bash, write, edit, gateway, message, cron |
 
 !!! note "Category Name Variants"
-    AIRS API returns underscored names (`prompt_injection`). Tool blocking supports
-    both underscore and hyphen variants for flexibility.
+AIRS API returns underscored names (`prompt_injection`). Tool blocking supports
+both underscore and hyphen variants for flexibility.
 
 ### High-Risk Tool Blocking
 
@@ -154,7 +154,7 @@ plugins:
 ```
 
 !!! warning "Security Risk"
-    Clearing `high_risk_tools` means only category-specific blocking applies.
+Clearing `high_risk_tools` means only category-specific blocking applies.
 
 ## Example Scenarios
 
@@ -281,6 +281,7 @@ high_risk_tools:
 ### 3. Monitor Blocked Events
 
 Review `prisma_airs_tool_block` logs for:
+
 - Attack patterns
 - False positives
 - Tools to add/remove

@@ -115,6 +115,7 @@ openclaw prisma-airs
 ```
 
 Expected output:
+
 ```
 Prisma AIRS Plugin Status
 -------------------------

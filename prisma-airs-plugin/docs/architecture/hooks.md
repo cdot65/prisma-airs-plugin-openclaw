@@ -49,6 +49,7 @@ async runModifyingHook(hookName, event) {
 Fires when an agent initializes.
 
 **Event Shape**:
+
 ```typescript
 interface AgentBootstrapEvent {
   type: "agent";
@@ -70,6 +71,7 @@ interface AgentBootstrapEvent {
 Fires when a message arrives at the gateway.
 
 **Event Shape**:
+
 ```typescript
 interface MessageReceivedEvent {
   from: string;
@@ -92,13 +94,14 @@ interface MessageReceivedEvent {
 **Modification**: None (void hook)
 
 !!! warning "Cannot Block"
-    `message_received` is fire-and-forget. The plugin caches scan results for downstream hooks to use.
+`message_received` is fire-and-forget. The plugin caches scan results for downstream hooks to use.
 
 ### before_agent_start
 
 Fires before the agent begins processing a message.
 
 **Event Shape**:
+
 ```typescript
 interface BeforeAgentStartEvent {
   sessionKey?: string;
@@ -116,10 +119,11 @@ interface BeforeAgentStartEvent {
 **Plugin Hook**: `prisma-airs-context`
 
 **Modification**:
+
 ```typescript
 interface HookResult {
-  prependContext?: string;  // Prepended to agent context
-  systemPrompt?: string;    // Alternative system prompt
+  prependContext?: string; // Prepended to agent context
+  systemPrompt?: string; // Alternative system prompt
 }
 ```
 
@@ -128,6 +132,7 @@ interface HookResult {
 Fires before each tool invocation.
 
 **Event Shape**:
+
 ```typescript
 interface BeforeToolCallEvent {
   toolName: string;
@@ -139,11 +144,12 @@ interface BeforeToolCallEvent {
 **Plugin Hook**: `prisma-airs-tools`
 
 **Modification**:
+
 ```typescript
 interface HookResult {
-  params?: Record<string, unknown>;  // Modified params
-  block?: boolean;                   // Block the call
-  blockReason?: string;              // Reason for blocking
+  params?: Record<string, unknown>; // Modified params
+  block?: boolean; // Block the call
+  blockReason?: string; // Reason for blocking
 }
 ```
 
@@ -152,6 +158,7 @@ interface HookResult {
 Fires before sending a response.
 
 **Event Shape**:
+
 ```typescript
 interface MessageSendingEvent {
   content?: string;
@@ -167,10 +174,11 @@ interface MessageSendingEvent {
 **Plugin Hook**: `prisma-airs-outbound`
 
 **Modification**:
+
 ```typescript
 interface HookResult {
-  content?: string;  // Modified content (or masked)
-  cancel?: boolean;  // Cancel sending entirely
+  content?: string; // Modified content (or masked)
+  cancel?: boolean; // Cancel sending entirely
 }
 ```
 

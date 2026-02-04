@@ -4,9 +4,9 @@ Complete reference for all configuration options.
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PANW_AI_SEC_API_KEY` | **Yes** | — | Prisma AIRS API key from Strata Cloud Manager |
+| Variable              | Required | Default | Description                                   |
+| --------------------- | -------- | ------- | --------------------------------------------- |
+| `PANW_AI_SEC_API_KEY` | **Yes**  | —       | Prisma AIRS API key from Strata Cloud Manager |
 
 ## Plugin Configuration
 
@@ -43,11 +43,11 @@ plugins:
 
 ### profile_name
 
-| Property | Value |
-|----------|-------|
-| Type | `string` |
-| Default | `"default"` |
-| Required | No |
+| Property | Value       |
+| -------- | ----------- |
+| Type     | `string`    |
+| Default  | `"default"` |
+| Required | No          |
 
 The Prisma AIRS security profile name configured in Strata Cloud Manager.
 
@@ -57,11 +57,11 @@ profile_name: "strict"
 
 ### app_name
 
-| Property | Value |
-|----------|-------|
-| Type | `string` |
-| Default | `"openclaw"` |
-| Required | No |
+| Property | Value        |
+| -------- | ------------ |
+| Type     | `string`     |
+| Default  | `"openclaw"` |
+| Required | No           |
 
 Application identifier included in scan metadata for reporting.
 
@@ -71,11 +71,11 @@ app_name: "my-agent"
 
 ### fail_closed
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Required | No |
+| Property | Value     |
+| -------- | --------- |
+| Type     | `boolean` |
+| Default  | `true`    |
+| Required | No        |
 
 When `true`, scan failures result in blocked requests. When `false`, scan failures allow requests through.
 
@@ -88,51 +88,51 @@ fail_closed: false  # Availability-first
 
 ### reminder_enabled
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Hook | `prisma-airs-guard` |
+| Property | Value               |
+| -------- | ------------------- |
+| Type     | `boolean`           |
+| Default  | `true`              |
+| Hook     | `prisma-airs-guard` |
 
 Enable/disable the bootstrap security reminder.
 
 ### audit_enabled
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Hook | `prisma-airs-audit` |
+| Property | Value               |
+| -------- | ------------------- |
+| Type     | `boolean`           |
+| Default  | `true`              |
+| Hook     | `prisma-airs-audit` |
 
 Enable/disable inbound message audit logging.
 
 ### context_injection_enabled
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Hook | `prisma-airs-context` |
+| Property | Value                 |
+| -------- | --------------------- |
+| Type     | `boolean`             |
+| Default  | `true`                |
+| Hook     | `prisma-airs-context` |
 
 Enable/disable threat warning injection into agent context.
 
 ### outbound_scanning_enabled
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Hook | `prisma-airs-outbound` |
+| Property | Value                  |
+| -------- | ---------------------- |
+| Type     | `boolean`              |
+| Default  | `true`                 |
+| Hook     | `prisma-airs-outbound` |
 
 Enable/disable outbound response scanning.
 
 ### tool_gating_enabled
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Hook | `prisma-airs-tools` |
+| Property | Value               |
+| -------- | ------------------- |
+| Type     | `boolean`           |
+| Default  | `true`              |
+| Hook     | `prisma-airs-tools` |
 
 Enable/disable tool blocking during active threats.
 
@@ -140,11 +140,11 @@ Enable/disable tool blocking during active threats.
 
 ### dlp_mask_only
 
-| Property | Value |
-|----------|-------|
-| Type | `boolean` |
-| Default | `true` |
-| Hook | `prisma-airs-outbound` |
+| Property | Value                  |
+| -------- | ---------------------- |
+| Type     | `boolean`              |
+| Default  | `true`                 |
+| Hook     | `prisma-airs-outbound` |
 
 When `true`, DLP violations are masked instead of blocked. When `false`, DLP violations result in blocked responses.
 
@@ -154,21 +154,22 @@ dlp_mask_only: false  # Block response entirely
 ```
 
 !!! note "Always-Block Categories"
-    Regardless of this setting, these categories always block:
-    `malicious_code`, `malicious_url`, `toxicity`, `agent_threat`,
-    `prompt_injection`, `db_security`, `scan-failure`
+Regardless of this setting, these categories always block:
+`malicious_code`, `malicious_url`, `toxicity`, `agent_threat`,
+`prompt_injection`, `db_security`, `scan-failure`
 
 ### high_risk_tools
 
-| Property | Value |
-|----------|-------|
-| Type | `string[]` |
-| Default | See below |
-| Hook | `prisma-airs-tools` |
+| Property | Value               |
+| -------- | ------------------- |
+| Type     | `string[]`          |
+| Default  | See below           |
+| Hook     | `prisma-airs-tools` |
 
 Tools to block when ANY threat is detected.
 
 Default value:
+
 ```yaml
 high_risk_tools:
   - exec
@@ -184,13 +185,14 @@ high_risk_tools:
 ```
 
 Custom configuration:
+
 ```yaml
 high_risk_tools:
   - exec
   - Bash
   - write
-  - deploy        # Custom tool
-  - kubectl       # Custom tool
+  - deploy # Custom tool
+  - kubectl # Custom tool
 ```
 
 ## Configuration Profiles
@@ -283,10 +285,10 @@ plugins:
 
 These settings are configured in SCM, not the plugin:
 
-| Setting | Location | Description |
-|---------|----------|-------------|
-| Detection services | Security Profiles | Which threats to detect |
-| Actions | Security Profiles | allow/alert/block per detection |
-| DLP patterns | Data Loss Prevention | PII, credential patterns |
-| URL categories | URL Filtering | Allowed/blocked categories |
-| Custom topics | Topic Guardrails | Organization policies |
+| Setting            | Location             | Description                     |
+| ------------------ | -------------------- | ------------------------------- |
+| Detection services | Security Profiles    | Which threats to detect         |
+| Actions            | Security Profiles    | allow/alert/block per detection |
+| DLP patterns       | Data Loss Prevention | PII, credential patterns        |
+| URL categories     | URL Filtering        | Allowed/blocked categories      |
+| Custom topics      | Topic Guardrails     | Organization policies           |

@@ -6,10 +6,10 @@ Understanding and configuring fail-open vs fail-closed behavior.
 
 When a scan fails (API error, timeout, network issue), the plugin must decide:
 
-| Mode | On Failure | Security | Availability |
-|------|------------|----------|--------------|
-| **Fail-Closed** | Block request | High | Lower |
-| **Fail-Open** | Allow request | Lower | High |
+| Mode            | On Failure    | Security | Availability |
+| --------------- | ------------- | -------- | ------------ |
+| **Fail-Closed** | Block request | High     | Lower        |
+| **Fail-Open**   | Allow request | Lower    | High         |
 
 ## Configuration
 
@@ -26,6 +26,7 @@ plugins:
 ### Behavior
 
 When scan fails:
+
 1. Create synthetic "block" result
 2. Cache it for downstream hooks
 3. Inject warning into agent context
@@ -66,11 +67,13 @@ When scan fails:
 ### Trade-offs
 
 **Pros**:
+
 - Attacks cannot succeed during outages
 - Conservative security posture
 - Predictable behavior
 
 **Cons**:
+
 - Service disruption during API issues
 - User frustration with failed requests
 - Requires monitoring for false blocks
@@ -80,6 +83,7 @@ When scan fails:
 ### Behavior
 
 When scan fails:
+
 1. Log error
 2. No cached result
 3. No warning injected
@@ -96,11 +100,13 @@ When scan fails:
 ### Trade-offs
 
 **Pros**:
+
 - Service continues during outages
 - Better user experience
 - No false positive blocks
 
 **Cons**:
+
 - Attacks can succeed during outages
 - Security gap during API issues
 - Potential compliance concerns
@@ -142,7 +148,7 @@ if (config.failClosed) {
 // Fail-closed
 if (config.failClosed) {
   return {
-    content: "Unable to provide response due to security verification issue."
+    content: "Unable to provide response due to security verification issue.",
   };
 }
 // Fail-open: return nothing (send original)
@@ -258,6 +264,7 @@ Default is fail-closed for good reason. Only change after understanding implicat
 ### 2. Monitor Failure Rates
 
 Track scan failures:
+
 ```bash
 grep "scan_error" /var/log/openclaw/*.log | wc -l
 ```
@@ -267,6 +274,7 @@ If failures are frequent, investigate root cause before switching to fail-open.
 ### 3. Set Up Alerts
 
 Alert on:
+
 - Scan failure rate > 1%
 - Consecutive failures > 5
 - Error types (timeout, auth, network)
@@ -274,6 +282,7 @@ Alert on:
 ### 4. Have a Fallback Plan
 
 If switching to fail-open:
+
 - Increase other security layers
 - Add rate limiting
 - Enable additional logging
@@ -282,6 +291,7 @@ If switching to fail-open:
 ### 5. Document the Decision
 
 Record why you chose fail-open (if applicable):
+
 - Business justification
 - Risk acceptance
 - Compensating controls

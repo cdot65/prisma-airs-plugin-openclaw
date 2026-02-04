@@ -4,15 +4,15 @@ The Prisma AIRS plugin provides 5 security hooks that work together for defense-
 
 ## Hook Summary
 
-| Hook | Event | Purpose | Can Block |
-|------|-------|---------|-----------|
-| [prisma-airs-guard](prisma-airs-guard.md) | `agent:bootstrap` | Remind agents to scan | No |
-| [prisma-airs-audit](prisma-airs-audit.md) | `message_received` | Audit logging + caching | No |
-| [prisma-airs-context](prisma-airs-context.md) | `before_agent_start` | Inject threat warnings | No* |
-| [prisma-airs-outbound](prisma-airs-outbound.md) | `message_sending` | Block/mask responses | Yes |
-| [prisma-airs-tools](prisma-airs-tools.md) | `before_tool_call` | Block dangerous tools | Yes |
+| Hook                                            | Event                | Purpose                 | Can Block |
+| ----------------------------------------------- | -------------------- | ----------------------- | --------- |
+| [prisma-airs-guard](prisma-airs-guard.md)       | `agent:bootstrap`    | Remind agents to scan   | No        |
+| [prisma-airs-audit](prisma-airs-audit.md)       | `message_received`   | Audit logging + caching | No        |
+| [prisma-airs-context](prisma-airs-context.md)   | `before_agent_start` | Inject threat warnings  | No\*      |
+| [prisma-airs-outbound](prisma-airs-outbound.md) | `message_sending`    | Block/mask responses    | Yes       |
+| [prisma-airs-tools](prisma-airs-tools.md)       | `before_tool_call`   | Block dangerous tools   | Yes       |
 
-*Cannot block directly, but can influence agent behavior via context
+\*Cannot block directly, but can influence agent behavior via context
 
 ## Execution Order
 
@@ -56,11 +56,11 @@ Each hook can be individually enabled/disabled:
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: true            # prisma-airs-guard
-    audit_enabled: true               # prisma-airs-audit
-    context_injection_enabled: true   # prisma-airs-context
-    outbound_scanning_enabled: true   # prisma-airs-outbound
-    tool_gating_enabled: true         # prisma-airs-tools
+    reminder_enabled: true # prisma-airs-guard
+    audit_enabled: true # prisma-airs-audit
+    context_injection_enabled: true # prisma-airs-context
+    outbound_scanning_enabled: true # prisma-airs-outbound
+    tool_gating_enabled: true # prisma-airs-tools
 ```
 
 ## Data Sharing
@@ -93,7 +93,7 @@ plugins:
     context_injection_enabled: true
     outbound_scanning_enabled: true
     tool_gating_enabled: true
-    dlp_mask_only: false  # Block instead of mask
+    dlp_mask_only: false # Block instead of mask
 ```
 
 ### Audit Only

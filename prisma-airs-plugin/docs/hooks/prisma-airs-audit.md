@@ -4,12 +4,12 @@ Audit logging hook for all inbound messages with scan caching.
 
 ## Overview
 
-| Property | Value |
-|----------|-------|
-| **Event** | `message_received` |
-| **Emoji** | :clipboard: |
-| **Can Block** | No |
-| **Config** | `audit_enabled`, `fail_closed` |
+| Property      | Value                          |
+| ------------- | ------------------------------ |
+| **Event**     | `message_received`             |
+| **Emoji**     | :clipboard:                    |
+| **Can Block** | No                             |
+| **Config**    | `audit_enabled`, `fail_closed` |
 
 ## Purpose
 
@@ -24,8 +24,8 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    audit_enabled: true    # default
-    fail_closed: true      # Block on scan failure (default)
+    audit_enabled: true # default
+    fail_closed: true # Block on scan failure (default)
     profile_name: "default"
     app_name: "openclaw"
 ```
@@ -120,14 +120,14 @@ const handler = async (event, ctx) => {
 ## Limitations
 
 !!! warning "Fire-and-Forget"
-    `message_received` is async and cannot block messages. This hook only logs and caches—it relies on downstream hooks for enforcement.
+`message_received` is async and cannot block messages. This hook only logs and caches—it relies on downstream hooks for enforcement.
 
 ## Cache Details
 
-| Property | Value |
-|----------|-------|
-| **TTL** | 30 seconds |
-| **Key** | Session ID or `${sender}_${channel}` |
+| Property | Value                                    |
+| -------- | ---------------------------------------- |
+| **TTL**  | 30 seconds                               |
+| **Key**  | Session ID or `${sender}_${channel}`     |
 | **Hash** | Message content hash for stale detection |
 
 ## Fail-Closed Behavior

@@ -49,6 +49,7 @@ npm run check
 ```
 
 This runs:
+
 - TypeScript type checking
 - ESLint
 - Prettier format check
@@ -57,6 +58,7 @@ This runs:
 ### 5. Commit
 
 Pre-commit hooks run automatically:
+
 - Type check
 - Lint staged files
 - Format staged files
@@ -98,12 +100,12 @@ prisma-airs-plugin/
 
 ### Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Files | kebab-case | `scan-cache.ts` |
-| Functions | camelCase | `getCachedScanResult` |
-| Types | PascalCase | `ScanResult` |
-| Constants | UPPER_SNAKE | `TTL_MS` |
+| Type      | Convention  | Example               |
+| --------- | ----------- | --------------------- |
+| Files     | kebab-case  | `scan-cache.ts`       |
+| Functions | camelCase   | `getCachedScanResult` |
+| Types     | PascalCase  | `ScanResult`          |
+| Constants | UPPER_SNAKE | `TTL_MS`              |
 
 ## Testing
 
@@ -146,6 +148,7 @@ describe('scan', () => {
 ### Mocking
 
 Use Vitest mocks for:
+
 - `fetch` - AIRS API calls
 - Environment variables
 - Time (for cache TTL tests)
@@ -160,7 +163,7 @@ mkdir -p hooks/prisma-airs-newhook
 
 ### 2. Create HOOK.md
 
-```yaml
+````yaml
 ---
 name: prisma-airs-newhook
 description: "Description of hook"
@@ -181,8 +184,9 @@ Description.
 plugins:
   prisma-airs:
     newhook_enabled: true
-```
-```
+````
+
+````
 
 ### 3. Create handler.ts
 
@@ -203,16 +207,16 @@ const handler = async (
 };
 
 export default handler;
-```
+````
 
 ### 4. Create handler.test.ts
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import handler from './handler';
+import { describe, it, expect } from "vitest";
+import handler from "./handler";
 
-describe('prisma-airs-newhook', () => {
-  it('should handle event', async () => {
+describe("prisma-airs-newhook", () => {
+  it("should handle event", async () => {
     const result = await handler(event, ctx);
     expect(result).toBeDefined();
   });
@@ -236,6 +240,7 @@ Update `index.ts` to read new config option.
 Format: `type: brief description`
 
 Types:
+
 - `feat` - New feature
 - `fix` - Bug fix
 - `docs` - Documentation
@@ -248,6 +253,7 @@ Example: `feat: add rate limiting for AIRS API calls`
 ### PR Description
 
 Include:
+
 - Summary of changes
 - Motivation
 - Testing done

@@ -11,14 +11,16 @@ Instead of completely blocking responses that contain sensitive data, the plugin
 ```yaml
 plugins:
   prisma-airs:
-    dlp_mask_only: true  # default
+    dlp_mask_only: true # default
 ```
 
 When `dlp_mask_only: true`:
+
 - DLP violations in responses are masked, not blocked
 - Other violations (malicious code, toxicity) still block
 
 When `dlp_mask_only: false`:
+
 - All violations result in blocked responses
 
 ## Masking Behavior
@@ -45,16 +47,16 @@ Your account details:
 
 ## Masked Patterns
 
-| Data Type | Pattern | Masked As |
-|-----------|---------|-----------|
-| Social Security Number | `XXX-XX-XXXX` | `[SSN REDACTED]` |
-| Credit Card | `XXXX-XXXX-XXXX-XXXX` | `[CARD REDACTED]` |
-| Email | `*@*.*` | `[EMAIL REDACTED]` |
-| API Key | `sk-*`, `pk-*`, `api_key_*` | `[API KEY REDACTED]` |
-| AWS Key | `AKIA*`, `ABIA*`, `ASIA*` | `[AWS KEY REDACTED]` |
-| Phone Number | `(XXX) XXX-XXXX` | `[PHONE REDACTED]` |
-| Private IP | `192.168.*.*`, `10.*.*.*` | `[IP REDACTED]` |
-| Long Secrets | 40+ char mixed alphanumeric | `[SECRET REDACTED]` |
+| Data Type              | Pattern                     | Masked As            |
+| ---------------------- | --------------------------- | -------------------- |
+| Social Security Number | `XXX-XX-XXXX`               | `[SSN REDACTED]`     |
+| Credit Card            | `XXXX-XXXX-XXXX-XXXX`       | `[CARD REDACTED]`    |
+| Email                  | `*@*.*`                     | `[EMAIL REDACTED]`   |
+| API Key                | `sk-*`, `pk-*`, `api_key_*` | `[API KEY REDACTED]` |
+| AWS Key                | `AKIA*`, `ABIA*`, `ASIA*`   | `[AWS KEY REDACTED]` |
+| Phone Number           | `(XXX) XXX-XXXX`            | `[PHONE REDACTED]`   |
+| Private IP             | `192.168.*.*`, `10.*.*.*`   | `[IP REDACTED]`      |
+| Long Secrets           | 40+ char mixed alphanumeric | `[SECRET REDACTED]`  |
 
 ## Pattern Details
 
@@ -73,6 +75,7 @@ Matches: `123-45-6789`
 ```
 
 Matches:
+
 - `4111-1111-1111-1111`
 - `4111 1111 1111 1111`
 - `4111111111111111`
@@ -92,6 +95,7 @@ Matches: `user@example.com`
 ```
 
 Matches:
+
 - `sk-abc123def456ghi789jkl`
 - `api_key_xyz123abc456`
 - `secret-myverylongsecretvalue`
@@ -111,6 +115,7 @@ Matches: `AKIAIOSFODNN7EXAMPLE`
 ```
 
 Matches:
+
 - `(555) 123-4567`
 - `555-123-4567`
 - `+1 555 123 4567`
@@ -122,6 +127,7 @@ Matches:
 ```
 
 Matches:
+
 - `192.168.1.1`
 - `10.0.0.1`
 - `172.16.0.1`
@@ -182,12 +188,13 @@ When blocking occurs (DLP + other violations):
 ### Regex-Based Masking
 
 Current masking uses regex patterns, which may:
+
 - Miss unusual formats
 - Have false positives
 - Not catch all sensitive data
 
 !!! tip "Future Enhancement"
-    Future versions will use AIRS API match offsets for precision masking when available.
+Future versions will use AIRS API match offsets for precision masking when available.
 
 ### Content After Masking
 

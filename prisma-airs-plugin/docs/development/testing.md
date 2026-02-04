@@ -26,6 +26,7 @@ npm run check
 ```
 
 Runs in order:
+
 1. TypeScript type checking (`npm run typecheck`)
 2. ESLint (`npm run lint`)
 3. Prettier (`npm run format:check`)
@@ -59,12 +60,12 @@ prisma-airs-plugin/
 ### Basic Test
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { scan } from './scanner';
+import { describe, it, expect } from "vitest";
+import { scan } from "./scanner";
 
-describe('scan', () => {
-  it('should return result for valid input', async () => {
-    const result = await scan({ prompt: 'hello' });
+describe("scan", () => {
+  it("should return result for valid input", async () => {
+    const result = await scan({ prompt: "hello" });
     expect(result).toBeDefined();
     expect(result.action).toBeDefined();
   });
@@ -74,43 +75,43 @@ describe('scan', () => {
 ### Mocking fetch
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock fetch globally
 global.fetch = vi.fn();
 
-describe('scan', () => {
+describe("scan", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it('should handle successful API response', async () => {
+  it("should handle successful API response", async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({
-        scan_id: 'scan_123',
-        action: 'allow',
-        category: 'benign',
+        scan_id: "scan_123",
+        action: "allow",
+        category: "benign",
       }),
     } as Response);
 
-    const result = await scan({ prompt: 'test' });
+    const result = await scan({ prompt: "test" });
 
-    expect(result.action).toBe('allow');
-    expect(result.scanId).toBe('scan_123');
+    expect(result.action).toBe("allow");
+    expect(result.scanId).toBe("scan_123");
   });
 
-  it('should handle API error', async () => {
+  it("should handle API error", async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: false,
       status: 500,
-      text: async () => 'Internal Server Error',
+      text: async () => "Internal Server Error",
     } as Response);
 
-    const result = await scan({ prompt: 'test' });
+    const result = await scan({ prompt: "test" });
 
-    expect(result.action).toBe('warn');
-    expect(result.error).toContain('API error 500');
+    expect(result.action).toBe("warn");
+    expect(result.error).toContain("API error 500");
   });
 });
 ```
@@ -118,9 +119,9 @@ describe('scan', () => {
 ### Mocking Environment Variables
 
 ```typescript
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-describe('scan with API key', () => {
+describe("scan with API key", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -132,26 +133,26 @@ describe('scan with API key', () => {
     process.env = originalEnv;
   });
 
-  it('should return error when API key missing', async () => {
+  it("should return error when API key missing", async () => {
     delete process.env.PANW_AI_SEC_API_KEY;
 
-    const { scan } = await import('./scanner');
-    const result = await scan({ prompt: 'test' });
+    const { scan } = await import("./scanner");
+    const result = await scan({ prompt: "test" });
 
-    expect(result.error).toBe('PANW_AI_SEC_API_KEY not set');
+    expect(result.error).toBe("PANW_AI_SEC_API_KEY not set");
   });
 
-  it('should call API when key present', async () => {
-    process.env.PANW_AI_SEC_API_KEY = 'test-key';
+  it("should call API when key present", async () => {
+    process.env.PANW_AI_SEC_API_KEY = "test-key";
 
-    const { scan } = await import('./scanner');
-    await scan({ prompt: 'test' });
+    const { scan } = await import("./scanner");
+    await scan({ prompt: "test" });
 
     expect(fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'x-pan-token': 'test-key',
+          "x-pan-token": "test-key",
         }),
       })
     );
@@ -203,45 +204,45 @@ describe('scan-cache', () => {
 ### Testing Hooks
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import handler from './handler';
+import { describe, it, expect, vi } from "vitest";
+import handler from "./handler";
 
-describe('prisma-airs-context', () => {
-  it('should inject warning when threat detected', async () => {
+describe("prisma-airs-context", () => {
+  it("should inject warning when threat detected", async () => {
     // Mock cache to return threat
-    vi.mock('../../src/scan-cache', () => ({
+    vi.mock("../../src/scan-cache", () => ({
       getCachedScanResultIfMatch: () => ({
-        action: 'block',
-        categories: ['prompt_injection'],
+        action: "block",
+        categories: ["prompt_injection"],
       }),
       cacheScanResult: vi.fn(),
-      hashMessage: () => 'hash123',
+      hashMessage: () => "hash123",
     }));
 
     const event = {
-      message: { content: 'malicious input' },
+      message: { content: "malicious input" },
     };
-    const ctx = { conversationId: 'conv-123' };
+    const ctx = { conversationId: "conv-123" };
 
     const result = await handler(event, ctx);
 
-    expect(result.prependContext).toContain('CRITICAL SECURITY ALERT');
-    expect(result.prependContext).toContain('prompt_injection');
+    expect(result.prependContext).toContain("CRITICAL SECURITY ALERT");
+    expect(result.prependContext).toContain("prompt_injection");
   });
 
-  it('should return nothing for safe content', async () => {
-    vi.mock('../../src/scan-cache', () => ({
+  it("should return nothing for safe content", async () => {
+    vi.mock("../../src/scan-cache", () => ({
       getCachedScanResultIfMatch: () => ({
-        action: 'allow',
-        severity: 'SAFE',
-        categories: ['safe'],
+        action: "allow",
+        severity: "SAFE",
+        categories: ["safe"],
       }),
       clearScanResult: vi.fn(),
-      hashMessage: () => 'hash123',
+      hashMessage: () => "hash123",
     }));
 
-    const event = { message: { content: 'hello' } };
-    const ctx = { conversationId: 'conv-123' };
+    const event = { message: { content: "hello" } };
+    const ctx = { conversationId: "conv-123" };
 
     const result = await handler(event, ctx);
 
@@ -258,10 +259,10 @@ Test individual functions in isolation.
 
 ```typescript
 // scanner.test.ts
-describe('parseResponse', () => {
-  it('should map AIRS response to ScanResult', () => {
+describe("parseResponse", () => {
+  it("should map AIRS response to ScanResult", () => {
     const result = parseResponse(airsResponse, request, 100);
-    expect(result.action).toBe('block');
+    expect(result.action).toBe("block");
   });
 });
 ```
@@ -272,16 +273,16 @@ Test multiple components together.
 
 ```typescript
 // Test cache + handler
-describe('context hook with cache', () => {
-  it('should use cached result from audit hook', async () => {
+describe("context hook with cache", () => {
+  it("should use cached result from audit hook", async () => {
     // Simulate audit hook caching
-    cacheScanResult('session', scanResult, 'hash');
+    cacheScanResult("session", scanResult, "hash");
 
     // Run context hook
     const result = await contextHandler(event, ctx);
 
     // Verify it used cached result
-    expect(result.prependContext).toContain('ALERT');
+    expect(result.prependContext).toContain("ALERT");
   });
 });
 ```
@@ -289,19 +290,19 @@ describe('context hook with cache', () => {
 ### Edge Cases
 
 ```typescript
-describe('edge cases', () => {
-  it('should handle empty content', async () => {
-    const result = await handler({ content: '' }, ctx);
+describe("edge cases", () => {
+  it("should handle empty content", async () => {
+    const result = await handler({ content: "" }, ctx);
     expect(result).toBeUndefined();
   });
 
-  it('should handle null message', async () => {
+  it("should handle null message", async () => {
     const result = await handler({ message: null }, ctx);
     expect(result).toBeUndefined();
   });
 
-  it('should handle unicode content', async () => {
-    const result = await handler({ content: '你好 🎉' }, ctx);
+  it("should handle unicode content", async () => {
+    const result = await handler({ content: "你好 🎉" }, ctx);
     expect(result).toBeDefined();
   });
 });
@@ -317,12 +318,12 @@ npm run test:coverage
 
 ### Coverage Targets
 
-| Metric | Target |
-|--------|--------|
-| Statements | 80% |
-| Branches | 75% |
-| Functions | 80% |
-| Lines | 80% |
+| Metric     | Target |
+| ---------- | ------ |
+| Statements | 80%    |
+| Branches   | 75%    |
+| Functions  | 80%    |
+| Lines      | 80%    |
 
 ### View Coverage
 

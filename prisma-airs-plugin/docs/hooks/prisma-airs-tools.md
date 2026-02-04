@@ -4,12 +4,12 @@ Tool gating hook that blocks dangerous tools during active threats.
 
 ## Overview
 
-| Property | Value |
-|----------|-------|
-| **Event** | `before_tool_call` |
-| **Emoji** | :stop_sign: |
-| **Can Block** | Yes |
-| **Config** | `tool_gating_enabled`, `high_risk_tools` |
+| Property      | Value                                    |
+| ------------- | ---------------------------------------- |
+| **Event**     | `before_tool_call`                       |
+| **Emoji**     | :stop_sign:                              |
+| **Can Block** | Yes                                      |
+| **Config**    | `tool_gating_enabled`, `high_risk_tools` |
 
 ## Purpose
 
@@ -24,8 +24,8 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    tool_gating_enabled: true  # default
-    high_risk_tools:           # blocked on ANY threat
+    tool_gating_enabled: true # default
+    high_risk_tools: # blocked on ANY threat
       - exec
       - Bash
       - bash
@@ -40,18 +40,18 @@ plugins:
 
 ## Tool Blocking Matrix
 
-| Threat Category | Blocked Tools |
-|-----------------|---------------|
-| `agent-threat` | ALL external tools (18 tools) |
-| `sql-injection` / `db-security` / `db_security` | exec, Bash, database, query, sql, eval |
-| `malicious-code` / `malicious_code` | exec, Bash, write, edit, eval, NotebookEdit |
-| `prompt-injection` / `prompt_injection` | exec, Bash, gateway, message, cron |
-| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl |
-| `scan-failure` | exec, Bash, write, edit, gateway, message, cron |
+| Threat Category                                            | Blocked Tools                                   |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| `agent-threat`                                             | ALL external tools (18 tools)                   |
+| `sql-injection` / `db-security` / `db_security`            | exec, Bash, database, query, sql, eval          |
+| `malicious-code` / `malicious_code`                        | exec, Bash, write, edit, eval, NotebookEdit     |
+| `prompt-injection` / `prompt_injection`                    | exec, Bash, gateway, message, cron              |
+| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl     |
+| `scan-failure`                                             | exec, Bash, write, edit, gateway, message, cron |
 
 !!! note "Category Name Variants"
-    AIRS API returns underscored names (`prompt_injection`). Tool blocking supports
-    both underscore and hyphen variants for flexibility.
+AIRS API returns underscored names (`prompt_injection`). Tool blocking supports
+both underscore and hyphen variants for flexibility.
 
 ## High-Risk Tools (Default)
 
@@ -59,16 +59,16 @@ These tools are blocked on ANY detected threat:
 
 ```yaml
 high_risk_tools:
-  - exec       # Command execution
-  - Bash       # Shell access
+  - exec # Command execution
+  - Bash # Shell access
   - bash
-  - write      # File writing
+  - write # File writing
   - Write
-  - edit       # File editing
+  - edit # File editing
   - Edit
-  - gateway    # Gateway operations
-  - message    # Sending messages
-  - cron       # Scheduled tasks
+  - gateway # Gateway operations
+  - message # Sending messages
+  - cron # Scheduled tasks
 ```
 
 ## Handler Logic
@@ -97,18 +97,18 @@ const handler = async (event, ctx) => {
   for (const category of scanResult.categories) {
     const tools = TOOL_BLOCKS[category];
     if (tools) {
-      tools.forEach(t => blockedTools.add(t.toLowerCase()));
+      tools.forEach((t) => blockedTools.add(t.toLowerCase()));
     }
   }
 
   // Add high-risk tools if any threat detected
-  config.highRiskTools.forEach(t => blockedTools.add(t.toLowerCase()));
+  config.highRiskTools.forEach((t) => blockedTools.add(t.toLowerCase()));
 
   // Check if this tool should be blocked
   if (blockedTools.has(toolName.toLowerCase())) {
     return {
       block: true,
-      blockReason: `Tool '${toolName}' blocked due to: ${scanResult.categories.join(", ")}`
+      blockReason: `Tool '${toolName}' blocked due to: ${scanResult.categories.join(", ")}`,
     };
   }
 };
@@ -118,9 +118,9 @@ const handler = async (event, ctx) => {
 
 ```typescript
 interface HookResult {
-  params?: Record<string, unknown>;  // Modified parameters
-  block?: boolean;                   // Block the tool call
-  blockReason?: string;              // Reason for blocking
+  params?: Record<string, unknown>; // Modified parameters
+  block?: boolean; // Block the tool call
+  blockReason?: string; // Reason for blocking
 }
 ```
 

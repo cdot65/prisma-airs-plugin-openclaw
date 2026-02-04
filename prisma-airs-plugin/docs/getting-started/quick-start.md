@@ -87,11 +87,11 @@ Agents can call `prisma_airs_scan` directly:
 
 ### Scan Result Fields
 
-| Field | Values | Meaning |
-|-------|--------|---------|
-| `action` | `allow`, `warn`, `block` | Recommended action |
-| `severity` | `SAFE`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` | Threat severity |
-| `categories` | `prompt_injection`, `dlp_*`, etc. | Detected threats |
+| Field        | Values                                      | Meaning            |
+| ------------ | ------------------------------------------- | ------------------ |
+| `action`     | `allow`, `warn`, `block`                    | Recommended action |
+| `severity`   | `SAFE`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` | Threat severity    |
+| `categories` | `prompt_injection`, `dlp_*`, etc.           | Detected threats   |
 
 ### Example Output
 

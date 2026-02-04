@@ -4,20 +4,20 @@
 
 The plugin uses two configuration sources:
 
-| Source | Settings |
-|--------|----------|
-| **Environment Variables** | API key |
-| **Plugin Config** | Profile, app name, feature toggles |
-| **Strata Cloud Manager** | Detection services, actions, DLP patterns |
+| Source                    | Settings                                  |
+| ------------------------- | ----------------------------------------- |
+| **Environment Variables** | API key                                   |
+| **Plugin Config**         | Profile, app name, feature toggles        |
+| **Strata Cloud Manager**  | Detection services, actions, DLP patterns |
 
 !!! warning "SCM vs Plugin Config"
-    Detection services and actions (allow/block/alert) are configured in **Strata Cloud Manager**, not in plugin config. The plugin config controls which hooks are enabled and their behavior.
+Detection services and actions (allow/block/alert) are configured in **Strata Cloud Manager**, not in plugin config. The plugin config controls which hooks are enabled and their behavior.
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PANW_AI_SEC_API_KEY` | Yes | API key from Strata Cloud Manager |
+| Variable              | Required | Description                       |
+| --------------------- | -------- | --------------------------------- |
+| `PANW_AI_SEC_API_KEY` | Yes      | API key from Strata Cloud Manager |
 
 ## Plugin Configuration
 
@@ -36,14 +36,14 @@ plugins:
     fail_closed: true
 
     # Hook toggles
-    reminder_enabled: true            # prisma-airs-guard
-    audit_enabled: true               # prisma-airs-audit
-    context_injection_enabled: true   # prisma-airs-context
-    outbound_scanning_enabled: true   # prisma-airs-outbound
-    tool_gating_enabled: true         # prisma-airs-tools
+    reminder_enabled: true # prisma-airs-guard
+    audit_enabled: true # prisma-airs-audit
+    context_injection_enabled: true # prisma-airs-context
+    outbound_scanning_enabled: true # prisma-airs-outbound
+    tool_gating_enabled: true # prisma-airs-tools
 
     # DLP settings
-    dlp_mask_only: true               # Mask instead of block for DLP
+    dlp_mask_only: true # Mask instead of block for DLP
 
     # Tool gating settings
     high_risk_tools:
@@ -60,35 +60,36 @@ plugins:
 
 ### Core Settings
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `profile_name` | string | `"default"` | AIRS security profile name |
-| `app_name` | string | `"openclaw"` | Application identifier for scans |
-| `fail_closed` | boolean | `true` | Block requests when scan fails |
+| Option         | Type    | Default      | Description                      |
+| -------------- | ------- | ------------ | -------------------------------- |
+| `profile_name` | string  | `"default"`  | AIRS security profile name       |
+| `app_name`     | string  | `"openclaw"` | Application identifier for scans |
+| `fail_closed`  | boolean | `true`       | Block requests when scan fails   |
 
 ### Hook Toggles
 
-| Option | Type | Default | Hook |
-|--------|------|---------|------|
-| `reminder_enabled` | boolean | `true` | prisma-airs-guard |
-| `audit_enabled` | boolean | `true` | prisma-airs-audit |
-| `context_injection_enabled` | boolean | `true` | prisma-airs-context |
-| `outbound_scanning_enabled` | boolean | `true` | prisma-airs-outbound |
-| `tool_gating_enabled` | boolean | `true` | prisma-airs-tools |
+| Option                      | Type    | Default | Hook                 |
+| --------------------------- | ------- | ------- | -------------------- |
+| `reminder_enabled`          | boolean | `true`  | prisma-airs-guard    |
+| `audit_enabled`             | boolean | `true`  | prisma-airs-audit    |
+| `context_injection_enabled` | boolean | `true`  | prisma-airs-context  |
+| `outbound_scanning_enabled` | boolean | `true`  | prisma-airs-outbound |
+| `tool_gating_enabled`       | boolean | `true`  | prisma-airs-tools    |
 
 ### DLP Settings
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `dlp_mask_only` | boolean | `true` | Mask DLP violations instead of blocking |
+| Option          | Type    | Default | Description                             |
+| --------------- | ------- | ------- | --------------------------------------- |
+| `dlp_mask_only` | boolean | `true`  | Mask DLP violations instead of blocking |
 
 ### Tool Gating Settings
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option            | Type     | Default   | Description                  |
+| ----------------- | -------- | --------- | ---------------------------- |
 | `high_risk_tools` | string[] | See below | Tools to block on any threat |
 
 Default high-risk tools:
+
 ```yaml
 high_risk_tools:
   - exec
@@ -126,11 +127,11 @@ The following are configured in SCM, not the plugin:
 
 For each detection service, configure the action:
 
-| Action | Behavior |
-|--------|----------|
-| `allow` | No action, scan only |
+| Action  | Behavior                   |
+| ------- | -------------------------- |
+| `allow` | No action, scan only       |
 | `alert` | Log warning, allow through |
-| `block` | Block the request |
+| `block` | Block the request          |
 
 ### DLP Patterns
 
@@ -149,7 +150,7 @@ plugins:
   prisma-airs:
     profile_name: "strict"
     fail_closed: true
-    dlp_mask_only: false  # Block instead of mask
+    dlp_mask_only: false # Block instead of mask
 ```
 
 ### Development/Testing
@@ -159,7 +160,7 @@ plugins:
   prisma-airs:
     profile_name: "permissive"
     fail_closed: false
-    outbound_scanning_enabled: false  # Skip outbound scans
+    outbound_scanning_enabled: false # Skip outbound scans
 ```
 
 ### Audit Only

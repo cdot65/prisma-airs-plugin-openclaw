@@ -4,23 +4,23 @@ Complete reference for Prisma AIRS detection categories.
 
 ## Categories Overview
 
-| Category | Detection Service | Description |
-|----------|-------------------|-------------|
-| `prompt_injection` | Prompt Injection | Attempt to override system instructions |
-| `dlp_prompt` | Sensitive Data | PII or secrets in user prompt |
-| `dlp_response` | Sensitive Data | PII or secrets in AI response |
-| `url_filtering_prompt` | URL Filtering | Disallowed URL in prompt |
-| `url_filtering_response` | URL Filtering | Disallowed URL in response |
-| `toxic_content` | Toxic Content | Harmful, abusive content |
-| `db_security` | Database Security | Dangerous database operations |
-| `malicious_code` | Malicious Code | Malware, exploits, dangerous code |
-| `agent_threat` | AI Agent Protection | Multi-step agent manipulation |
-| `ungrounded` | Contextual Grounding | Hallucination, unverified claims |
-| `topic_violation` | Topic Guardrails | Custom policy violation |
-| `safe` | — | No threats detected |
-| `benign` | — | Alias for `safe` |
-| `api_error` | — | API call failed |
-| `scan-failure` | — | Scan failed (fail-closed mode) |
+| Category                 | Detection Service    | Description                             |
+| ------------------------ | -------------------- | --------------------------------------- |
+| `prompt_injection`       | Prompt Injection     | Attempt to override system instructions |
+| `dlp_prompt`             | Sensitive Data       | PII or secrets in user prompt           |
+| `dlp_response`           | Sensitive Data       | PII or secrets in AI response           |
+| `url_filtering_prompt`   | URL Filtering        | Disallowed URL in prompt                |
+| `url_filtering_response` | URL Filtering        | Disallowed URL in response              |
+| `toxic_content`          | Toxic Content        | Harmful, abusive content                |
+| `db_security`            | Database Security    | Dangerous database operations           |
+| `malicious_code`         | Malicious Code       | Malware, exploits, dangerous code       |
+| `agent_threat`           | AI Agent Protection  | Multi-step agent manipulation           |
+| `ungrounded`             | Contextual Grounding | Hallucination, unverified claims        |
+| `topic_violation`        | Topic Guardrails     | Custom policy violation                 |
+| `safe`                   | —                    | No threats detected                     |
+| `benign`                 | —                    | Alias for `safe`                        |
+| `api_error`              | —                    | API call failed                         |
+| `scan-failure`           | —                    | Scan failed (fail-closed mode)          |
 
 ## Prompt Injection
 
@@ -249,6 +249,7 @@ Detects violations of organization-specific content policies.
 ### Configured in SCM
 
 Define custom topics to block:
+
 - Competitor discussions
 - Confidential projects
 - Legal advice
@@ -296,7 +297,7 @@ Alias for `safe` in some AIRS API responses. Treated identically to `safe`.
 ```
 
 !!! note "Internal Normalization"
-    The scanner normalizes `benign` responses to `safe` in the categories array.
+The scanner normalizes `benign` responses to `safe` in the categories array.
 
 ---
 
@@ -361,23 +362,23 @@ Triggers fail-closed behavior in downstream hooks.
 
 ## Category to Action Mapping
 
-| Category | Default Action |
-|----------|---------------|
-| `prompt_injection` | block |
-| `dlp_prompt` | block |
-| `dlp_response` | block (or mask) |
-| `url_filtering_*` | block |
-| `toxic_content` | block |
-| `db_security` | block |
-| `malicious_code` | block |
-| `agent_threat` | block |
-| `ungrounded` | warn or block |
-| `topic_violation` | configurable |
-| `safe` | allow |
-| `benign` | allow |
-| `api_error` | warn |
-| `scan-failure` | block (fail-closed) |
+| Category           | Default Action      |
+| ------------------ | ------------------- |
+| `prompt_injection` | block               |
+| `dlp_prompt`       | block               |
+| `dlp_response`     | block (or mask)     |
+| `url_filtering_*`  | block               |
+| `toxic_content`    | block               |
+| `db_security`      | block               |
+| `malicious_code`   | block               |
+| `agent_threat`     | block               |
+| `ungrounded`       | warn or block       |
+| `topic_violation`  | configurable        |
+| `safe`             | allow               |
+| `benign`           | allow               |
+| `api_error`        | warn                |
+| `scan-failure`     | block (fail-closed) |
 
 !!! note "Configurable in SCM"
-    Actions are configured per detection service in Strata Cloud Manager.
-    The plugin respects whatever action the AIRS API returns.
+Actions are configured per detection service in Strata Cloud Manager.
+The plugin respects whatever action the AIRS API returns.

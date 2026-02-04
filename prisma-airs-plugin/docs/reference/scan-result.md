@@ -19,16 +19,16 @@ interface ScanRequest {
 
 ### ScanRequest Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `prompt` | `string?` | User prompt to scan |
-| `response` | `string?` | AI response to scan |
-| `sessionId` | `string?` | Session ID for tracking |
-| `trId` | `string?` | Transaction ID for correlating prompt/response |
-| `profileName` | `string?` | Security profile name (default: "default") |
-| `appName` | `string?` | Application name for scan metadata |
-| `appUser` | `string?` | User identifier for scan metadata |
-| `aiModel` | `string?` | AI model name for scan metadata |
+| Field         | Type      | Description                                    |
+| ------------- | --------- | ---------------------------------------------- |
+| `prompt`      | `string?` | User prompt to scan                            |
+| `response`    | `string?` | AI response to scan                            |
+| `sessionId`   | `string?` | Session ID for tracking                        |
+| `trId`        | `string?` | Transaction ID for correlating prompt/response |
+| `profileName` | `string?` | Security profile name (default: "default")     |
+| `appName`     | `string?` | Application name for scan metadata             |
+| `appUser`     | `string?` | User identifier for scan metadata              |
+| `aiModel`     | `string?` | AI model name for scan metadata                |
 
 ## ScanResult Interface
 
@@ -67,143 +67,144 @@ interface ResponseDetected {
 
 ### action
 
-| Property | Value |
-|----------|-------|
-| Type | `"allow" \| "warn" \| "block"` |
-| Required | Yes |
+| Property | Value                          |
+| -------- | ------------------------------ |
+| Type     | `"allow" \| "warn" \| "block"` |
+| Required | Yes                            |
 
 Recommended action based on scan results.
 
-| Value | Meaning |
-|-------|---------|
-| `allow` | No threats detected, safe to proceed |
-| `warn` | Potential concerns, proceed with caution |
-| `block` | Threat detected, block the request |
+| Value   | Meaning                                  |
+| ------- | ---------------------------------------- |
+| `allow` | No threats detected, safe to proceed     |
+| `warn`  | Potential concerns, proceed with caution |
+| `block` | Threat detected, block the request       |
 
 ### severity
 
-| Property | Value |
-|----------|-------|
-| Type | `"SAFE" \| "LOW" \| "MEDIUM" \| "HIGH" \| "CRITICAL"` |
-| Required | Yes |
+| Property | Value                                                 |
+| -------- | ----------------------------------------------------- |
+| Type     | `"SAFE" \| "LOW" \| "MEDIUM" \| "HIGH" \| "CRITICAL"` |
+| Required | Yes                                                   |
 
 Threat severity level.
 
-| Value | Meaning |
-|-------|---------|
-| `SAFE` | No issues detected |
-| `LOW` | Minor concern or API error |
-| `MEDIUM` | Detection flags triggered |
-| `HIGH` | Suspicious content detected |
+| Value      | Meaning                           |
+| ---------- | --------------------------------- |
+| `SAFE`     | No issues detected                |
+| `LOW`      | Minor concern or API error        |
+| `MEDIUM`   | Detection flags triggered         |
+| `HIGH`     | Suspicious content detected       |
 | `CRITICAL` | Malicious content or block action |
 
 ### categories
 
-| Property | Value |
-|----------|-------|
-| Type | `string[]` |
-| Required | Yes |
+| Property | Value      |
+| -------- | ---------- |
+| Type     | `string[]` |
+| Required | Yes        |
 
 List of detected threat categories. See [Detection Categories](detection-categories.md).
 
 Example:
+
 ```json
 ["prompt_injection", "dlp_prompt"]
 ```
 
 ### scanId
 
-| Property | Value |
-|----------|-------|
-| Type | `string` |
+| Property | Value                |
+| -------- | -------------------- |
+| Type     | `string`             |
 | Required | Yes (empty on error) |
 
 Unique identifier for this scan from Prisma AIRS.
 
 ### reportId
 
-| Property | Value |
-|----------|-------|
-| Type | `string` |
+| Property | Value                |
+| -------- | -------------------- |
+| Type     | `string`             |
 | Required | Yes (empty on error) |
 
 Report identifier for detailed analysis in Strata Cloud Manager.
 
 ### profileName
 
-| Property | Value |
-|----------|-------|
-| Type | `string` |
-| Required | Yes |
+| Property | Value    |
+| -------- | -------- |
+| Type     | `string` |
+| Required | Yes      |
 
 Security profile name used for the scan.
 
 ### promptDetected
 
-| Property | Value |
-|----------|-------|
-| Type | `PromptDetected` |
-| Required | Yes |
+| Property | Value            |
+| -------- | ---------------- |
+| Type     | `PromptDetected` |
+| Required | Yes              |
 
 Detection flags for prompt content.
 
 ```typescript
 {
-  injection: boolean;  // Prompt injection detected
-  dlp: boolean;        // Sensitive data in prompt
-  urlCats: boolean;    // URL category violation in prompt
+  injection: boolean; // Prompt injection detected
+  dlp: boolean; // Sensitive data in prompt
+  urlCats: boolean; // URL category violation in prompt
 }
 ```
 
 ### responseDetected
 
-| Property | Value |
-|----------|-------|
-| Type | `ResponseDetected` |
-| Required | Yes |
+| Property | Value              |
+| -------- | ------------------ |
+| Type     | `ResponseDetected` |
+| Required | Yes                |
 
 Detection flags for response content.
 
 ```typescript
 {
-  dlp: boolean;      // Sensitive data in response
-  urlCats: boolean;  // URL category violation in response
+  dlp: boolean; // Sensitive data in response
+  urlCats: boolean; // URL category violation in response
 }
 ```
 
 ### sessionId
 
-| Property | Value |
-|----------|-------|
-| Type | `string \| undefined` |
-| Required | No |
+| Property | Value                 |
+| -------- | --------------------- |
+| Type     | `string \| undefined` |
+| Required | No                    |
 
 Session identifier passed in the scan request.
 
 ### trId
 
-| Property | Value |
-|----------|-------|
-| Type | `string \| undefined` |
-| Required | No |
+| Property | Value                 |
+| -------- | --------------------- |
+| Type     | `string \| undefined` |
+| Required | No                    |
 
 Transaction identifier for correlating prompt/response pairs.
 
 ### latencyMs
 
-| Property | Value |
-|----------|-------|
-| Type | `number` |
-| Required | Yes |
+| Property | Value    |
+| -------- | -------- |
+| Type     | `number` |
+| Required | Yes      |
 
 Scan latency in milliseconds.
 
 ### error
 
-| Property | Value |
-|----------|-------|
-| Type | `string \| undefined` |
-| Required | No |
+| Property | Value                 |
+| -------- | --------------------- |
+| Type     | `string \| undefined` |
+| Required | No                    |
 
 Error message if scan failed.
 

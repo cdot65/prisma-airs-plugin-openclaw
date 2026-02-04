@@ -4,12 +4,12 @@ Outbound response scanning with blocking and DLP masking.
 
 ## Overview
 
-| Property | Value |
-|----------|-------|
-| **Event** | `message_sending` |
-| **Emoji** | :shield: |
-| **Can Block** | Yes |
-| **Config** | `outbound_scanning_enabled`, `fail_closed`, `dlp_mask_only` |
+| Property      | Value                                                       |
+| ------------- | ----------------------------------------------------------- |
+| **Event**     | `message_sending`                                           |
+| **Emoji**     | :shield:                                                    |
+| **Can Block** | Yes                                                         |
+| **Config**    | `outbound_scanning_enabled`, `fail_closed`, `dlp_mask_only` |
 
 ## Purpose
 
@@ -24,22 +24,22 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    outbound_scanning_enabled: true  # default
-    fail_closed: true                # Block on scan failure (default)
-    dlp_mask_only: true              # Mask DLP instead of block (default)
+    outbound_scanning_enabled: true # default
+    fail_closed: true # Block on scan failure (default)
+    dlp_mask_only: true # Mask DLP instead of block (default)
 ```
 
 ## Detection Capabilities
 
-| Detection | Description | Action |
-|-----------|-------------|--------|
-| **WildFire** | Malicious URL/content | Block |
-| **Toxicity** | Harmful, abusive content | Block |
-| **URL Filtering** | Disallowed URL categories | Block |
-| **DLP** | PII, credentials leakage | Mask or Block |
-| **Malicious Code** | Malware, exploits | Block |
-| **Custom Topics** | Policy violations | Block |
-| **Grounding** | Hallucinations | Block |
+| Detection          | Description               | Action        |
+| ------------------ | ------------------------- | ------------- |
+| **WildFire**       | Malicious URL/content     | Block         |
+| **Toxicity**       | Harmful, abusive content  | Block         |
+| **URL Filtering**  | Disallowed URL categories | Block         |
+| **DLP**            | PII, credentials leakage  | Mask or Block |
+| **Malicious Code** | Malware, exploits         | Block         |
+| **Custom Topics**  | Policy violations         | Block         |
+| **Grounding**      | Hallucinations            | Block         |
 
 ## Actions
 
@@ -68,15 +68,15 @@ No modification.
 
 ## Masking Patterns
 
-| Pattern | Example | Masked As |
-|---------|---------|-----------|
-| SSN | `123-45-6789` | `[SSN REDACTED]` |
-| Credit Card | `4111-1111-1111-1111` | `[CARD REDACTED]` |
-| Email | `user@example.com` | `[EMAIL REDACTED]` |
-| API Key | `sk-abc123...` | `[API KEY REDACTED]` |
-| AWS Key | `AKIAIOSFODNN7EXAMPLE` | `[AWS KEY REDACTED]` |
-| Phone | `(555) 123-4567` | `[PHONE REDACTED]` |
-| Private IP | `192.168.1.1` | `[IP REDACTED]` |
+| Pattern     | Example                | Masked As            |
+| ----------- | ---------------------- | -------------------- |
+| SSN         | `123-45-6789`          | `[SSN REDACTED]`     |
+| Credit Card | `4111-1111-1111-1111`  | `[CARD REDACTED]`    |
+| Email       | `user@example.com`     | `[EMAIL REDACTED]`   |
+| API Key     | `sk-abc123...`         | `[API KEY REDACTED]` |
+| AWS Key     | `AKIAIOSFODNN7EXAMPLE` | `[AWS KEY REDACTED]` |
+| Phone       | `(555) 123-4567`       | `[PHONE REDACTED]`   |
+| Private IP  | `192.168.1.1`          | `[IP REDACTED]`      |
 
 ## Handler Logic
 
@@ -131,8 +131,8 @@ const handler = async (event, ctx) => {
 
 ```typescript
 interface HookResult {
-  content?: string;  // Modified or blocked content
-  cancel?: boolean;  // Cancel sending entirely
+  content?: string; // Modified or blocked content
+  cancel?: boolean; // Cancel sending entirely
 }
 ```
 
