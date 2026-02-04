@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          registry-url: "https://registry.npmjs.org"
+          # No registry-url - let npm use OIDC automatically
 
       - name: Install dependencies
         run: npm ci
@@ -40,7 +40,5 @@ jobs:
       - name: Test
         run: npm run test
 
-      - name: Publish to npm with provenance
+      - name: Publish to npm with OIDC
         run: npm publish --access public --provenance
-        env:
-          NPM_CONFIG_PROVENANCE: true
