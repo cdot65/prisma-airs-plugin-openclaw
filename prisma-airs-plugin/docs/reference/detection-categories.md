@@ -18,6 +18,9 @@ Complete reference for Prisma AIRS detection categories.
 | `ungrounded` | Contextual Grounding | Hallucination, unverified claims |
 | `topic_violation` | Topic Guardrails | Custom policy violation |
 | `safe` | — | No threats detected |
+| `benign` | — | Alias for `safe` |
+| `api_error` | — | API call failed |
+| `scan-failure` | — | Scan failed (fail-closed mode) |
 
 ## Prompt Injection
 
@@ -276,6 +279,86 @@ No threats detected. Content is safe to process.
 
 ---
 
+## Benign
+
+**Category**: `benign`
+
+Alias for `safe` in some AIRS API responses. Treated identically to `safe`.
+
+### Result
+
+```json
+{
+  "action": "allow",
+  "severity": "SAFE",
+  "categories": ["safe"]
+}
+```
+
+!!! note "Internal Normalization"
+    The scanner normalizes `benign` responses to `safe` in the categories array.
+
+---
+
+## API Error
+
+**Category**: `api_error`
+
+Returned when the AIRS API call fails (timeout, auth error, network issues, etc).
+
+### Causes
+
+- `PANW_AI_SEC_API_KEY` not set
+- API timeout or network failure
+- 401 Unauthorized (invalid/expired key)
+- 429 Rate limiting
+- 503 Service unavailable
+
+### Typical Action
+
+`warn`
+
+### Example
+
+```json
+{
+  "action": "warn",
+  "severity": "LOW",
+  "categories": ["api_error"],
+  "error": "API error 503: Service temporarily unavailable"
+}
+```
+
+---
+
+## Scan Failure
+
+**Category**: `scan-failure`
+
+Internal category used when AIRS API scan fails and `fail_closed: true` is configured.
+Triggers fail-closed behavior in downstream hooks.
+
+### Typical Action
+
+`block` (when `fail_closed: true`)
+
+### Tool Blocking
+
+`exec`, `Bash`, `bash`, `write`, `Write`, `edit`, `Edit`, `gateway`, `message`, `cron`
+
+### Example
+
+```json
+{
+  "action": "block",
+  "severity": "CRITICAL",
+  "categories": ["scan-failure"],
+  "error": "Scan failed: connection timeout"
+}
+```
+
+---
+
 ## Category to Action Mapping
 
 | Category | Default Action |
@@ -291,7 +374,9 @@ No threats detected. Content is safe to process.
 | `ungrounded` | warn or block |
 | `topic_violation` | configurable |
 | `safe` | allow |
+| `benign` | allow |
 | `api_error` | warn |
+| `scan-failure` | block (fail-closed) |
 
 !!! note "Configurable in SCM"
     Actions are configured per detection service in Strata Cloud Manager.

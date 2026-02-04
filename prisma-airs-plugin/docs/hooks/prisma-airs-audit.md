@@ -68,6 +68,8 @@ interface MessageReceivedEvent {
     provider?: string;
     surface?: string;
     threadId?: string;
+    originatingChannel?: string;
+    originatingTo?: string;
     messageId?: string;
     senderId?: string;
     senderName?: string;

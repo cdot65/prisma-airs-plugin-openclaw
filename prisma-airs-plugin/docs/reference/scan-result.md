@@ -1,6 +1,34 @@
 # Scan Result Reference
 
-Complete reference for the `ScanResult` type returned by all scan operations.
+Complete reference for the `ScanRequest` and `ScanResult` types used by all scan operations.
+
+## ScanRequest Interface
+
+```typescript
+interface ScanRequest {
+  prompt?: string;
+  response?: string;
+  sessionId?: string;
+  trId?: string;
+  profileName?: string;
+  appName?: string;
+  appUser?: string;
+  aiModel?: string;
+}
+```
+
+### ScanRequest Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `prompt` | `string?` | User prompt to scan |
+| `response` | `string?` | AI response to scan |
+| `sessionId` | `string?` | Session ID for tracking |
+| `trId` | `string?` | Transaction ID for correlating prompt/response |
+| `profileName` | `string?` | Security profile name (default: "default") |
+| `appName` | `string?` | Application name for scan metadata |
+| `appUser` | `string?` | User identifier for scan metadata |
+| `aiModel` | `string?` | AI model name for scan metadata |
 
 ## ScanResult Interface
 

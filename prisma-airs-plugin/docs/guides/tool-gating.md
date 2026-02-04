@@ -58,12 +58,16 @@ plugins:
 
 | Category | Blocked Tools |
 |----------|---------------|
-| `agent-threat` | ALL external tools |
-| `sql-injection` / `db-security` | exec, Bash, database, query, sql, eval |
-| `malicious-code` | exec, Bash, write, edit, eval, NotebookEdit |
-| `prompt-injection` | exec, Bash, gateway, message, cron |
-| `malicious-url` | web_fetch, WebFetch, browser, curl |
+| `agent-threat` | ALL external tools (18 tools) |
+| `sql-injection` / `db-security` / `db_security` | exec, Bash, database, query, sql, eval |
+| `malicious-code` / `malicious_code` | exec, Bash, write, edit, eval, NotebookEdit |
+| `prompt-injection` / `prompt_injection` | exec, Bash, gateway, message, cron |
+| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl |
 | `scan-failure` | exec, Bash, write, edit, gateway, message, cron |
+
+!!! note "Category Name Variants"
+    AIRS API returns underscored names (`prompt_injection`). Tool blocking supports
+    both underscore and hyphen variants for flexibility.
 
 ### High-Risk Tool Blocking
 
@@ -71,7 +75,7 @@ Additionally, any threat (including `warn`) blocks the `high_risk_tools` list.
 
 ## Blocked Tool List
 
-### agent-threat (All External)
+### agent-threat (18 External Tools)
 
 ```
 exec, Bash, bash, write, Write, edit, Edit,

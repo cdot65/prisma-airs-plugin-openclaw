@@ -42,12 +42,16 @@ plugins:
 
 | Threat Category | Blocked Tools |
 |-----------------|---------------|
-| `agent-threat` | ALL external tools |
-| `sql-injection` / `db-security` | exec, Bash, database, query, sql, eval |
-| `malicious-code` | exec, Bash, write, edit, eval, NotebookEdit |
-| `prompt-injection` | exec, Bash, gateway, message, cron |
-| `malicious-url` | web_fetch, WebFetch, browser, curl |
+| `agent-threat` | ALL external tools (18 tools) |
+| `sql-injection` / `db-security` / `db_security` | exec, Bash, database, query, sql, eval |
+| `malicious-code` / `malicious_code` | exec, Bash, write, edit, eval, NotebookEdit |
+| `prompt-injection` / `prompt_injection` | exec, Bash, gateway, message, cron |
+| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl |
 | `scan-failure` | exec, Bash, write, edit, gateway, message, cron |
+
+!!! note "Category Name Variants"
+    AIRS API returns underscored names (`prompt_injection`). Tool blocking supports
+    both underscore and hyphen variants for flexibility.
 
 ## High-Risk Tools (Default)
 
@@ -171,7 +175,10 @@ interface HookResult {
 1. User: Complex multi-step attack
 2. Audit: Detects agent-threat, caches BLOCK
 3. Agent: Attempts to call gateway
-4. Tools: BLOCKED - ALL external tools blocked
+4. Tools: BLOCKED - 18 external tools blocked:
+   exec, Bash, bash, write, Write, edit, Edit, gateway,
+   message, cron, browser, web_fetch, WebFetch, database,
+   query, sql, eval, NotebookEdit
 ```
 
 ### Safe Request

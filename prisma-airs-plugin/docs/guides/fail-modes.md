@@ -39,9 +39,20 @@ When scan fails:
   "action": "block",
   "severity": "CRITICAL",
   "categories": ["scan-failure"],
-  "error": "Scan failed: connection timeout",
   "scanId": "",
-  "reportId": ""
+  "reportId": "",
+  "profileName": "default",
+  "promptDetected": {
+    "injection": false,
+    "dlp": false,
+    "urlCats": false
+  },
+  "responseDetected": {
+    "dlp": false,
+    "urlCats": false
+  },
+  "latencyMs": 0,
+  "error": "Scan failed: connection timeout"
 }
 ```
 
