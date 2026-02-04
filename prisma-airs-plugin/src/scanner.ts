@@ -97,6 +97,9 @@ interface AIRSResponse {
  */
 export async function scan(request: ScanRequest): Promise<ScanResult> {
   const apiKey = process.env.PANW_AI_SEC_API_KEY;
+  // Profile name: request param > env var > default
+  const profileName = request.profileName ?? process.env.PANW_AI_SEC_PROFILE_NAME ?? "default";
+
   if (!apiKey) {
     return {
       action: "warn",
@@ -104,7 +107,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       categories: ["api_error"],
       scanId: "",
       reportId: "",
-      profileName: request.profileName ?? "default",
+      profileName,
       promptDetected: { injection: false, dlp: false, urlCats: false },
       responseDetected: { dlp: false, urlCats: false },
       latencyMs: 0,
@@ -122,7 +125,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
   // Build request body (per OpenAPI spec)
   const body: AIRSRequest = {
     ai_profile: {
-      profile_name: request.profileName ?? "default",
+      profile_name: profileName,
     },
     contents: [contentItem],
   };
@@ -160,7 +163,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
         categories: ["api_error"],
         scanId: "",
         reportId: "",
-        profileName: request.profileName ?? "default",
+        profileName,
         promptDetected: { injection: false, dlp: false, urlCats: false },
         responseDetected: { dlp: false, urlCats: false },
         latencyMs,
@@ -169,7 +172,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
     }
 
     const data: AIRSResponse = await resp.json();
-    return parseResponse(data, request, latencyMs);
+    return parseResponse(data, profileName, request, latencyMs);
   } catch (err) {
     const latencyMs = Date.now() - startTime;
     return {
@@ -178,7 +181,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       categories: ["api_error"],
       scanId: "",
       reportId: "",
-      profileName: request.profileName ?? "default",
+      profileName,
       promptDetected: { injection: false, dlp: false, urlCats: false },
       responseDetected: { dlp: false, urlCats: false },
       latencyMs,
@@ -190,10 +193,15 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
 /**
  * Parse AIRS API response into ScanResult
  */
-function parseResponse(data: AIRSResponse, request: ScanRequest, latencyMs: number): ScanResult {
+function parseResponse(
+  data: AIRSResponse,
+  defaultProfileName: string,
+  request: ScanRequest,
+  latencyMs: number
+): ScanResult {
   const scanId = data.scan_id ?? "";
   const reportId = data.report_id ?? "";
-  const profileName = data.profile_name ?? request.profileName ?? "default";
+  const profileName = data.profile_name ?? defaultProfileName;
   const category = data.category ?? "benign";
   const actionStr = data.action ?? "allow";
 

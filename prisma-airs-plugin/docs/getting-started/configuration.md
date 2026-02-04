@@ -1,114 +1,103 @@
 # Configuration
 
-## Configuration Layers
+## Important: Where to Configure What
 
-The plugin uses two configuration sources:
+| What to Configure                                                | Where                                 |
+| ---------------------------------------------------------------- | ------------------------------------- |
+| **Detection rules** (prompt injection, DLP, URL filtering, etc.) | Strata Cloud Manager                  |
+| **Actions** (allow/alert/block per detection)                    | Strata Cloud Manager                  |
+| **DLP patterns** (SSN, credit cards, API keys)                   | Strata Cloud Manager                  |
+| **URL categories** (malware, phishing, adult)                    | Strata Cloud Manager                  |
+| **Custom topics** (organization policies)                        | Strata Cloud Manager                  |
+| **API key**                                                      | Environment variable                  |
+| **Profile name**                                                 | Environment variable or plugin config |
+| **Plugin behavior** (enable/disable hooks)                       | Plugin config                         |
 
-| Source                    | Settings                                  |
-| ------------------------- | ----------------------------------------- |
-| **Environment Variables** | API key                                   |
-| **Plugin Config**         | Profile, app name, feature toggles        |
-| **Strata Cloud Manager**  | Detection services, actions, DLP patterns |
+!!! warning "All Guardrails Are in SCM"
+This plugin does NOT configure AI guardrails. All detection services, sensitivity levels, and actions are configured in your **Strata Cloud Manager** tenant. The plugin simply points to your SCM security profile and applies local enforcement.
 
-!!! warning "SCM vs Plugin Config"
-Detection services and actions (allow/block/alert) are configured in **Strata Cloud Manager**, not in plugin config. The plugin config controls which hooks are enabled and their behavior.
+## Required: Environment Variables
 
-## Environment Variables
+| Variable                   | Required | Description                                  |
+| -------------------------- | -------- | -------------------------------------------- |
+| `PANW_AI_SEC_API_KEY`      | **Yes**  | API key from Strata Cloud Manager            |
+| `PANW_AI_SEC_PROFILE_NAME` | No       | Security profile name (default: `"default"`) |
 
-| Variable              | Required | Description                       |
-| --------------------- | -------- | --------------------------------- |
-| `PANW_AI_SEC_API_KEY` | Yes      | API key from Strata Cloud Manager |
+Set these on your gateway node:
 
-## Plugin Configuration
+```bash
+export PANW_AI_SEC_API_KEY="your-api-key-here"
+export PANW_AI_SEC_PROFILE_NAME="your-profile-name"  # optional
+```
 
-Add to your OpenClaw config file:
+## Optional: Plugin Configuration
+
+The plugin config controls **local behavior only** - not detection rules or guardrails.
 
 ```yaml
 plugins:
   prisma-airs:
-    # AIRS profile name (configured in SCM)
-    profile_name: "default"
+    enabled: true
+    config:
+      # Which SCM profile to use (overrides env var)
+      profile_name: "default"
 
-    # Application name for scan metadata
-    app_name: "openclaw"
-
-    # Fail-closed mode (block on scan failure)
-    fail_closed: true
-
-    # Hook toggles
-    reminder_enabled: true # prisma-airs-guard
-    audit_enabled: true # prisma-airs-audit
-    context_injection_enabled: true # prisma-airs-context
-    outbound_scanning_enabled: true # prisma-airs-outbound
-    tool_gating_enabled: true # prisma-airs-tools
-
-    # DLP settings
-    dlp_mask_only: true # Mask instead of block for DLP
-
-    # Tool gating settings
-    high_risk_tools:
-      - exec
-      - Bash
-      - write
-      - edit
-      - gateway
-      - message
-      - cron
+      # Application name for scan metadata/reporting
+      app_name: "openclaw"
 ```
-
-## Configuration Options
-
-### Core Settings
-
-| Option         | Type    | Default      | Description                      |
-| -------------- | ------- | ------------ | -------------------------------- |
-| `profile_name` | string  | `"default"`  | AIRS security profile name       |
-| `app_name`     | string  | `"openclaw"` | Application identifier for scans |
-| `fail_closed`  | boolean | `true`       | Block requests when scan fails   |
 
 ### Hook Toggles
 
-| Option                      | Type    | Default | Hook                 |
-| --------------------------- | ------- | ------- | -------------------- |
-| `reminder_enabled`          | boolean | `true`  | prisma-airs-guard    |
-| `audit_enabled`             | boolean | `true`  | prisma-airs-audit    |
-| `context_injection_enabled` | boolean | `true`  | prisma-airs-context  |
-| `outbound_scanning_enabled` | boolean | `true`  | prisma-airs-outbound |
-| `tool_gating_enabled`       | boolean | `true`  | prisma-airs-tools    |
-
-### DLP Settings
-
-| Option          | Type    | Default | Description                             |
-| --------------- | ------- | ------- | --------------------------------------- |
-| `dlp_mask_only` | boolean | `true`  | Mask DLP violations instead of blocking |
-
-### Tool Gating Settings
-
-| Option            | Type     | Default   | Description                  |
-| ----------------- | -------- | --------- | ---------------------------- |
-| `high_risk_tools` | string[] | See below | Tools to block on any threat |
-
-Default high-risk tools:
+Enable/disable individual hooks:
 
 ```yaml
-high_risk_tools:
-  - exec
-  - Bash
-  - bash
-  - write
-  - Write
-  - edit
-  - Edit
-  - gateway
-  - message
-  - cron
+plugins:
+  prisma-airs:
+    config:
+      reminder_enabled: true # prisma-airs-guard
+      audit_enabled: true # prisma-airs-audit
+      context_injection_enabled: true # prisma-airs-context
+      outbound_scanning_enabled: true # prisma-airs-outbound
+      tool_gating_enabled: true # prisma-airs-tools
 ```
 
-## Strata Cloud Manager Configuration
+### Local Enforcement Settings
 
-The following are configured in SCM, not the plugin:
+These control how the plugin responds locally, NOT what AIRS detects:
 
-### Security Profile
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      # Block messages when AIRS API is unreachable
+      fail_closed: true
+
+      # Mask DLP violations instead of blocking
+      dlp_mask_only: true
+
+      # Tools to block when ANY threat is detected
+      high_risk_tools:
+        - exec
+        - Bash
+        - write
+        - edit
+        - gateway
+        - message
+        - cron
+```
+
+## Strata Cloud Manager Setup
+
+All detection configuration happens in SCM:
+
+### 1. Get API Key
+
+1. Log into [Strata Cloud Manager](https://stratacloudmanager.paloaltonetworks.com)
+2. Navigate to **Settings** → **API Keys**
+3. Create a new key with AIRS permissions
+4. Copy the key to `PANW_AI_SEC_API_KEY`
+
+### 2. Create Security Profile
 
 1. Navigate to **AI Runtime Security** → **Security Profiles**
 2. Create or edit a profile
@@ -123,53 +112,31 @@ The following are configured in SCM, not the plugin:
    - Contextual Grounding
    - Custom Topic Guardrails
 
-### Actions
+### 3. Configure Actions
 
-For each detection service, configure the action:
+For each detection service, set the action:
 
 | Action  | Behavior                   |
 | ------- | -------------------------- |
-| `allow` | No action, scan only       |
+| `allow` | Log only, no blocking      |
 | `alert` | Log warning, allow through |
 | `block` | Block the request          |
 
-### DLP Patterns
+### 4. Configure DLP Patterns
 
 1. Navigate to **Data Loss Prevention**
-2. Configure detection patterns for:
-   - PII (SSN, credit cards, etc.)
-   - Credentials (API keys, passwords)
-   - Custom sensitive data
+2. Configure detection patterns for PII, credentials, etc.
 
-## Example Configurations
+## Minimal Configuration
 
-### High Security
+The absolute minimum to get started:
 
-```yaml
-plugins:
-  prisma-airs:
-    profile_name: "strict"
-    fail_closed: true
-    dlp_mask_only: false # Block instead of mask
+```bash
+# Required
+export PANW_AI_SEC_API_KEY="your-key"
+
+# Optional - defaults to "default"
+export PANW_AI_SEC_PROFILE_NAME="your-profile"
 ```
 
-### Development/Testing
-
-```yaml
-plugins:
-  prisma-airs:
-    profile_name: "permissive"
-    fail_closed: false
-    outbound_scanning_enabled: false # Skip outbound scans
-```
-
-### Audit Only
-
-```yaml
-plugins:
-  prisma-airs:
-    audit_enabled: true
-    context_injection_enabled: false
-    outbound_scanning_enabled: false
-    tool_gating_enabled: false
-```
+That's it. All other settings have sensible defaults.

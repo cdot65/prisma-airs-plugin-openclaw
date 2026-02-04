@@ -5,27 +5,67 @@
 
 OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma-ai-runtime-security) (AI Runtime Security) from Palo Alto Networks.
 
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Strata Cloud Manager                       │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Security Profile: "your-profile-name"               │   │
+│  │ - Prompt Injection: block                           │   │
+│  │ - DLP: alert                                        │   │
+│  │ - Malicious URLs: block                             │   │
+│  │ - ... (all detection config here)                   │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ API calls
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    OpenClaw Gateway                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ prisma-airs plugin                                  │   │
+│  │ - PANW_AI_SEC_API_KEY (env var)                     │   │
+│  │ - PANW_AI_SEC_PROFILE_NAME (env var)                │   │
+│  │ - Sends prompts/responses to AIRS API               │   │
+│  │ - Enforces actions returned by AIRS                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**All guardrail configuration happens in Strata Cloud Manager.** This plugin just connects to your SCM security profile and enforces the actions it returns.
+
 ## Quick Start
 
 ```bash
-# Install from npm
+# 1. Set environment variables
+export PANW_AI_SEC_API_KEY="your-api-key"
+export PANW_AI_SEC_PROFILE_NAME="your-profile-name"
+
+# 2. Install plugin
 openclaw plugins install @cdot65/prisma-airs
 
-# Set API key
-export PANW_AI_SEC_API_KEY="your-key"
-
-# Restart gateway
+# 3. Restart gateway
 openclaw gateway restart
 
-# Test
+# 4. Test
 openclaw prisma-airs-scan "test message"
 ```
 
+## What You Configure Where
+
+| Configuration                          | Where                              |
+| -------------------------------------- | ---------------------------------- |
+| Detection services (what to detect)    | Strata Cloud Manager               |
+| Actions (allow/alert/block)            | Strata Cloud Manager               |
+| DLP patterns, URL categories           | Strata Cloud Manager               |
+| API key                                | `PANW_AI_SEC_API_KEY` env var      |
+| Profile name                           | `PANW_AI_SEC_PROFILE_NAME` env var |
+| Plugin behavior (enable/disable hooks) | OpenClaw plugin config             |
+
 ## Features
 
-### Multi-Layer Security
-
-The plugin provides defense-in-depth with 5 security hooks:
+### Multi-Layer Security Hooks
 
 | Hook                                                  | Event                | Purpose                                   |
 | ----------------------------------------------------- | -------------------- | ----------------------------------------- |
@@ -37,7 +77,7 @@ The plugin provides defense-in-depth with 5 security hooks:
 
 ### Detection Capabilities
 
-Powered by Prisma AIRS, the plugin detects:
+Powered by Prisma AIRS (configured in SCM):
 
 - **Prompt Injection** - Attempts to override agent instructions
 - **Data Leakage** - PII, credentials, sensitive data (DLP)
@@ -51,7 +91,7 @@ Powered by Prisma AIRS, the plugin detects:
 
 ### DLP Masking
 
-Instead of blocking responses with sensitive data, the plugin can mask them:
+Instead of blocking responses with sensitive data, mask them:
 
 ```
 Before: "Your SSN is 123-45-6789"
@@ -65,49 +105,6 @@ Block dangerous tools during active threats:
 ```
 Threat: prompt_injection
 Blocked: exec, Bash, gateway, message, cron
-```
-
-## Architecture
-
-```mermaid
-flowchart TB
-    subgraph Inbound
-        A[User Message] --> B[message_received]
-        B --> C[Scan + Cache]
-        C --> D[before_agent_start]
-        D --> E[Inject Warnings]
-    end
-
-    subgraph Agent
-        E --> F[Agent Processing]
-        F --> G[Tool Call]
-        G --> H[before_tool_call]
-        H -->|Blocked| I[Block Response]
-        H -->|Allowed| J[Execute Tool]
-    end
-
-    subgraph Outbound
-        F --> K[Agent Response]
-        K --> L[message_sending]
-        L --> M[Scan + Block/Mask]
-        M --> N[Final Response]
-    end
-```
-
-## Configuration
-
-```yaml
-plugins:
-  prisma-airs:
-    profile_name: "default" # AIRS profile
-    app_name: "openclaw" # App metadata
-    fail_closed: true # Block on scan failure
-    dlp_mask_only: true # Mask instead of block for DLP
-    reminder_enabled: true # Agent bootstrap reminder
-    audit_enabled: true # Inbound audit logging
-    context_injection_enabled: true # Threat warning injection
-    outbound_scanning_enabled: true # Outbound response scanning
-    tool_gating_enabled: true # Tool blocking
 ```
 
 ## Requirements

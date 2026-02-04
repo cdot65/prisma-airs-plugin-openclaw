@@ -110,6 +110,7 @@
     }
   },
   "requires": {
-    "env": ["PANW_AI_SEC_API_KEY"]
+    "env": ["PANW_AI_SEC_API_KEY"],
+    "envOptional": ["PANW_AI_SEC_PROFILE_NAME"]
   }
 }
