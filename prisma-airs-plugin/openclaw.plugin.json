@@ -1,10 +1,16 @@
 {
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
-  "description": "AI Runtime Security scanning via Palo Alto Networks - TypeScript implementation with Gateway RPC, agent tool, and bootstrap reminder hook",
-  "version": "0.1.4",
+  "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
+  "version": "0.2.0",
   "entrypoint": "index.ts",
-  "hooks": ["hooks/prisma-airs-guard"],
+  "hooks": [
+    "hooks/prisma-airs-guard",
+    "hooks/prisma-airs-audit",
+    "hooks/prisma-airs-context",
+    "hooks/prisma-airs-outbound",
+    "hooks/prisma-airs-tools"
+  ],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -23,6 +29,42 @@
         "type": "boolean",
         "default": true,
         "description": "Inject security scanning reminder on agent bootstrap"
+      },
+      "audit_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable audit logging of all inbound messages"
+      },
+      "context_injection_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Inject security warnings into agent context"
+      },
+      "outbound_scanning_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable scanning and blocking of outbound responses"
+      },
+      "tool_gating_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Block dangerous tools when threats are detected"
+      },
+      "fail_closed": {
+        "type": "boolean",
+        "default": true,
+        "description": "Block messages when AIRS scan fails (default: true for security)"
+      },
+      "dlp_mask_only": {
+        "type": "boolean",
+        "default": true,
+        "description": "Mask DLP violations instead of blocking (when no other violations)"
+      },
+      "high_risk_tools": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": ["exec", "Bash", "write", "Write", "edit", "Edit", "gateway", "message", "cron"],
+        "description": "Tools to block on any detected threat"
       }
     }
   },
@@ -37,6 +79,34 @@
     },
     "reminder_enabled": {
       "label": "Enable Bootstrap Reminder"
+    },
+    "audit_enabled": {
+      "label": "Enable Audit Logging",
+      "description": "Log all inbound messages with scan results"
+    },
+    "context_injection_enabled": {
+      "label": "Enable Context Injection",
+      "description": "Inject security warnings into agent context"
+    },
+    "outbound_scanning_enabled": {
+      "label": "Enable Outbound Scanning",
+      "description": "Scan and block/mask outbound responses"
+    },
+    "tool_gating_enabled": {
+      "label": "Enable Tool Gating",
+      "description": "Block dangerous tools during active threats"
+    },
+    "fail_closed": {
+      "label": "Fail Closed",
+      "description": "Block on scan failure (recommended for security)"
+    },
+    "dlp_mask_only": {
+      "label": "DLP Mask Only",
+      "description": "Mask sensitive data instead of blocking"
+    },
+    "high_risk_tools": {
+      "label": "High Risk Tools",
+      "description": "Tools blocked on any threat detection"
     }
   },
   "requires": {

@@ -1,0 +1,102 @@
+site_name: Prisma AIRS Plugin
+site_description: OpenClaw plugin for Prisma AIRS (AI Runtime Security)
+site_url: https://cdot65.github.io/prisma-airs-plugin-openclaw/
+repo_url: https://github.com/cdot65/prisma-airs-plugin-openclaw
+repo_name: cdot65/prisma-airs-plugin-openclaw
+edit_uri: edit/main/prisma-airs-plugin/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+  logo: images/logo.svg
+  favicon: images/logo.svg
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cdot65
+  version:
+    provider: mike
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Configuration: getting-started/configuration.md
+      - Quick Start: getting-started/quick-start.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Hook Lifecycle: architecture/hooks.md
+      - Design Decisions: architecture/design-decisions.md
+  - Hooks:
+      - Overview: hooks/index.md
+      - prisma-airs-guard: hooks/prisma-airs-guard.md
+      - prisma-airs-audit: hooks/prisma-airs-audit.md
+      - prisma-airs-context: hooks/prisma-airs-context.md
+      - prisma-airs-outbound: hooks/prisma-airs-outbound.md
+      - prisma-airs-tools: hooks/prisma-airs-tools.md
+  - Reference:
+      - Configuration Options: reference/configuration.md
+      - Scan Result: reference/scan-result.md
+      - Detection Categories: reference/detection-categories.md
+  - Guides:
+      - DLP Masking: guides/dlp-masking.md
+      - Tool Gating: guides/tool-gating.md
+      - Fail Modes: guides/fail-modes.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+      - Local Setup: development/local-setup.md
+  - About:
+      - Release Notes: about/release-notes.md
+      - License: about/license.md
