@@ -1,6 +1,12 @@
 # Prisma AIRS Plugin
 
+[![npm version](https://img.shields.io/npm/v/@cdot65/prisma-airs)](https://www.npmjs.com/package/@cdot65/prisma-airs)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://cdot65.github.io/prisma-airs-plugin-openclaw/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma-ai-runtime-security) (AI Runtime Security) from Palo Alto Networks.
+
+**[Documentation](https://cdot65.github.io/prisma-airs-plugin-openclaw/)** | **[Release Notes](RELEASE_NOTES.md)**
 
 ## Overview
 
@@ -9,7 +15,12 @@ Pure TypeScript plugin with direct AIRS API integration via `fetch()`.
 **Provides:**
 - **Gateway RPC**: `prisma-airs.scan` - Programmatic scanning
 - **Agent Tool**: `prisma_airs_scan` - Agent-initiated scans
-- **Bootstrap Hook**: `prisma-airs-guard` - Reminds agents to scan suspicious content
+- **5 Security Hooks**: Defense-in-depth protection
+  - `prisma-airs-guard` - Bootstrap reminder
+  - `prisma-airs-audit` - Audit logging with scan caching
+  - `prisma-airs-context` - Threat warning injection
+  - `prisma-airs-outbound` - Response scanning/blocking/masking
+  - `prisma-airs-tools` - Tool gating during threats
 
 **Detection capabilities:**
 - Prompt injection detection
@@ -243,6 +254,15 @@ interface ScanResult {
 - Node.js 18+
 - Prisma AIRS API key (from Strata Cloud Manager)
 - API Security Profile configured in SCM
+
+## Documentation
+
+Full documentation available at **[cdot65.github.io/prisma-airs-plugin-openclaw](https://cdot65.github.io/prisma-airs-plugin-openclaw/)**
+
+- [Getting Started](https://cdot65.github.io/prisma-airs-plugin-openclaw/getting-started/installation/)
+- [Architecture](https://cdot65.github.io/prisma-airs-plugin-openclaw/architecture/overview/)
+- [Hook Reference](https://cdot65.github.io/prisma-airs-plugin-openclaw/hooks/)
+- [Configuration](https://cdot65.github.io/prisma-airs-plugin-openclaw/reference/configuration/)
 
 ## Links
 

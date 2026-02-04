@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Shield background -->
+  <path d="M32 4L8 14v18c0 14.4 10.4 27.2 24 30 13.6-2.8 24-15.6 24-30V14L32 4z" fill="#3949ab"/>
+
+  <!-- Shield highlight -->
+  <path d="M32 4L8 14v18c0 14.4 10.4 27.2 24 30V4z" fill="#5c6bc0"/>
+
+  <!-- AI text/symbol -->
+  <g fill="#fff">
+    <!-- A -->
+    <path d="M22 44l4-20h4l4 20h-3l-0.8-4h-4.4l-0.8 4h-3zm4.2-7h3.6l-1.8-9-1.8 9z"/>
+    <!-- I -->
+    <rect x="38" y="24" width="4" height="20" rx="1"/>
+  </g>
+
+  <!-- Security dot -->
+  <circle cx="40" cy="20" r="3" fill="#00e676"/>
+</svg>

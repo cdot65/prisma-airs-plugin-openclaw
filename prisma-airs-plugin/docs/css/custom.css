@@ -1,0 +1,61 @@
+/* Custom styles for Prisma AIRS Plugin documentation */
+
+/* Admonition colors */
+.md-typeset .admonition.note,
+.md-typeset details.note {
+  border-color: #448aff;
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-color: #ff9100;
+}
+
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: #00c853;
+}
+
+/* Code blocks */
+.md-typeset code {
+  background-color: var(--md-code-bg-color);
+  border-radius: 0.2rem;
+  padding: 0 0.3rem;
+}
+
+/* Table styling */
+.md-typeset table:not([class]) {
+  font-size: 0.85rem;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+}
+
+/* Mermaid diagrams */
+.mermaid {
+  margin: 1rem 0;
+}
+
+/* Footer links */
+.md-footer-meta {
+  background-color: var(--md-footer-bg-color);
+}
+
+/* Search highlight */
+.md-search-result__meta {
+  color: var(--md-default-fg-color--light);
+}
+
+/* Navigation */
+.md-nav__link {
+  font-size: 0.9rem;
+}
+
+/* Mobile responsive */
+@media screen and (max-width: 76.25em) {
+  .md-nav--primary .md-nav__title {
+    background-color: var(--md-primary-fg-color);
+  }
+}
