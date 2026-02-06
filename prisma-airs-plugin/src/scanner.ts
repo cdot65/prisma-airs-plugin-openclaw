@@ -12,6 +12,38 @@ const AIRS_SCAN_ENDPOINT = `${AIRS_API_BASE}/v1/scan/sync/request`;
 export type Action = "allow" | "warn" | "block";
 export type Severity = "SAFE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
+export interface ToolEventMetadata {
+  ecosystem: string;
+  method: string;
+  serverName: string;
+  toolInvoked?: string;
+}
+
+export interface ToolEventInput {
+  metadata: ToolEventMetadata;
+  input?: string;
+  output?: string;
+}
+
+export interface ToolDetectionFlags {
+  injection?: boolean;
+  urlCats?: boolean;
+  dlp?: boolean;
+  dbSecurity?: boolean;
+  toxicContent?: boolean;
+  maliciousCode?: boolean;
+  agent?: boolean;
+  topicViolation?: boolean;
+}
+
+export interface ToolDetected {
+  verdict: string;
+  metadata: ToolEventMetadata;
+  summary: string;
+  inputDetected?: ToolDetectionFlags;
+  outputDetected?: ToolDetectionFlags;
+}
+
 export interface ScanRequest {
   prompt?: string;
   response?: string;
@@ -21,6 +53,7 @@ export interface ScanRequest {
   appName?: string;
   appUser?: string;
   aiModel?: string;
+  toolEvents?: ToolEventInput[];
 }
 
 export interface PromptDetected {
@@ -92,6 +125,7 @@ export interface ScanResult {
   timeout: boolean;
   hasError: boolean;
   contentErrors: ContentError[];
+  toolDetected?: ToolDetected;
 }
 
 /** Default prompt detection flags (all false) */
@@ -125,6 +159,18 @@ export function defaultResponseDetected(): ResponseDetected {
 interface AIRSContentItem {
   prompt?: string;
   response?: string;
+  tool_calls?: AIRSToolEvent[];
+}
+
+interface AIRSToolEvent {
+  metadata: {
+    ecosystem: string;
+    method: string;
+    server_name: string;
+    tool_invoked?: string;
+  };
+  input?: string;
+  output?: string;
 }
 
 interface AIRSRequest {
@@ -188,6 +234,30 @@ interface AIRSContentError {
   status?: string;
 }
 
+interface AIRSToolDetectionFlags {
+  injection?: boolean;
+  url_cats?: boolean;
+  dlp?: boolean;
+  db_security?: boolean;
+  toxic_content?: boolean;
+  malicious_code?: boolean;
+  agent?: boolean;
+  topic_violation?: boolean;
+}
+
+interface AIRSToolDetected {
+  verdict?: string;
+  metadata?: {
+    ecosystem?: string;
+    method?: string;
+    server_name?: string;
+    tool_invoked?: string;
+  };
+  summary?: string;
+  input_detected?: AIRSToolDetectionFlags;
+  output_detected?: AIRSToolDetectionFlags;
+}
+
 interface AIRSResponse {
   scan_id?: string;
   report_id?: string;
@@ -204,6 +274,7 @@ interface AIRSResponse {
   timeout?: boolean;
   error?: boolean;
   errors?: AIRSContentError[];
+  tool_detected?: AIRSToolDetected;
 }
 
 /**
@@ -238,6 +309,20 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
   const contentItem: AIRSContentItem = {};
   if (request.prompt) contentItem.prompt = request.prompt;
   if (request.response) contentItem.response = request.response;
+
+  // Map tool events into contents
+  if (request.toolEvents && request.toolEvents.length > 0) {
+    contentItem.tool_calls = request.toolEvents.map((te) => ({
+      metadata: {
+        ecosystem: te.metadata.ecosystem,
+        method: te.metadata.method,
+        server_name: te.metadata.serverName,
+        ...(te.metadata.toolInvoked ? { tool_invoked: te.metadata.toolInvoked } : {}),
+      },
+      ...(te.input ? { input: te.input } : {}),
+      ...(te.output ? { output: te.output } : {}),
+    }));
+  }
 
   // Build request body (per OpenAPI spec)
   const body: AIRSRequest = {
@@ -441,6 +526,10 @@ function parseResponse(
   if (promptMaskedData) result.promptMaskedData = promptMaskedData;
   if (responseMaskedData) result.responseMaskedData = responseMaskedData;
 
+  // Extract tool detection (optional)
+  const toolDetected = parseToolDetected(data.tool_detected);
+  if (toolDetected) result.toolDetected = toolDetected;
+
   return result;
 }
 
@@ -465,6 +554,39 @@ function parseMaskedData(raw?: AIRSMaskedData): MaskedData | undefined {
       locations: p.locations ?? [],
     })),
   };
+}
+
+function parseToolDetectionFlags(raw?: AIRSToolDetectionFlags): ToolDetectionFlags | undefined {
+  if (!raw) return undefined;
+  const flags: ToolDetectionFlags = {};
+  if (raw.injection != null) flags.injection = raw.injection;
+  if (raw.url_cats != null) flags.urlCats = raw.url_cats;
+  if (raw.dlp != null) flags.dlp = raw.dlp;
+  if (raw.db_security != null) flags.dbSecurity = raw.db_security;
+  if (raw.toxic_content != null) flags.toxicContent = raw.toxic_content;
+  if (raw.malicious_code != null) flags.maliciousCode = raw.malicious_code;
+  if (raw.agent != null) flags.agent = raw.agent;
+  if (raw.topic_violation != null) flags.topicViolation = raw.topic_violation;
+  return Object.keys(flags).length > 0 ? flags : undefined;
+}
+
+function parseToolDetected(raw?: AIRSToolDetected): ToolDetected | undefined {
+  if (!raw || !raw.metadata) return undefined;
+  const result: ToolDetected = {
+    verdict: raw.verdict ?? "",
+    metadata: {
+      ecosystem: raw.metadata.ecosystem ?? "",
+      method: raw.metadata.method ?? "",
+      serverName: raw.metadata.server_name ?? "",
+      toolInvoked: raw.metadata.tool_invoked,
+    },
+    summary: raw.summary ?? "",
+  };
+  const inputDetected = parseToolDetectionFlags(raw.input_detected);
+  const outputDetected = parseToolDetectionFlags(raw.output_detected);
+  if (inputDetected) result.inputDetected = inputDetected;
+  if (outputDetected) result.outputDetected = outputDetected;
+  return result;
 }
 
 /**

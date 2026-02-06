@@ -542,6 +542,81 @@ describe("scanner", () => {
       expect(result.contentErrors).toEqual([]);
     });
 
+    it("parses tool_detected from API response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "tool-123",
+          report_id: "Rtool-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: {},
+          response_detected: {},
+          tool_detected: {
+            verdict: "malicious",
+            metadata: {
+              ecosystem: "mcp",
+              method: "tool_call",
+              server_name: "test-server",
+              tool_invoked: "exec",
+            },
+            summary: "Malicious tool usage detected",
+            input_detected: { injection: true, malicious_code: true },
+            output_detected: { dlp: true },
+          },
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.toolDetected).toBeDefined();
+      expect(result.toolDetected?.verdict).toBe("malicious");
+      expect(result.toolDetected?.metadata.ecosystem).toBe("mcp");
+      expect(result.toolDetected?.metadata.serverName).toBe("test-server");
+      expect(result.toolDetected?.metadata.toolInvoked).toBe("exec");
+      expect(result.toolDetected?.summary).toBe("Malicious tool usage detected");
+      expect(result.toolDetected?.inputDetected?.injection).toBe(true);
+      expect(result.toolDetected?.inputDetected?.maliciousCode).toBe(true);
+      expect(result.toolDetected?.outputDetected?.dlp).toBe(true);
+    });
+
+    it("sends toolEvents in request body", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "tevt-123",
+          report_id: "Rtevt-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      await scan({
+        prompt: "test",
+        toolEvents: [
+          {
+            metadata: {
+              ecosystem: "mcp",
+              method: "tool_call",
+              serverName: "my-server",
+              toolInvoked: "read_file",
+            },
+            input: '{"path":"/etc/passwd"}',
+            output: "root:x:0:0:root:/root:/bin/bash",
+          },
+        ],
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.contents[0].tool_calls).toHaveLength(1);
+      expect(body.contents[0].tool_calls[0].metadata.ecosystem).toBe("mcp");
+      expect(body.contents[0].tool_calls[0].metadata.server_name).toBe("my-server");
+      expect(body.contents[0].tool_calls[0].metadata.tool_invoked).toBe("read_file");
+      expect(body.contents[0].tool_calls[0].input).toBe('{"path":"/etc/passwd"}');
+    });
+
     it("tracks latency correctly", async () => {
       mockFetch.mockImplementationOnce(async () => {
         await new Promise((r) => setTimeout(r, 50)); // 50ms delay
