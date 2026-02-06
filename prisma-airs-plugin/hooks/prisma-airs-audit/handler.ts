@@ -156,6 +156,9 @@ const handler = async (
           promptDetected: defaultPromptDetected(),
           responseDetected: defaultResponseDetected(),
           latencyMs: 0,
+          timeout: false,
+          hasError: true,
+          contentErrors: [],
           error: `Scan failed: ${err instanceof Error ? err.message : String(err)}`,
         },
         msgHash

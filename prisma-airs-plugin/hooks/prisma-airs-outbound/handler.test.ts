@@ -85,6 +85,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: defaultResponseDetected(),
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -104,6 +107,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: { ...defaultResponseDetected(), urlCats: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -124,6 +130,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithSSN = {
@@ -147,6 +156,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithCard = {
@@ -169,6 +181,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithEmail = {
@@ -193,6 +208,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: defaultResponseDetected(),
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -211,6 +229,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: defaultResponseDetected(),
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -228,6 +249,9 @@ describe("prisma-airs-outbound handler", () => {
         promptDetected: defaultPromptDetected(),
         responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithSSN = {

@@ -467,6 +467,81 @@ describe("scanner", () => {
       expect(result.responseMaskedData).toBeUndefined();
     });
 
+    it("sets timeout and partial_scan category when timeout is true", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "to-123",
+          report_id: "Rto-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+          timeout: true,
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.timeout).toBe(true);
+      expect(result.categories).toContain("partial_scan");
+      expect(result.severity).toBe("SAFE"); // no severity escalation
+    });
+
+    it("sets hasError and contentErrors from API errors", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "err-123",
+          report_id: "Rerr-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+          error: true,
+          errors: [
+            { content_type: "prompt", feature: "dlp", status: "error" },
+            { content_type: "response", feature: "toxic_content", status: "timeout" },
+          ],
+        }),
+      });
+
+      const result = await scan({ prompt: "test", response: "resp" });
+
+      expect(result.hasError).toBe(true);
+      expect(result.contentErrors).toHaveLength(2);
+      expect(result.contentErrors[0]).toEqual({
+        contentType: "prompt",
+        feature: "dlp",
+        status: "error",
+      });
+      expect(result.contentErrors[1]).toEqual({
+        contentType: "response",
+        feature: "toxic_content",
+        status: "timeout",
+      });
+    });
+
+    it("defaults timeout/hasError/contentErrors when absent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "def-err",
+          report_id: "Rdef-err",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.timeout).toBe(false);
+      expect(result.hasError).toBe(false);
+      expect(result.contentErrors).toEqual([]);
+    });
+
     it("tracks latency correctly", async () => {
       mockFetch.mockImplementationOnce(async () => {
         await new Promise((r) => setTimeout(r, 50)); // 50ms delay

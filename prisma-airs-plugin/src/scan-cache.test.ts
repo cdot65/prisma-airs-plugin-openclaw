@@ -27,6 +27,9 @@ const mockScanResult: ScanResult = {
   promptDetected: { ...defaultPromptDetected(), injection: true },
   responseDetected: defaultResponseDetected(),
   latencyMs: 100,
+  timeout: false,
+  hasError: false,
+  contentErrors: [],
 };
 
 describe("scan-cache", () => {

@@ -63,6 +63,15 @@ export interface MaskedData {
   patternDetections: PatternDetection[];
 }
 
+export type ContentErrorType = "prompt" | "response";
+export type ErrorStatus = "error" | "timeout";
+
+export interface ContentError {
+  contentType: ContentErrorType;
+  feature: string;
+  status: ErrorStatus;
+}
+
 export interface ScanResult {
   action: Action;
   severity: Severity;
@@ -80,6 +89,9 @@ export interface ScanResult {
   responseDetectionDetails?: DetectionDetails;
   promptMaskedData?: MaskedData;
   responseMaskedData?: MaskedData;
+  timeout: boolean;
+  hasError: boolean;
+  contentErrors: ContentError[];
 }
 
 /** Default prompt detection flags (all false) */
@@ -170,6 +182,12 @@ interface AIRSMaskedData {
   pattern_detections?: AIRSPatternDetection[];
 }
 
+interface AIRSContentError {
+  content_type?: string;
+  feature?: string;
+  status?: string;
+}
+
 interface AIRSResponse {
   scan_id?: string;
   report_id?: string;
@@ -183,6 +201,9 @@ interface AIRSResponse {
   prompt_masked_data?: AIRSMaskedData;
   response_masked_data?: AIRSMaskedData;
   tr_id?: string;
+  timeout?: boolean;
+  error?: boolean;
+  errors?: AIRSContentError[];
 }
 
 /**
@@ -204,6 +225,9 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       promptDetected: defaultPromptDetected(),
       responseDetected: defaultResponseDetected(),
       latencyMs: 0,
+      timeout: false,
+      hasError: false,
+      contentErrors: [],
       error: "PANW_AI_SEC_API_KEY not set",
     };
   }
@@ -260,6 +284,9 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
         promptDetected: defaultPromptDetected(),
         responseDetected: defaultResponseDetected(),
         latencyMs,
+        timeout: false,
+        hasError: true,
+        contentErrors: [],
         error: `API error ${resp.status}: ${errorText}`,
       };
     }
@@ -278,6 +305,9 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       promptDetected: defaultPromptDetected(),
       responseDetected: defaultResponseDetected(),
       latencyMs,
+      timeout: false,
+      hasError: true,
+      contentErrors: [],
       error: err instanceof Error ? err.message : String(err),
     };
   }
@@ -376,6 +406,19 @@ function parseResponse(
   const promptMaskedData = parseMaskedData(data.prompt_masked_data);
   const responseMaskedData = parseMaskedData(data.response_masked_data);
 
+  // Extract timeout/error info
+  const isTimeout = data.timeout === true;
+  const hasError = data.error === true;
+  const contentErrors: ContentError[] = (data.errors ?? []).map((e) => ({
+    contentType: (e.content_type === "prompt" ? "prompt" : "response") as ContentErrorType,
+    feature: e.feature ?? "",
+    status: (e.status === "timeout" ? "timeout" : "error") as ErrorStatus,
+  }));
+
+  if (isTimeout && !categories.includes("partial_scan")) {
+    categories.push("partial_scan");
+  }
+
   const result: ScanResult = {
     action,
     severity,
@@ -388,6 +431,9 @@ function parseResponse(
     sessionId: request.sessionId,
     trId: data.tr_id ?? request.trId,
     latencyMs,
+    timeout: isTimeout,
+    hasError,
+    contentErrors,
   };
 
   if (promptDetectionDetails) result.promptDetectionDetails = promptDetectionDetails;
