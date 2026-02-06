@@ -159,7 +159,8 @@ export default function register(api: PluginApi): void {
     name: "prisma_airs_scan",
     description:
       "Scan content for security threats via Prisma AIRS. " +
-      "Detects prompt injection, data leakage, malicious URLs, and other threats. " +
+      "Detects prompt injection, DLP, malicious URLs, toxic content, malicious code, " +
+      "agent threats, topic violations, DB security, and ungrounded responses. " +
       "Returns action (allow/warn/block), severity, and detected categories.",
     parameters: {
       type: "object",

@@ -27,11 +27,21 @@ export interface PromptDetected {
   injection: boolean;
   dlp: boolean;
   urlCats: boolean;
+  toxicContent: boolean;
+  maliciousCode: boolean;
+  agent: boolean;
+  topicViolation: boolean;
 }
 
 export interface ResponseDetected {
   dlp: boolean;
   urlCats: boolean;
+  dbSecurity: boolean;
+  toxicContent: boolean;
+  maliciousCode: boolean;
+  agent: boolean;
+  ungrounded: boolean;
+  topicViolation: boolean;
 }
 
 export interface ScanResult {
@@ -51,12 +61,29 @@ export interface ScanResult {
 
 /** Default prompt detection flags (all false) */
 export function defaultPromptDetected(): PromptDetected {
-  return { injection: false, dlp: false, urlCats: false };
+  return {
+    injection: false,
+    dlp: false,
+    urlCats: false,
+    toxicContent: false,
+    maliciousCode: false,
+    agent: false,
+    topicViolation: false,
+  };
 }
 
 /** Default response detection flags (all false) */
 export function defaultResponseDetected(): ResponseDetected {
-  return { dlp: false, urlCats: false };
+  return {
+    dlp: false,
+    urlCats: false,
+    dbSecurity: false,
+    toxicContent: false,
+    maliciousCode: false,
+    agent: false,
+    ungrounded: false,
+    topicViolation: false,
+  };
 }
 
 // AIRS API request/response types (per OpenAPI spec)
@@ -84,11 +111,21 @@ interface AIRSPromptDetected {
   injection?: boolean;
   dlp?: boolean;
   url_cats?: boolean;
+  toxic_content?: boolean;
+  malicious_code?: boolean;
+  agent?: boolean;
+  topic_violation?: boolean;
 }
 
 interface AIRSResponseDetected {
   dlp?: boolean;
   url_cats?: boolean;
+  db_security?: boolean;
+  toxic_content?: boolean;
+  malicious_code?: boolean;
+  agent?: boolean;
+  ungrounded?: boolean;
+  topic_violation?: boolean;
 }
 
 interface AIRSResponse {
@@ -220,38 +257,56 @@ function parseResponse(
     injection: data.prompt_detected?.injection ?? false,
     dlp: data.prompt_detected?.dlp ?? false,
     urlCats: data.prompt_detected?.url_cats ?? false,
+    toxicContent: data.prompt_detected?.toxic_content ?? false,
+    maliciousCode: data.prompt_detected?.malicious_code ?? false,
+    agent: data.prompt_detected?.agent ?? false,
+    topicViolation: data.prompt_detected?.topic_violation ?? false,
   };
 
   const responseDetected: ResponseDetected = {
     dlp: data.response_detected?.dlp ?? false,
     urlCats: data.response_detected?.url_cats ?? false,
+    dbSecurity: data.response_detected?.db_security ?? false,
+    toxicContent: data.response_detected?.toxic_content ?? false,
+    maliciousCode: data.response_detected?.malicious_code ?? false,
+    agent: data.response_detected?.agent ?? false,
+    ungrounded: data.response_detected?.ungrounded ?? false,
+    topicViolation: data.response_detected?.topic_violation ?? false,
   };
 
   // Build categories list
   const categories: string[] = [];
+  // Prompt detections
   if (promptDetected.injection) categories.push("prompt_injection");
   if (promptDetected.dlp) categories.push("dlp_prompt");
   if (promptDetected.urlCats) categories.push("url_filtering_prompt");
+  if (promptDetected.toxicContent) categories.push("toxic_content_prompt");
+  if (promptDetected.maliciousCode) categories.push("malicious_code_prompt");
+  if (promptDetected.agent) categories.push("agent_threat_prompt");
+  if (promptDetected.topicViolation) categories.push("topic_violation_prompt");
+  // Response detections
   if (responseDetected.dlp) categories.push("dlp_response");
   if (responseDetected.urlCats) categories.push("url_filtering_response");
+  if (responseDetected.dbSecurity) categories.push("db_security_response");
+  if (responseDetected.toxicContent) categories.push("toxic_content_response");
+  if (responseDetected.maliciousCode) categories.push("malicious_code_response");
+  if (responseDetected.agent) categories.push("agent_threat_response");
+  if (responseDetected.ungrounded) categories.push("ungrounded_response");
+  if (responseDetected.topicViolation) categories.push("topic_violation_response");
 
   if (categories.length === 0) {
     categories.push(category === "benign" ? "safe" : category);
   }
 
   // Determine severity
+  const anyDetected =
+    Object.values(promptDetected).some(Boolean) || Object.values(responseDetected).some(Boolean);
   let severity: Severity;
   if (category === "malicious" || actionStr === "block") {
     severity = "CRITICAL";
   } else if (category === "suspicious") {
     severity = "HIGH";
-  } else if (
-    promptDetected.injection ||
-    promptDetected.dlp ||
-    promptDetected.urlCats ||
-    responseDetected.dlp ||
-    responseDetected.urlCats
-  ) {
+  } else if (anyDetected) {
     severity = "MEDIUM";
   } else {
     severity = "SAFE";

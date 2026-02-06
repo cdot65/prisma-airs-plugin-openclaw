@@ -59,7 +59,7 @@ interface HookResult {
 
 // Map AIRS categories to user-friendly messages
 const CATEGORY_MESSAGES: Record<string, string> = {
-  // Core detections
+  // Core detections (unsuffixed aliases)
   prompt_injection: "prompt injection attempt",
   dlp_prompt: "sensitive data in input",
   dlp_response: "sensitive data leakage",
@@ -75,6 +75,18 @@ const CATEGORY_MESSAGES: Record<string, string> = {
   custom_topic: "policy violation",
   topic_violation: "policy violation",
   db_security: "database security threat",
+  // Suffixed variants (from scanner category builder)
+  toxic_content_prompt: "inappropriate content in input",
+  toxic_content_response: "inappropriate content in response",
+  malicious_code_prompt: "malicious code in input",
+  malicious_code_response: "malicious code in response",
+  agent_threat_prompt: "AI agent threat in input",
+  agent_threat_response: "AI agent threat in response",
+  topic_violation_prompt: "policy violation in input",
+  topic_violation_response: "policy violation in response",
+  db_security_response: "database security threat in response",
+  ungrounded_response: "ungrounded response",
+  // Meta
   safe: "safe",
   benign: "safe",
   api_error: "security scan error",
@@ -87,12 +99,19 @@ const MASKABLE_CATEGORIES = ["dlp_response", "dlp_prompt", "dlp"];
 // Categories that always require full block
 const ALWAYS_BLOCK_CATEGORIES = [
   "malicious_code",
+  "malicious_code_prompt",
+  "malicious_code_response",
   "malicious_url",
   "toxicity",
   "toxic_content",
+  "toxic_content_prompt",
+  "toxic_content_response",
   "agent_threat",
+  "agent_threat_prompt",
+  "agent_threat_response",
   "prompt_injection",
   "db_security",
+  "db_security_response",
   "scan-failure",
 ];
 

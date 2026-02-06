@@ -256,6 +256,140 @@ describe("scanner", () => {
       expect(result.promptDetected.urlCats).toBe(true);
     });
 
+    it("detects toxic content in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "toxic-123",
+          report_id: "Rtoxic-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: { toxic_content: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "toxic message" });
+
+      expect(result.action).toBe("block");
+      expect(result.categories).toContain("toxic_content_prompt");
+      expect(result.promptDetected.toxicContent).toBe(true);
+    });
+
+    it("detects malicious code in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "malcode-123",
+          report_id: "Rmalcode-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: { malicious_code: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "exec malware" });
+
+      expect(result.categories).toContain("malicious_code_prompt");
+      expect(result.promptDetected.maliciousCode).toBe(true);
+    });
+
+    it("detects agent threat in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "agent-123",
+          report_id: "Ragent-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: { agent: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "manipulate agent" });
+
+      expect(result.categories).toContain("agent_threat_prompt");
+      expect(result.promptDetected.agent).toBe(true);
+    });
+
+    it("detects topic violation in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "topic-123",
+          report_id: "Rtopic-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: { topic_violation: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "restricted topic" });
+
+      expect(result.categories).toContain("topic_violation_prompt");
+      expect(result.promptDetected.topicViolation).toBe(true);
+    });
+
+    it("detects db_security in response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "db-123",
+          report_id: "Rdb-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: {},
+          response_detected: { db_security: true },
+        }),
+      });
+
+      const result = await scan({ prompt: "query", response: "DROP TABLE" });
+
+      expect(result.categories).toContain("db_security_response");
+      expect(result.responseDetected.dbSecurity).toBe(true);
+    });
+
+    it("detects ungrounded response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "ung-123",
+          report_id: "Rung-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: {},
+          response_detected: { ungrounded: true },
+        }),
+      });
+
+      const result = await scan({ prompt: "question", response: "fabricated answer" });
+
+      expect(result.categories).toContain("ungrounded_response");
+      expect(result.responseDetected.ungrounded).toBe(true);
+    });
+
+    it("detects toxic content in response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "rtoxic-123",
+          report_id: "Rrtoxic-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: {},
+          response_detected: { toxic_content: true },
+        }),
+      });
+
+      const result = await scan({ prompt: "q", response: "toxic response" });
+
+      expect(result.categories).toContain("toxic_content_response");
+      expect(result.responseDetected.toxicContent).toBe(true);
+    });
+
     it("tracks latency correctly", async () => {
       mockFetch.mockImplementationOnce(async () => {
         await new Promise((r) => setTimeout(r, 50)); // 50ms delay
