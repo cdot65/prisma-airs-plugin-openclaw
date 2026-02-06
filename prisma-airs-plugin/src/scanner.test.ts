@@ -617,6 +617,52 @@ describe("scanner", () => {
       expect(body.contents[0].tool_calls[0].input).toBe('{"path":"/etc/passwd"}');
     });
 
+    it("parses timestamps and metadata when present", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "ts-123",
+          report_id: "Rts-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+          source: "airs-v2",
+          profile_id: "prof-abc",
+          created_at: "2025-01-15T10:30:00Z",
+          completed_at: "2025-01-15T10:30:01Z",
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.source).toBe("airs-v2");
+      expect(result.profileId).toBe("prof-abc");
+      expect(result.createdAt).toBe("2025-01-15T10:30:00Z");
+      expect(result.completedAt).toBe("2025-01-15T10:30:01Z");
+    });
+
+    it("omits timestamps when absent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "nots-123",
+          report_id: "Rnots-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.source).toBeUndefined();
+      expect(result.profileId).toBeUndefined();
+      expect(result.createdAt).toBeUndefined();
+      expect(result.completedAt).toBeUndefined();
+    });
+
     it("tracks latency correctly", async () => {
       mockFetch.mockImplementationOnce(async () => {
         await new Promise((r) => setTimeout(r, 50)); // 50ms delay

@@ -126,6 +126,10 @@ export interface ScanResult {
   hasError: boolean;
   contentErrors: ContentError[];
   toolDetected?: ToolDetected;
+  source?: string;
+  profileId?: string;
+  createdAt?: string;
+  completedAt?: string;
 }
 
 /** Default prompt detection flags (all false) */
@@ -275,6 +279,10 @@ interface AIRSResponse {
   error?: boolean;
   errors?: AIRSContentError[];
   tool_detected?: AIRSToolDetected;
+  source?: string;
+  profile_id?: string;
+  created_at?: string;
+  completed_at?: string;
 }
 
 /**
@@ -529,6 +537,12 @@ function parseResponse(
   // Extract tool detection (optional)
   const toolDetected = parseToolDetected(data.tool_detected);
   if (toolDetected) result.toolDetected = toolDetected;
+
+  // Extract timestamps and metadata (optional)
+  if (data.source) result.source = data.source;
+  if (data.profile_id) result.profileId = data.profile_id;
+  if (data.created_at) result.createdAt = data.created_at;
+  if (data.completed_at) result.completedAt = data.completed_at;
 
   return result;
 }
