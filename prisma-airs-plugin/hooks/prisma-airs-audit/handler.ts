@@ -5,7 +5,7 @@
  * Cannot block - only logs scan results and caches for downstream hooks.
  */
 
-import { scan } from "../../src/scanner";
+import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner";
 import { cacheScanResult, hashMessage } from "../../src/scan-cache";
 
 // Event shape from OpenClaw message_received hook
@@ -153,9 +153,12 @@ const handler = async (
           scanId: "",
           reportId: "",
           profileName: config.profileName,
-          promptDetected: { injection: false, dlp: false, urlCats: false },
-          responseDetected: { dlp: false, urlCats: false },
+          promptDetected: defaultPromptDetected(),
+          responseDetected: defaultResponseDetected(),
           latencyMs: 0,
+          timeout: false,
+          hasError: true,
+          contentErrors: [],
           error: `Scan failed: ${err instanceof Error ? err.message : String(err)}`,
         },
         msgHash

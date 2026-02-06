@@ -8,9 +8,28 @@ import handler from "./handler";
 // Mock the scanner module
 vi.mock("../../src/scanner", () => ({
   scan: vi.fn(),
+  defaultPromptDetected: () => ({
+    injection: false,
+    dlp: false,
+    urlCats: false,
+    toxicContent: false,
+    maliciousCode: false,
+    agent: false,
+    topicViolation: false,
+  }),
+  defaultResponseDetected: () => ({
+    dlp: false,
+    urlCats: false,
+    dbSecurity: false,
+    toxicContent: false,
+    maliciousCode: false,
+    agent: false,
+    ungrounded: false,
+    topicViolation: false,
+  }),
 }));
 
-import { scan } from "../../src/scanner";
+import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner";
 const mockScan = vi.mocked(scan);
 
 describe("prisma-airs-outbound handler", () => {
@@ -63,9 +82,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -82,9 +104,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: true },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: { ...defaultResponseDetected(), urlCats: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -102,9 +127,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: true, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithSSN = {
@@ -125,9 +153,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: true, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithCard = {
@@ -147,9 +178,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: true, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithEmail = {
@@ -171,9 +205,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -189,9 +226,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const result = await handler(baseEvent, baseCtx);
@@ -206,9 +246,12 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: true, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: { ...defaultResponseDetected(), dlp: true },
         latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
       });
 
       const eventWithSSN = {

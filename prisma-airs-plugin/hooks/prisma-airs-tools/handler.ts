@@ -45,81 +45,84 @@ interface HookResult {
   blockReason?: string;
 }
 
+// Shared tool lists
+const ALL_EXTERNAL_TOOLS = [
+  "exec",
+  "Bash",
+  "bash",
+  "write",
+  "Write",
+  "edit",
+  "Edit",
+  "gateway",
+  "message",
+  "cron",
+  "browser",
+  "web_fetch",
+  "WebFetch",
+  "database",
+  "query",
+  "sql",
+  "eval",
+  "NotebookEdit",
+];
+const DB_TOOLS = ["exec", "Bash", "bash", "database", "query", "sql", "eval"];
+const CODE_TOOLS = [
+  "exec",
+  "Bash",
+  "bash",
+  "write",
+  "Write",
+  "edit",
+  "Edit",
+  "eval",
+  "NotebookEdit",
+];
+const SENSITIVE_TOOLS = ["exec", "Bash", "bash", "gateway", "message", "cron"];
+const WEB_TOOLS = ["web_fetch", "WebFetch", "browser", "Browser", "curl"];
+
 // Tool blocking rules by threat category
 const TOOL_BLOCKS: Record<string, string[]> = {
   // AI Agent threats - block ALL external actions
-  "agent-threat": [
-    "exec",
-    "Bash",
-    "bash",
-    "write",
-    "Write",
-    "edit",
-    "Edit",
-    "gateway",
-    "message",
-    "cron",
-    "browser",
-    "web_fetch",
-    "WebFetch",
-    "database",
-    "query",
-    "sql",
-    "eval",
-    "NotebookEdit",
-  ],
+  "agent-threat": ALL_EXTERNAL_TOOLS,
+  agent_threat: ALL_EXTERNAL_TOOLS,
+  agent_threat_prompt: ALL_EXTERNAL_TOOLS,
+  agent_threat_response: ALL_EXTERNAL_TOOLS,
 
   // SQL/Database injection - block database and exec tools
-  "sql-injection": ["exec", "Bash", "bash", "database", "query", "sql", "eval"],
-  db_security: ["exec", "Bash", "bash", "database", "query", "sql", "eval"],
-  "db-security": ["exec", "Bash", "bash", "database", "query", "sql", "eval"],
+  "sql-injection": DB_TOOLS,
+  db_security: DB_TOOLS,
+  "db-security": DB_TOOLS,
+  db_security_response: DB_TOOLS,
 
   // Malicious code - block code execution and file writes
-  "malicious-code": [
-    "exec",
-    "Bash",
-    "bash",
-    "write",
-    "Write",
-    "edit",
-    "Edit",
-    "eval",
-    "NotebookEdit",
-  ],
-  malicious_code: [
-    "exec",
-    "Bash",
-    "bash",
-    "write",
-    "Write",
-    "edit",
-    "Edit",
-    "eval",
-    "NotebookEdit",
-  ],
+  "malicious-code": CODE_TOOLS,
+  malicious_code: CODE_TOOLS,
+  malicious_code_prompt: CODE_TOOLS,
+  malicious_code_response: CODE_TOOLS,
 
   // Prompt injection - block sensitive tools
-  "prompt-injection": ["exec", "Bash", "bash", "gateway", "message", "cron"],
-  prompt_injection: ["exec", "Bash", "bash", "gateway", "message", "cron"],
+  "prompt-injection": SENSITIVE_TOOLS,
+  prompt_injection: SENSITIVE_TOOLS,
 
   // Malicious URLs - block web access
-  "malicious-url": ["web_fetch", "WebFetch", "browser", "Browser", "curl"],
-  malicious_url: ["web_fetch", "WebFetch", "browser", "Browser", "curl"],
-  url_filtering_prompt: ["web_fetch", "WebFetch", "browser", "Browser", "curl"],
+  "malicious-url": WEB_TOOLS,
+  malicious_url: WEB_TOOLS,
+  url_filtering_prompt: WEB_TOOLS,
+  url_filtering_response: WEB_TOOLS,
+
+  // Toxic content - block code/write tools
+  toxic_content: CODE_TOOLS,
+  toxic_content_prompt: CODE_TOOLS,
+  toxic_content_response: CODE_TOOLS,
+
+  // Topic violations - block sensitive tools
+  topic_violation: SENSITIVE_TOOLS,
+  topic_violation_prompt: SENSITIVE_TOOLS,
+  topic_violation_response: SENSITIVE_TOOLS,
 
   // Scan failure - block high-risk tools
-  "scan-failure": [
-    "exec",
-    "Bash",
-    "bash",
-    "write",
-    "Write",
-    "edit",
-    "Edit",
-    "gateway",
-    "message",
-    "cron",
-  ],
+  "scan-failure": SENSITIVE_TOOLS.concat(["write", "Write", "edit", "Edit"]),
 };
 
 // Default high-risk tools (blocked on any threat)

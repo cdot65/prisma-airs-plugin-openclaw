@@ -13,6 +13,7 @@ import {
   stopCleanup,
   startCleanup,
 } from "./scan-cache";
+import { defaultPromptDetected, defaultResponseDetected } from "./scanner";
 import type { ScanResult } from "./scanner";
 
 // Mock scan result
@@ -23,9 +24,12 @@ const mockScanResult: ScanResult = {
   scanId: "scan_123",
   reportId: "report_456",
   profileName: "default",
-  promptDetected: { injection: true, dlp: false, urlCats: false },
-  responseDetected: { dlp: false, urlCats: false },
+  promptDetected: { ...defaultPromptDetected(), injection: true },
+  responseDetected: defaultResponseDetected(),
   latencyMs: 100,
+  timeout: false,
+  hasError: false,
+  contentErrors: [],
 };
 
 describe("scan-cache", () => {

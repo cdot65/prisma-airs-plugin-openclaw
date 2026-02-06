@@ -256,6 +256,413 @@ describe("scanner", () => {
       expect(result.promptDetected.urlCats).toBe(true);
     });
 
+    it("detects toxic content in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "toxic-123",
+          report_id: "Rtoxic-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: { toxic_content: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "toxic message" });
+
+      expect(result.action).toBe("block");
+      expect(result.categories).toContain("toxic_content_prompt");
+      expect(result.promptDetected.toxicContent).toBe(true);
+    });
+
+    it("detects malicious code in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "malcode-123",
+          report_id: "Rmalcode-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: { malicious_code: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "exec malware" });
+
+      expect(result.categories).toContain("malicious_code_prompt");
+      expect(result.promptDetected.maliciousCode).toBe(true);
+    });
+
+    it("detects agent threat in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "agent-123",
+          report_id: "Ragent-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: { agent: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "manipulate agent" });
+
+      expect(result.categories).toContain("agent_threat_prompt");
+      expect(result.promptDetected.agent).toBe(true);
+    });
+
+    it("detects topic violation in prompt", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "topic-123",
+          report_id: "Rtopic-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: { topic_violation: true },
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "restricted topic" });
+
+      expect(result.categories).toContain("topic_violation_prompt");
+      expect(result.promptDetected.topicViolation).toBe(true);
+    });
+
+    it("detects db_security in response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "db-123",
+          report_id: "Rdb-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: {},
+          response_detected: { db_security: true },
+        }),
+      });
+
+      const result = await scan({ prompt: "query", response: "DROP TABLE" });
+
+      expect(result.categories).toContain("db_security_response");
+      expect(result.responseDetected.dbSecurity).toBe(true);
+    });
+
+    it("detects ungrounded response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "ung-123",
+          report_id: "Rung-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: {},
+          response_detected: { ungrounded: true },
+        }),
+      });
+
+      const result = await scan({ prompt: "question", response: "fabricated answer" });
+
+      expect(result.categories).toContain("ungrounded_response");
+      expect(result.responseDetected.ungrounded).toBe(true);
+    });
+
+    it("detects toxic content in response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "rtoxic-123",
+          report_id: "Rrtoxic-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: {},
+          response_detected: { toxic_content: true },
+        }),
+      });
+
+      const result = await scan({ prompt: "q", response: "toxic response" });
+
+      expect(result.categories).toContain("toxic_content_response");
+      expect(result.responseDetected.toxicContent).toBe(true);
+    });
+
+    it("parses topic guardrails detection details", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "det-123",
+          report_id: "Rdet-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: { topic_violation: true },
+          response_detected: {},
+          prompt_detection_details: {
+            topic_guardrails_details: {
+              allowed_topics: ["general"],
+              blocked_topics: ["weapons"],
+            },
+          },
+        }),
+      });
+
+      const result = await scan({ prompt: "restricted topic" });
+
+      expect(result.promptDetectionDetails?.topicGuardrailsDetails).toEqual({
+        allowedTopics: ["general"],
+        blockedTopics: ["weapons"],
+      });
+    });
+
+    it("parses masked data with pattern detections", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "mask-123",
+          report_id: "Rmask-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: { dlp: true },
+          response_detected: {},
+          prompt_masked_data: {
+            data: "My SSN is [REDACTED]",
+            pattern_detections: [
+              {
+                pattern: "ssn",
+                locations: [[10, 21]],
+              },
+            ],
+          },
+        }),
+      });
+
+      const result = await scan({ prompt: "My SSN is 123-45-6789" });
+
+      expect(result.promptMaskedData?.data).toBe("My SSN is [REDACTED]");
+      expect(result.promptMaskedData?.patternDetections).toHaveLength(1);
+      expect(result.promptMaskedData?.patternDetections[0].pattern).toBe("ssn");
+    });
+
+    it("omits detection details and masked data when absent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "clean-123",
+          report_id: "Rclean-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "hello" });
+
+      expect(result.promptDetectionDetails).toBeUndefined();
+      expect(result.responseDetectionDetails).toBeUndefined();
+      expect(result.promptMaskedData).toBeUndefined();
+      expect(result.responseMaskedData).toBeUndefined();
+    });
+
+    it("sets timeout and partial_scan category when timeout is true", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "to-123",
+          report_id: "Rto-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+          timeout: true,
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.timeout).toBe(true);
+      expect(result.categories).toContain("partial_scan");
+      expect(result.severity).toBe("SAFE"); // no severity escalation
+    });
+
+    it("sets hasError and contentErrors from API errors", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "err-123",
+          report_id: "Rerr-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+          error: true,
+          errors: [
+            { content_type: "prompt", feature: "dlp", status: "error" },
+            { content_type: "response", feature: "toxic_content", status: "timeout" },
+          ],
+        }),
+      });
+
+      const result = await scan({ prompt: "test", response: "resp" });
+
+      expect(result.hasError).toBe(true);
+      expect(result.contentErrors).toHaveLength(2);
+      expect(result.contentErrors[0]).toEqual({
+        contentType: "prompt",
+        feature: "dlp",
+        status: "error",
+      });
+      expect(result.contentErrors[1]).toEqual({
+        contentType: "response",
+        feature: "toxic_content",
+        status: "timeout",
+      });
+    });
+
+    it("defaults timeout/hasError/contentErrors when absent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "def-err",
+          report_id: "Rdef-err",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.timeout).toBe(false);
+      expect(result.hasError).toBe(false);
+      expect(result.contentErrors).toEqual([]);
+    });
+
+    it("parses tool_detected from API response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "tool-123",
+          report_id: "Rtool-123",
+          category: "malicious",
+          action: "block",
+          prompt_detected: {},
+          response_detected: {},
+          tool_detected: {
+            verdict: "malicious",
+            metadata: {
+              ecosystem: "mcp",
+              method: "tool_call",
+              server_name: "test-server",
+              tool_invoked: "exec",
+            },
+            summary: "Malicious tool usage detected",
+            input_detected: { injection: true, malicious_code: true },
+            output_detected: { dlp: true },
+          },
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.toolDetected).toBeDefined();
+      expect(result.toolDetected?.verdict).toBe("malicious");
+      expect(result.toolDetected?.metadata.ecosystem).toBe("mcp");
+      expect(result.toolDetected?.metadata.serverName).toBe("test-server");
+      expect(result.toolDetected?.metadata.toolInvoked).toBe("exec");
+      expect(result.toolDetected?.summary).toBe("Malicious tool usage detected");
+      expect(result.toolDetected?.inputDetected?.injection).toBe(true);
+      expect(result.toolDetected?.inputDetected?.maliciousCode).toBe(true);
+      expect(result.toolDetected?.outputDetected?.dlp).toBe(true);
+    });
+
+    it("sends toolEvents in request body", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "tevt-123",
+          report_id: "Rtevt-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      await scan({
+        prompt: "test",
+        toolEvents: [
+          {
+            metadata: {
+              ecosystem: "mcp",
+              method: "tool_call",
+              serverName: "my-server",
+              toolInvoked: "read_file",
+            },
+            input: '{"path":"/etc/passwd"}',
+            output: "root:x:0:0:root:/root:/bin/bash",
+          },
+        ],
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.contents[0].tool_calls).toHaveLength(1);
+      expect(body.contents[0].tool_calls[0].metadata.ecosystem).toBe("mcp");
+      expect(body.contents[0].tool_calls[0].metadata.server_name).toBe("my-server");
+      expect(body.contents[0].tool_calls[0].metadata.tool_invoked).toBe("read_file");
+      expect(body.contents[0].tool_calls[0].input).toBe('{"path":"/etc/passwd"}');
+    });
+
+    it("parses timestamps and metadata when present", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "ts-123",
+          report_id: "Rts-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+          source: "airs-v2",
+          profile_id: "prof-abc",
+          created_at: "2025-01-15T10:30:00Z",
+          completed_at: "2025-01-15T10:30:01Z",
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.source).toBe("airs-v2");
+      expect(result.profileId).toBe("prof-abc");
+      expect(result.createdAt).toBe("2025-01-15T10:30:00Z");
+      expect(result.completedAt).toBe("2025-01-15T10:30:01Z");
+    });
+
+    it("omits timestamps when absent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "nots-123",
+          report_id: "Rnots-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.source).toBeUndefined();
+      expect(result.profileId).toBeUndefined();
+      expect(result.createdAt).toBeUndefined();
+      expect(result.completedAt).toBeUndefined();
+    });
+
     it("tracks latency correctly", async () => {
       mockFetch.mockImplementationOnce(async () => {
         await new Promise((r) => setTimeout(r, 50)); // 50ms delay
