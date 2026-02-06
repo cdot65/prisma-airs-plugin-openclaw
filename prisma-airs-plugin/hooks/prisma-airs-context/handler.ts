@@ -7,7 +7,12 @@
  * Includes fallback scanning if cache miss (race condition with message_received).
  */
 
-import { scan, type ScanResult } from "../../src/scanner";
+import {
+  scan,
+  defaultPromptDetected,
+  defaultResponseDetected,
+  type ScanResult,
+} from "../../src/scanner";
 import {
   getCachedScanResultIfMatch,
   cacheScanResult,
@@ -258,8 +263,8 @@ const handler = async (
           scanId: "",
           reportId: "",
           profileName: config.profileName,
-          promptDetected: { injection: false, dlp: false, urlCats: false },
-          responseDetected: { dlp: false, urlCats: false },
+          promptDetected: defaultPromptDetected(),
+          responseDetected: defaultResponseDetected(),
           latencyMs: 0,
           error: `Scan failed: ${err instanceof Error ? err.message : String(err)}`,
         };

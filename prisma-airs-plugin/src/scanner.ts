@@ -49,6 +49,16 @@ export interface ScanResult {
   error?: string;
 }
 
+/** Default prompt detection flags (all false) */
+export function defaultPromptDetected(): PromptDetected {
+  return { injection: false, dlp: false, urlCats: false };
+}
+
+/** Default response detection flags (all false) */
+export function defaultResponseDetected(): ResponseDetected {
+  return { dlp: false, urlCats: false };
+}
+
 // AIRS API request/response types (per OpenAPI spec)
 interface AIRSContentItem {
   prompt?: string;
@@ -108,8 +118,8 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       scanId: "",
       reportId: "",
       profileName,
-      promptDetected: { injection: false, dlp: false, urlCats: false },
-      responseDetected: { dlp: false, urlCats: false },
+      promptDetected: defaultPromptDetected(),
+      responseDetected: defaultResponseDetected(),
       latencyMs: 0,
       error: "PANW_AI_SEC_API_KEY not set",
     };
@@ -164,8 +174,8 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
         scanId: "",
         reportId: "",
         profileName,
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs,
         error: `API error ${resp.status}: ${errorText}`,
       };
@@ -182,8 +192,8 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       scanId: "",
       reportId: "",
       profileName,
-      promptDetected: { injection: false, dlp: false, urlCats: false },
-      responseDetected: { dlp: false, urlCats: false },
+      promptDetected: defaultPromptDetected(),
+      responseDetected: defaultResponseDetected(),
       latencyMs,
       error: err instanceof Error ? err.message : String(err),
     };

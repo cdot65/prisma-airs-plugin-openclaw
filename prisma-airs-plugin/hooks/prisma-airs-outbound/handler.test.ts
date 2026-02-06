@@ -8,9 +8,11 @@ import handler from "./handler";
 // Mock the scanner module
 vi.mock("../../src/scanner", () => ({
   scan: vi.fn(),
+  defaultPromptDetected: () => ({ injection: false, dlp: false, urlCats: false }),
+  defaultResponseDetected: () => ({ dlp: false, urlCats: false }),
 }));
 
-import { scan } from "../../src/scanner";
+import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner";
 const mockScan = vi.mocked(scan);
 
 describe("prisma-airs-outbound handler", () => {
@@ -63,8 +65,8 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs: 50,
       });
 
@@ -171,8 +173,8 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs: 50,
       });
 
@@ -189,8 +191,8 @@ describe("prisma-airs-outbound handler", () => {
         scanId: "scan_123",
         reportId: "report_456",
         profileName: "default",
-        promptDetected: { injection: false, dlp: false, urlCats: false },
-        responseDetected: { dlp: false, urlCats: false },
+        promptDetected: defaultPromptDetected(),
+        responseDetected: defaultResponseDetected(),
         latencyMs: 50,
       });
 
