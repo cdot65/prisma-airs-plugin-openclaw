@@ -390,6 +390,83 @@ describe("scanner", () => {
       expect(result.responseDetected.toxicContent).toBe(true);
     });
 
+    it("parses topic guardrails detection details", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "det-123",
+          report_id: "Rdet-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: { topic_violation: true },
+          response_detected: {},
+          prompt_detection_details: {
+            topic_guardrails_details: {
+              allowed_topics: ["general"],
+              blocked_topics: ["weapons"],
+            },
+          },
+        }),
+      });
+
+      const result = await scan({ prompt: "restricted topic" });
+
+      expect(result.promptDetectionDetails?.topicGuardrailsDetails).toEqual({
+        allowedTopics: ["general"],
+        blockedTopics: ["weapons"],
+      });
+    });
+
+    it("parses masked data with pattern detections", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "mask-123",
+          report_id: "Rmask-123",
+          category: "suspicious",
+          action: "alert",
+          prompt_detected: { dlp: true },
+          response_detected: {},
+          prompt_masked_data: {
+            data: "My SSN is [REDACTED]",
+            pattern_detections: [
+              {
+                pattern: "ssn",
+                locations: [[10, 21]],
+              },
+            ],
+          },
+        }),
+      });
+
+      const result = await scan({ prompt: "My SSN is 123-45-6789" });
+
+      expect(result.promptMaskedData?.data).toBe("My SSN is [REDACTED]");
+      expect(result.promptMaskedData?.patternDetections).toHaveLength(1);
+      expect(result.promptMaskedData?.patternDetections[0].pattern).toBe("ssn");
+    });
+
+    it("omits detection details and masked data when absent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scan_id: "clean-123",
+          report_id: "Rclean-123",
+          category: "benign",
+          action: "allow",
+          prompt_detected: {},
+          response_detected: {},
+        }),
+      });
+
+      const result = await scan({ prompt: "hello" });
+
+      expect(result.promptDetectionDetails).toBeUndefined();
+      expect(result.responseDetectionDetails).toBeUndefined();
+      expect(result.promptMaskedData).toBeUndefined();
+      expect(result.responseMaskedData).toBeUndefined();
+    });
+
     it("tracks latency correctly", async () => {
       mockFetch.mockImplementationOnce(async () => {
         await new Promise((r) => setTimeout(r, 50)); // 50ms delay

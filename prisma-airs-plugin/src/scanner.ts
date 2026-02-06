@@ -44,6 +44,25 @@ export interface ResponseDetected {
   topicViolation: boolean;
 }
 
+export interface TopicGuardrails {
+  allowedTopics: string[];
+  blockedTopics: string[];
+}
+
+export interface DetectionDetails {
+  topicGuardrailsDetails?: TopicGuardrails;
+}
+
+export interface PatternDetection {
+  pattern: string;
+  locations: number[][];
+}
+
+export interface MaskedData {
+  data?: string;
+  patternDetections: PatternDetection[];
+}
+
 export interface ScanResult {
   action: Action;
   severity: Severity;
@@ -57,6 +76,10 @@ export interface ScanResult {
   trId?: string;
   latencyMs: number;
   error?: string;
+  promptDetectionDetails?: DetectionDetails;
+  responseDetectionDetails?: DetectionDetails;
+  promptMaskedData?: MaskedData;
+  responseMaskedData?: MaskedData;
 }
 
 /** Default prompt detection flags (all false) */
@@ -128,6 +151,25 @@ interface AIRSResponseDetected {
   topic_violation?: boolean;
 }
 
+interface AIRSTopicGuardrails {
+  allowed_topics?: string[];
+  blocked_topics?: string[];
+}
+
+interface AIRSDetectionDetails {
+  topic_guardrails_details?: AIRSTopicGuardrails;
+}
+
+interface AIRSPatternDetection {
+  pattern?: string;
+  locations?: number[][];
+}
+
+interface AIRSMaskedData {
+  data?: string;
+  pattern_detections?: AIRSPatternDetection[];
+}
+
 interface AIRSResponse {
   scan_id?: string;
   report_id?: string;
@@ -136,6 +178,10 @@ interface AIRSResponse {
   action?: string;
   prompt_detected?: AIRSPromptDetected;
   response_detected?: AIRSResponseDetected;
+  prompt_detection_details?: AIRSDetectionDetails;
+  response_detection_details?: AIRSDetectionDetails;
+  prompt_masked_data?: AIRSMaskedData;
+  response_masked_data?: AIRSMaskedData;
   tr_id?: string;
 }
 
@@ -322,7 +368,15 @@ function parseResponse(
     action = "allow";
   }
 
-  return {
+  // Extract detection details (optional)
+  const promptDetectionDetails = parseDetectionDetails(data.prompt_detection_details);
+  const responseDetectionDetails = parseDetectionDetails(data.response_detection_details);
+
+  // Extract masked data (optional)
+  const promptMaskedData = parseMaskedData(data.prompt_masked_data);
+  const responseMaskedData = parseMaskedData(data.response_masked_data);
+
+  const result: ScanResult = {
     action,
     severity,
     categories,
@@ -334,6 +388,36 @@ function parseResponse(
     sessionId: request.sessionId,
     trId: data.tr_id ?? request.trId,
     latencyMs,
+  };
+
+  if (promptDetectionDetails) result.promptDetectionDetails = promptDetectionDetails;
+  if (responseDetectionDetails) result.responseDetectionDetails = responseDetectionDetails;
+  if (promptMaskedData) result.promptMaskedData = promptMaskedData;
+  if (responseMaskedData) result.responseMaskedData = responseMaskedData;
+
+  return result;
+}
+
+function parseDetectionDetails(raw?: AIRSDetectionDetails): DetectionDetails | undefined {
+  if (!raw) return undefined;
+  const details: DetectionDetails = {};
+  if (raw.topic_guardrails_details) {
+    details.topicGuardrailsDetails = {
+      allowedTopics: raw.topic_guardrails_details.allowed_topics ?? [],
+      blockedTopics: raw.topic_guardrails_details.blocked_topics ?? [],
+    };
+  }
+  return Object.keys(details).length > 0 ? details : undefined;
+}
+
+function parseMaskedData(raw?: AIRSMaskedData): MaskedData | undefined {
+  if (!raw) return undefined;
+  return {
+    data: raw.data,
+    patternDetections: (raw.pattern_detections ?? []).map((p) => ({
+      pattern: p.pattern ?? "",
+      locations: p.locations ?? [],
+    })),
   };
 }
 
