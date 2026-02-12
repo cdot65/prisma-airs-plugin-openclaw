@@ -155,6 +155,7 @@ const response = await fetch(AIRS_SCAN_ENDPOINT, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
     "x-pan-token": apiKey,
   },
   body: JSON.stringify({

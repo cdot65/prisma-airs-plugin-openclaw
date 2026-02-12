@@ -4,23 +4,27 @@ Complete reference for Prisma AIRS detection categories.
 
 ## Categories Overview
 
-| Category                 | Detection Service    | Description                             |
-| ------------------------ | -------------------- | --------------------------------------- |
-| `prompt_injection`       | Prompt Injection     | Attempt to override system instructions |
-| `dlp_prompt`             | Sensitive Data       | PII or secrets in user prompt           |
-| `dlp_response`           | Sensitive Data       | PII or secrets in AI response           |
-| `url_filtering_prompt`   | URL Filtering        | Disallowed URL in prompt                |
-| `url_filtering_response` | URL Filtering        | Disallowed URL in response              |
-| `toxic_content`          | Toxic Content        | Harmful, abusive content                |
-| `db_security`            | Database Security    | Dangerous database operations           |
-| `malicious_code`         | Malicious Code       | Malware, exploits, dangerous code       |
-| `agent_threat`           | AI Agent Protection  | Multi-step agent manipulation           |
-| `ungrounded`             | Contextual Grounding | Hallucination, unverified claims        |
-| `topic_violation`        | Topic Guardrails     | Custom policy violation                 |
-| `safe`                   | —                    | No threats detected                     |
-| `benign`                 | —                    | Alias for `safe`                        |
-| `api_error`              | —                    | API call failed                         |
-| `scan-failure`           | —                    | Scan failed (fail-closed mode)          |
+| Category                   | Detection Service    | Description                             |
+| -------------------------- | -------------------- | --------------------------------------- |
+| `prompt_injection`         | Prompt Injection     | Attempt to override system instructions |
+| `dlp_prompt`               | Sensitive Data       | PII or secrets in user prompt           |
+| `dlp_response`             | Sensitive Data       | PII or secrets in AI response           |
+| `url_filtering_prompt`     | URL Filtering        | Disallowed URL in prompt                |
+| `url_filtering_response`   | URL Filtering        | Disallowed URL in response              |
+| `toxic_content_prompt`     | Toxic Content        | Harmful, abusive content in prompt      |
+| `toxic_content_response`   | Toxic Content        | Harmful, abusive content in response    |
+| `db_security_response`     | Database Security    | Dangerous database operations           |
+| `malicious_code_prompt`    | Malicious Code       | Malware, exploits in prompt             |
+| `malicious_code_response`  | Malicious Code       | Malware, exploits in response           |
+| `agent_threat_prompt`      | AI Agent Protection  | Agent manipulation in prompt            |
+| `agent_threat_response`    | AI Agent Protection  | Agent manipulation in response          |
+| `ungrounded_response`      | Contextual Grounding | Hallucination, unverified claims        |
+| `topic_violation_prompt`   | Topic Guardrails     | Custom policy violation in prompt       |
+| `topic_violation_response` | Topic Guardrails     | Custom policy violation in response     |
+| `safe`                     | —                    | No threats detected                     |
+| `benign`                   | —                    | Alias for `safe`                        |
+| `api_error`                | —                    | API call failed                         |
+| `scan-failure`             | —                    | Scan failed (fail-closed mode)          |
 
 ## Prompt Injection
 

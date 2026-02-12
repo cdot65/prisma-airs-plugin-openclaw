@@ -43,7 +43,7 @@ Agent → prisma_airs_scan tool → scan() → fetch() → AIRS API
 **Key types:**
 - `Action`: "allow" | "warn" | "block"
 - `Severity`: "SAFE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
-- `ScanRequest`: prompt, response, sessionId, trId, profileName, appName, appUser, aiModel, apiKey
+- `ScanRequest`: prompt, response, sessionId, trId, profileName, appName, appUser, aiModel, apiKey, toolEvents
 - `ScanResult`: action, severity, categories, scanId, reportId, promptDetected, responseDetected
 
 ## Config: Plugin vs Strata Cloud Manager

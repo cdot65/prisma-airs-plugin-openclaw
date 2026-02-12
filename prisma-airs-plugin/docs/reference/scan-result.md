@@ -15,22 +15,24 @@ interface ScanRequest {
   appUser?: string;
   aiModel?: string;
   apiKey?: string;
+  toolEvents?: ToolEventInput[];
 }
 ```
 
 ### ScanRequest Fields
 
-| Field         | Type      | Description                                    |
-| ------------- | --------- | ---------------------------------------------- |
-| `prompt`      | `string?` | User prompt to scan                            |
-| `response`    | `string?` | AI response to scan                            |
-| `sessionId`   | `string?` | Session ID for tracking                        |
-| `trId`        | `string?` | Transaction ID for correlating prompt/response |
-| `profileName` | `string?` | Security profile name (default: "default")     |
-| `appName`     | `string?` | Application name for scan metadata             |
-| `appUser`     | `string?` | User identifier for scan metadata              |
-| `aiModel`     | `string?` | AI model name for scan metadata                |
-| `apiKey`      | `string?` | Prisma AIRS API key from plugin config         |
+| Field         | Type                | Description                                    |
+| ------------- | ------------------- | ---------------------------------------------- |
+| `prompt`      | `string?`           | User prompt to scan                            |
+| `response`    | `string?`           | AI response to scan                            |
+| `sessionId`   | `string?`           | Session ID for tracking                        |
+| `trId`        | `string?`           | Transaction ID for correlating prompt/response |
+| `profileName` | `string?`           | Security profile name (default: "default")     |
+| `appName`     | `string?`           | Application name for scan metadata             |
+| `appUser`     | `string?`           | User identifier for scan metadata              |
+| `aiModel`     | `string?`           | AI model name for scan metadata                |
+| `apiKey`      | `string?`           | Prisma AIRS API key from plugin config         |
+| `toolEvents`  | `ToolEventInput[]?` | Tool call events to scan                       |
 
 ## ScanResult Interface
 
@@ -47,7 +49,19 @@ interface ScanResult {
   sessionId?: string;
   trId?: string;
   latencyMs: number;
+  timeout: boolean;
+  hasError: boolean;
+  contentErrors: ContentError[];
   error?: string;
+  promptDetectionDetails?: DetectionDetails;
+  responseDetectionDetails?: DetectionDetails;
+  promptMaskedData?: MaskedData;
+  responseMaskedData?: MaskedData;
+  toolDetected?: ToolDetected;
+  source?: string;
+  profileId?: string;
+  createdAt?: string;
+  completedAt?: string;
 }
 
 type Action = "allow" | "warn" | "block";
@@ -57,11 +71,21 @@ interface PromptDetected {
   injection: boolean;
   dlp: boolean;
   urlCats: boolean;
+  toxicContent: boolean;
+  maliciousCode: boolean;
+  agent: boolean;
+  topicViolation: boolean;
 }
 
 interface ResponseDetected {
   dlp: boolean;
   urlCats: boolean;
+  dbSecurity: boolean;
+  toxicContent: boolean;
+  maliciousCode: boolean;
+  agent: boolean;
+  ungrounded: boolean;
+  topicViolation: boolean;
 }
 ```
 
@@ -155,6 +179,10 @@ Detection flags for prompt content.
   injection: boolean; // Prompt injection detected
   dlp: boolean; // Sensitive data in prompt
   urlCats: boolean; // URL category violation in prompt
+  toxicContent: boolean; // Toxic content in prompt
+  maliciousCode: boolean; // Malicious code in prompt
+  agent: boolean; // AI agent threat in prompt
+  topicViolation: boolean; // Topic guardrail violation in prompt
 }
 ```
 
@@ -171,6 +199,12 @@ Detection flags for response content.
 {
   dlp: boolean; // Sensitive data in response
   urlCats: boolean; // URL category violation in response
+  dbSecurity: boolean; // Database security threat in response
+  toxicContent: boolean; // Toxic content in response
+  maliciousCode: boolean; // Malicious code in response
+  agent: boolean; // AI agent threat in response
+  ungrounded: boolean; // Ungrounded/hallucinated content
+  topicViolation: boolean; // Topic guardrail violation in response
 }
 ```
 
