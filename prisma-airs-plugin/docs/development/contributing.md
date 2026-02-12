@@ -137,7 +137,7 @@ describe('scan', () => {
     vi.spyOn(global, 'fetch').mockResolvedValue(...);
 
     // Act
-    const result = await scan({ prompt: 'hello' });
+    const result = await scan({ prompt: 'hello', apiKey: 'test-key' });
 
     // Assert
     expect(result.action).toBe('allow');
@@ -150,7 +150,7 @@ describe('scan', () => {
 Use Vitest mocks for:
 
 - `fetch` - AIRS API calls
-- Environment variables
+- Plugin config (pass `apiKey` as param)
 - Time (for cache TTL tests)
 
 ## Adding a New Hook
