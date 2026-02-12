@@ -150,7 +150,16 @@ interface HookResult {
   "categories": ["dlp_response"],
   "scanId": "scan_xyz789",
   "latencyMs": 120,
-  "responseDetected": { "dlp": true, "urlCats": false }
+  "responseDetected": {
+    "dlp": true,
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
+  }
 }
 ```
 
@@ -175,7 +184,7 @@ interface HookResult {
   "sessionKey": "session_abc123",
   "action": "block",
   "severity": "CRITICAL",
-  "categories": ["malicious_code"],
+  "categories": ["malicious_code_response"],
   "scanId": "scan_xyz789",
   "reportId": "report_abc123"
 }
@@ -185,13 +194,12 @@ interface HookResult {
 
 These categories always block, even with `dlp_mask_only: true`:
 
-- `malicious_code`
+- `malicious_code`, `malicious_code_prompt`, `malicious_code_response`
 - `malicious_url`
-- `toxicity`
-- `toxic_content`
-- `agent_threat`
+- `toxicity`, `toxic_content`, `toxic_content_prompt`, `toxic_content_response`
+- `agent_threat`, `agent_threat_prompt`, `agent_threat_response`
 - `prompt_injection`
-- `db_security`
+- `db_security`, `db_security_response`
 - `scan-failure`
 
 ## Related Hooks

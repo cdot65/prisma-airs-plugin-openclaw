@@ -103,7 +103,7 @@ Agents can call `prisma_airs_scan` directly:
 ```json
 {
   "action": "block",
-  "severity": "HIGH",
+  "severity": "CRITICAL",
   "categories": ["prompt_injection"],
   "scanId": "scan_abc123",
   "reportId": "report_xyz789",
@@ -111,9 +111,26 @@ Agents can call `prisma_airs_scan` directly:
   "promptDetected": {
     "injection": true,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
-  "latencyMs": 145
+  "responseDetected": {
+    "dlp": false,
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
+  },
+  "latencyMs": 145,
+  "timeout": false,
+  "hasError": false,
+  "contentErrors": []
 }
 ```
 

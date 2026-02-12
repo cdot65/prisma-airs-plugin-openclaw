@@ -279,9 +279,19 @@ Hard enforcement at tool invocation:
 
 ```typescript
 const TOOL_BLOCKS = {
-  "agent-threat": ["exec", "Bash", "write", "edit", "gateway", "message", "cron"],
-  "sql-injection": ["exec", "database", "query", "sql"],
-  "malicious-code": ["exec", "write", "edit", "eval"],
+  "agent-threat": ALL_EXTERNAL_TOOLS, // 18 tools
+  "sql-injection": ["exec", "Bash", "bash", "database", "query", "sql", "eval"],
+  "malicious-code": [
+    "exec",
+    "Bash",
+    "bash",
+    "write",
+    "Write",
+    "edit",
+    "Edit",
+    "eval",
+    "NotebookEdit",
+  ],
   // ...
 };
 

@@ -150,11 +150,31 @@ interface ScanResult {
   scanId: string;
   reportId: string;
   profileName: string;
-  promptDetected: { injection: boolean; dlp: boolean; urlCats: boolean };
-  responseDetected: { dlp: boolean; urlCats: boolean };
+  promptDetected: {
+    injection: boolean;
+    dlp: boolean;
+    urlCats: boolean;
+    toxicContent: boolean;
+    maliciousCode: boolean;
+    agent: boolean;
+    topicViolation: boolean;
+  };
+  responseDetected: {
+    dlp: boolean;
+    urlCats: boolean;
+    dbSecurity: boolean;
+    toxicContent: boolean;
+    maliciousCode: boolean;
+    agent: boolean;
+    ungrounded: boolean;
+    topicViolation: boolean;
+  };
   sessionId?: string;
   trId?: string;
   latencyMs: number;
+  timeout: boolean;
+  hasError: boolean;
+  contentErrors: ContentError[];
   error?: string;
 }
 ```

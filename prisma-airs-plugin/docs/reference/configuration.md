@@ -105,8 +105,9 @@ When `true`, DLP violations are masked instead of blocked. When `false`, DLP vio
 
 !!! note "Always-Block Categories"
 Regardless of `dlp_mask_only`, these categories always block:
-`malicious_code`, `malicious_url`, `toxicity`, `agent_threat`,
-`prompt_injection`, `db_security`, `scan-failure`
+`malicious_code*`, `malicious_url`, `toxicity`, `toxic_content*`,
+`agent_threat*`, `prompt_injection`, `db_security*`, `scan-failure`
+(includes suffixed variants like `malicious_code_response`)
 
 ### high_risk_tools
 

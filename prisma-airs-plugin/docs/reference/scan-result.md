@@ -259,13 +259,26 @@ Error message if scan failed.
   "promptDetected": {
     "injection": false,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
-  "latencyMs": 145
+  "latencyMs": 145,
+  "timeout": false,
+  "hasError": false,
+  "contentErrors": []
 }
 ```
 
@@ -282,13 +295,26 @@ Error message if scan failed.
   "promptDetected": {
     "injection": true,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
-  "latencyMs": 203
+  "latencyMs": 203,
+  "timeout": false,
+  "hasError": false,
+  "contentErrors": []
 }
 ```
 
@@ -305,13 +331,26 @@ Error message if scan failed.
   "promptDetected": {
     "injection": false,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": true,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
-  "latencyMs": 178
+  "latencyMs": 178,
+  "timeout": false,
+  "hasError": false,
+  "contentErrors": []
 }
 ```
 
@@ -321,20 +360,33 @@ Error message if scan failed.
 {
   "action": "block",
   "severity": "CRITICAL",
-  "categories": ["prompt_injection", "malicious_url"],
+  "categories": ["prompt_injection", "url_filtering_prompt"],
   "scanId": "scan_multi789",
   "reportId": "report_multi012",
   "profileName": "default",
   "promptDetected": {
     "injection": true,
     "dlp": false,
-    "urlCats": true
+    "urlCats": true,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
-  "latencyMs": 215
+  "latencyMs": 215,
+  "timeout": false,
+  "hasError": false,
+  "contentErrors": []
 }
 ```
 
@@ -351,13 +403,26 @@ Error message if scan failed.
   "promptDetected": {
     "injection": false,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
   "latencyMs": 5023,
+  "timeout": false,
+  "hasError": true,
+  "contentErrors": [],
   "error": "API error 503: Service temporarily unavailable"
 }
 ```
@@ -375,13 +440,26 @@ Error message if scan failed.
   "promptDetected": {
     "injection": false,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
   "latencyMs": 0,
+  "timeout": false,
+  "hasError": false,
+  "contentErrors": [],
   "error": "API key not configured. Set it in plugin config."
 }
 ```

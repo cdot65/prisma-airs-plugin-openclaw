@@ -51,7 +51,11 @@ plugins:
   "promptDetected": {
     "injection": true,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   }
 }
 ```
@@ -93,6 +97,7 @@ const handler = async (event, ctx) => {
       prompt: event.content,
       profileName: config.profileName,
       appName: config.appName,
+      apiKey: config.apiKey,
       appUser: event.metadata?.senderId,
     });
 
