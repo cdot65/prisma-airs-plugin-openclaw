@@ -124,6 +124,7 @@ Default:
 high_risk_tools:
   - exec
   - Bash
+  - bash
   - write
   - Write
   - edit

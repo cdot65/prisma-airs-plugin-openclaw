@@ -6,7 +6,7 @@ The Prisma AIRS plugin provides 5 security hooks that work together for defense-
 
 | Hook                                            | Event                | Purpose                 | Can Block |
 | ----------------------------------------------- | -------------------- | ----------------------- | --------- |
-| [prisma-airs-guard](prisma-airs-guard.md)       | `agent:bootstrap`    | Remind agents to scan   | No        |
+| [prisma-airs-guard](prisma-airs-guard.md)       | `before_agent_start` | Remind agents to scan   | No        |
 | [prisma-airs-audit](prisma-airs-audit.md)       | `message_received`   | Audit logging + caching | No        |
 | [prisma-airs-context](prisma-airs-context.md)   | `before_agent_start` | Inject threat warnings  | No\*      |
 | [prisma-airs-outbound](prisma-airs-outbound.md) | `message_sending`    | Block/mask responses    | Yes       |

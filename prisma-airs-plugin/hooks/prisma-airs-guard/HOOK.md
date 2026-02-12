@@ -5,7 +5,7 @@ metadata:
   openclaw:
     emoji: "🛡"
     events:
-      - agent:bootstrap
+      - before_agent_start
 ---
 
 # Prisma AIRS Security Reminder

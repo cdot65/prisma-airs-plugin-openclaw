@@ -63,7 +63,18 @@
       "high_risk_tools": {
         "type": "array",
         "items": { "type": "string" },
-        "default": ["exec", "Bash", "write", "Write", "edit", "Edit", "gateway", "message", "cron"],
+        "default": [
+          "exec",
+          "Bash",
+          "bash",
+          "write",
+          "Write",
+          "edit",
+          "Edit",
+          "gateway",
+          "message",
+          "cron"
+        ],
         "description": "Tools to block on any detected threat"
       },
       "api_key": {

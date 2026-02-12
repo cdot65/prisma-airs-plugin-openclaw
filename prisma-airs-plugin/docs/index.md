@@ -68,7 +68,7 @@ openclaw prisma-airs-scan "test message"
 
 | Hook                                                  | Event                | Purpose                                   |
 | ----------------------------------------------------- | -------------------- | ----------------------------------------- |
-| [prisma-airs-guard](hooks/prisma-airs-guard.md)       | `agent:bootstrap`    | Reminds agents to scan suspicious content |
+| [prisma-airs-guard](hooks/prisma-airs-guard.md)       | `before_agent_start` | Reminds agents to scan suspicious content |
 | [prisma-airs-audit](hooks/prisma-airs-audit.md)       | `message_received`   | Audit logging with scan caching           |
 | [prisma-airs-context](hooks/prisma-airs-context.md)   | `before_agent_start` | Injects threat warnings into context      |
 | [prisma-airs-outbound](hooks/prisma-airs-outbound.md) | `message_sending`    | Blocks/masks outbound responses           |

@@ -4,12 +4,12 @@ Bootstrap reminder hook that instructs agents to scan suspicious content.
 
 ## Overview
 
-| Property      | Value              |
-| ------------- | ------------------ |
-| **Event**     | `agent:bootstrap`  |
-| **Emoji**     | :shield:           |
-| **Can Block** | No                 |
-| **Config**    | `reminder_enabled` |
+| Property      | Value                |
+| ------------- | -------------------- |
+| **Event**     | `before_agent_start` |
+| **Emoji**     | :shield:             |
+| **Can Block** | No                   |
+| **Config**    | `reminder_enabled`   |
 
 ## Purpose
 
