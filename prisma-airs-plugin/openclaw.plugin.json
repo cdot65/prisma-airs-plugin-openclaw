@@ -2,7 +2,7 @@
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
   "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "entrypoint": "index.ts",
   "hooks": [
     "hooks/prisma-airs-guard",
@@ -65,10 +65,19 @@
         "items": { "type": "string" },
         "default": ["exec", "Bash", "write", "Write", "edit", "Edit", "gateway", "message", "cron"],
         "description": "Tools to block on any detected threat"
+      },
+      "api_key": {
+        "type": "string",
+        "description": "Prisma AIRS API key from Strata Cloud Manager"
       }
     }
   },
   "uiHints": {
+    "api_key": {
+      "label": "API Key",
+      "sensitive": true,
+      "placeholder": "Enter your PANW AI Security API key"
+    },
     "profile_name": {
       "label": "Profile Name",
       "placeholder": "default"
@@ -109,8 +118,5 @@
       "description": "Tools blocked on any threat detection"
     }
   },
-  "requires": {
-    "env": ["PANW_AI_SEC_API_KEY"],
-    "envOptional": ["PANW_AI_SEC_PROFILE_NAME"]
-  }
+  "requires": {}
 }

@@ -6,6 +6,24 @@ For detailed release notes including design decisions, see [RELEASE_NOTES.md](ht
 
 ## Version History
 
+### v0.2.4 - Config API Key & Hook Registration
+
+**Released**: 2025-02-12
+
+#### Breaking Changes
+
+- API key moved from `PANW_AI_SEC_API_KEY` env var to plugin config `api_key`
+- `ScanRequest` now requires `apiKey` parameter instead of reading from `process.env`
+
+#### Changes
+
+- API key set via plugin config (`api_key` field) instead of environment variable
+- Hook registration via `api.on()` adapters instead of `registerPluginHooksFromDir`
+- Removed `requires.env` from plugin manifest
+- Updated all documentation to reflect config-based API key
+
+---
+
 ### v0.2.0 - Multi-Layer Security Architecture
 
 **Released**: 2024-02-04
@@ -55,7 +73,7 @@ See [Design Decisions](../architecture/design-decisions.md) for detailed rationa
 **Released**: 2024-02-02
 
 - Added `prisma-airs-guard` bootstrap reminder hook
-- Plugin hook registration via `registerPluginHooksFromDir`
+- Plugin hook registration via hook directory (replaced by `api.on()` in v0.2.4)
 
 ---
 

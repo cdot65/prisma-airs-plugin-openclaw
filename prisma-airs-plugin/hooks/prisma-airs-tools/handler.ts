@@ -32,6 +32,7 @@ interface PluginConfig {
         config?: {
           tool_gating_enabled?: boolean;
           high_risk_tools?: string[];
+          api_key?: string;
         };
       };
     };

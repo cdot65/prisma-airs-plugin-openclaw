@@ -6,9 +6,6 @@ metadata:
     emoji: "🛡"
     events:
       - agent:bootstrap
-    requires:
-      env:
-        - PANW_AI_SEC_API_KEY
 ---
 
 # Prisma AIRS Security Reminder
@@ -35,4 +32,4 @@ plugins:
 
 ## Requirements
 
-- `PANW_AI_SEC_API_KEY` environment variable must be set
+- API key must be set in plugin config (`api_key`)

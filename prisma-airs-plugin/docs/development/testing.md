@@ -116,43 +116,34 @@ describe("scan", () => {
 });
 ```
 
-### Mocking Environment Variables
+### Testing API Key via ScanRequest
 
 ```typescript
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const TEST_API_KEY = "test-api-key-12345";
 
 describe("scan with API key", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
-    vi.resetModules();
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
+    vi.resetAllMocks();
   });
 
   it("should return error when API key missing", async () => {
-    delete process.env.PANW_AI_SEC_API_KEY;
-
     const { scan } = await import("./scanner");
     const result = await scan({ prompt: "test" });
 
-    expect(result.error).toBe("PANW_AI_SEC_API_KEY not set");
+    expect(result.error).toBe("API key not configured. Set it in plugin config.");
   });
 
   it("should call API when key present", async () => {
-    process.env.PANW_AI_SEC_API_KEY = "test-key";
-
     const { scan } = await import("./scanner");
-    await scan({ prompt: "test" });
+    await scan({ prompt: "test", apiKey: TEST_API_KEY });
 
     expect(fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
-          "x-pan-token": "test-key",
+          "x-pan-token": TEST_API_KEY,
         }),
       })
     );

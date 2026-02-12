@@ -11,13 +11,17 @@
  */
 
 import { scan, isConfigured, ScanRequest } from "./src/scanner";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import guardHandler from "./hooks/prisma-airs-guard/handler";
+import auditHandler from "./hooks/prisma-airs-audit/handler";
+import contextHandler from "./hooks/prisma-airs-context/handler";
+import outboundHandler from "./hooks/prisma-airs-outbound/handler";
+import toolsHandler from "./hooks/prisma-airs-tools/handler";
 
 // Plugin config interface
 interface PrismaAirsConfig {
   profile_name?: string;
   app_name?: string;
+  api_key?: string;
   reminder_enabled?: boolean;
 }
 
@@ -72,7 +76,8 @@ interface PluginApi {
     execute: (_id: string, params: ScanRequest) => Promise<ToolResult>;
   }) => void;
   registerCli: (setup: (ctx: { program: unknown }) => void, opts: { commands: string[] }) => void;
-  registerPluginHooksFromDir?: (dir: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on: (hookName: string, handler: (...args: any[]) => any, opts?: { priority?: number }) => void;
 }
 
 // Get plugin config from OpenClaw config
@@ -91,6 +96,7 @@ function buildScanRequest(params: ScanRequest | undefined, config: PrismaAirsCon
     appName: params?.appName ?? config.app_name ?? "openclaw",
     appUser: params?.appUser,
     aiModel: params?.aiModel,
+    apiKey: config.api_key,
   };
 }
 
@@ -101,22 +107,71 @@ export default function register(api: PluginApi): void {
     `Prisma AIRS plugin loaded (reminder_enabled=${config.reminder_enabled ?? true})`
   );
 
-  // Register hooks from the hooks directory
-  if (api.registerPluginHooksFromDir) {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    const hooksDir = join(__dirname, "hooks");
-    api.registerPluginHooksFromDir(hooksDir);
-    api.logger.info(`Registered hooks from ${hooksDir}`);
-  }
+  // Register lifecycle hooks via api.on()
+  // Each adapter injects api.config as cfg for handler compatibility.
+
+  // Guard: inject security scanning reminder at agent bootstrap
+  api.on(
+    "before_agent_start",
+    async () => {
+      const files: { path: string; content: string; source?: string }[] = [];
+      await guardHandler({
+        type: "agent",
+        action: "bootstrap",
+        context: { bootstrapFiles: files, cfg: api.config },
+      });
+      if (files.length > 0) {
+        return { systemPrompt: files.map((f) => f.content).join("\n\n") };
+      }
+      return undefined;
+    },
+    { priority: 100 }
+  );
+
+  // Audit: fire-and-forget inbound message scan logging
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  api.on("message_received", async (event: any, ctx: any) => {
+    await auditHandler(event, { ...ctx, cfg: api.config });
+  });
+
+  // Context: inject security warnings before agent processes message
+  api.on(
+    "before_agent_start",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (event: any, ctx: any) => {
+      return await contextHandler(
+        {
+          sessionKey: ctx.sessionKey,
+          message: { content: event.prompt },
+          messages: event.messages,
+        },
+        { ...ctx, cfg: api.config }
+      );
+    },
+    { priority: 50 }
+  );
+
+  // Outbound: scan and block/mask outgoing responses
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  api.on("message_sending", async (event: any, ctx: any) => {
+    return await outboundHandler(event, { ...ctx, cfg: api.config });
+  });
+
+  // Tools: block dangerous tool calls during active threats
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  api.on("before_tool_call", async (event: any, ctx: any) => {
+    return await toolsHandler(event, { ...ctx, cfg: api.config });
+  });
+
+  api.logger.info("Registered 5 lifecycle hooks");
 
   // Register RPC method for status check
   api.registerGatewayMethod("prisma-airs.status", ({ respond }) => {
     const cfg = getPluginConfig(api);
-    const hasApiKey = isConfigured();
+    const hasApiKey = isConfigured(cfg.api_key);
     respond(true, {
       plugin: "prisma-airs",
-      version: "0.2.3",
+      version: "0.2.4",
       config: {
         profile_name: cfg.profile_name ?? "default",
         app_name: cfg.app_name ?? "openclaw",
@@ -213,16 +268,16 @@ export default function register(api: PluginApi): void {
         .description("Show Prisma AIRS plugin status")
         .action(() => {
           const cfg = getPluginConfig(api);
-          const hasKey = isConfigured();
+          const hasKey = isConfigured(cfg.api_key);
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 0.2.3`);
+          console.log(`Version: 0.2.4`);
           console.log(`Profile: ${cfg.profile_name ?? "default"}`);
           console.log(`App Name: ${cfg.app_name ?? "openclaw"}`);
           console.log(`Reminder: ${cfg.reminder_enabled ?? true}`);
           console.log(`API Key: ${hasKey ? "configured" : "MISSING"}`);
           if (!hasKey) {
-            console.log("\nSet PANW_AI_SEC_API_KEY environment variable");
+            console.log("\nSet API key in plugin config");
           }
         });
 
@@ -267,7 +322,7 @@ export default function register(api: PluginApi): void {
 // Export plugin metadata for discovery
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "0.2.3";
+export const version = "0.2.4";
 
 // Re-export scanner types and functions
 export { scan, isConfigured } from "./src/scanner";

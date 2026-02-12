@@ -309,7 +309,7 @@ Returned when the AIRS API call fails (timeout, auth error, network issues, etc)
 
 ### Causes
 
-- `PANW_AI_SEC_API_KEY` not set
+- API key not configured in plugin config
 - API timeout or network failure
 - 401 Unauthorized (invalid/expired key)
 - 429 Rate limiting

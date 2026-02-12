@@ -14,6 +14,7 @@ interface ScanRequest {
   appName?: string;
   appUser?: string;
   aiModel?: string;
+  apiKey?: string;
 }
 ```
 
@@ -29,6 +30,7 @@ interface ScanRequest {
 | `appName`     | `string?` | Application name for scan metadata             |
 | `appUser`     | `string?` | User identifier for scan metadata              |
 | `aiModel`     | `string?` | AI model name for scan metadata                |
+| `apiKey`      | `string?` | Prisma AIRS API key from plugin config         |
 
 ## ScanResult Interface
 
@@ -346,6 +348,6 @@ Error message if scan failed.
     "urlCats": false
   },
   "latencyMs": 0,
-  "error": "PANW_AI_SEC_API_KEY not set"
+  "error": "API key not configured. Set it in plugin config."
 }
 ```

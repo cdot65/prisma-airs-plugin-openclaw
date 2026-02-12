@@ -44,6 +44,7 @@ interface PluginConfig {
           audit_enabled?: boolean;
           profile_name?: string;
           app_name?: string;
+          api_key?: string;
           fail_closed?: boolean;
         };
       };
@@ -58,6 +59,7 @@ function getPluginConfig(ctx: HookContext & { cfg?: PluginConfig }): {
   enabled: boolean;
   profileName: string;
   appName: string;
+  apiKey: string;
   failClosed: boolean;
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
@@ -65,6 +67,7 @@ function getPluginConfig(ctx: HookContext & { cfg?: PluginConfig }): {
     enabled: cfg?.audit_enabled !== false,
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
+    apiKey: cfg?.api_key ?? "",
     failClosed: cfg?.fail_closed ?? true, // Default fail-closed
   };
 }
@@ -100,6 +103,7 @@ const handler = async (
       prompt: content,
       profileName: config.profileName,
       appName: config.appName,
+      apiKey: config.apiKey,
       appUser: event.metadata?.senderId || event.from,
     });
 

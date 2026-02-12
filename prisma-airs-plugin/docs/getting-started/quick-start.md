@@ -10,8 +10,13 @@ openclaw plugins install @cdot65/prisma-airs
 
 ## 2. Configure API Key
 
-```bash
-export PANW_AI_SEC_API_KEY="your-key-from-strata-cloud-manager"
+Set the API key in plugin config (via gateway web UI or config file):
+
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      api_key: "your-key-from-strata-cloud-manager"
 ```
 
 ## 3. Restart Gateway

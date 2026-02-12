@@ -240,7 +240,7 @@ fail_closed: false → Allow request
 ### Invalid API Key
 
 ```
-Cause: PANW_AI_SEC_API_KEY invalid or expired
+Cause: API key invalid or expired
 Response: 401 Unauthorized
 fail_closed: true  → Block request
 fail_closed: false → Allow request
