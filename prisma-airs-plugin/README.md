@@ -17,6 +17,9 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/ai-run
 - Toxic content
 - Database security
 - Malicious code
+- AI agent threats
+- Grounding violations
+- Custom topic guardrails
 
 ## Installation
 

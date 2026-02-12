@@ -56,14 +56,14 @@ plugins:
 
 ### Category-Based Blocking
 
-| Category                                                   | Blocked Tools                                   |
-| ---------------------------------------------------------- | ----------------------------------------------- |
-| `agent-threat`                                             | ALL external tools (18 tools)                   |
-| `sql-injection` / `db-security` / `db_security`            | exec, Bash, database, query, sql, eval          |
-| `malicious-code` / `malicious_code`                        | exec, Bash, write, edit, eval, NotebookEdit     |
-| `prompt-injection` / `prompt_injection`                    | exec, Bash, gateway, message, cron              |
-| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl     |
-| `scan-failure`                                             | exec, Bash, write, edit, gateway, message, cron |
+| Category                                                   | Blocked Tools                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `agent-threat`                                             | ALL external tools (18 tools)                                      |
+| `sql-injection` / `db-security` / `db_security`            | exec, Bash, bash, database, query, sql, eval                       |
+| `malicious-code` / `malicious_code`                        | exec, Bash, bash, write, Write, edit, Edit, eval, NotebookEdit     |
+| `prompt-injection` / `prompt_injection`                    | exec, Bash, bash, gateway, message, cron                           |
+| `malicious-url` / `malicious_url` / `url_filtering_prompt` | web_fetch, WebFetch, browser, Browser, curl                        |
+| `scan-failure`                                             | exec, Bash, bash, write, Write, edit, Edit, gateway, message, cron |
 
 !!! note "Category Name Variants"
 AIRS API returns underscored names (`prompt_injection`). Tool blocking supports

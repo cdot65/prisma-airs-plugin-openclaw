@@ -103,7 +103,7 @@ Block dangerous tools during active threats:
 
 ```
 Threat: prompt_injection
-Blocked: exec, Bash, gateway, message, cron
+Blocked: exec, Bash, bash, gateway, message, cron
 ```
 
 ## Requirements

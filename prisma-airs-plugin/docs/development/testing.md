@@ -95,7 +95,7 @@ describe("scan", () => {
       }),
     } as Response);
 
-    const result = await scan({ prompt: "test" });
+    const result = await scan({ prompt: "test", apiKey: "test-key" });
 
     expect(result.action).toBe("allow");
     expect(result.scanId).toBe("scan_123");
@@ -108,7 +108,7 @@ describe("scan", () => {
       text: async () => "Internal Server Error",
     } as Response);
 
-    const result = await scan({ prompt: "test" });
+    const result = await scan({ prompt: "test", apiKey: "test-key" });
 
     expect(result.action).toBe("warn");
     expect(result.error).toContain("API error 500");

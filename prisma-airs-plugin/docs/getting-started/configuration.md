@@ -68,8 +68,11 @@ plugins:
       high_risk_tools:
         - exec
         - Bash
+        - bash
         - write
+        - Write
         - edit
+        - Edit
         - gateway
         - message
         - cron
