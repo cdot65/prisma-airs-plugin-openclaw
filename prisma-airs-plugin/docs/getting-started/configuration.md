@@ -2,49 +2,38 @@
 
 ## Important: Where to Configure What
 
-| What to Configure                                                | Where                                 |
-| ---------------------------------------------------------------- | ------------------------------------- |
-| **Detection rules** (prompt injection, DLP, URL filtering, etc.) | Strata Cloud Manager                  |
-| **Actions** (allow/alert/block per detection)                    | Strata Cloud Manager                  |
-| **DLP patterns** (SSN, credit cards, API keys)                   | Strata Cloud Manager                  |
-| **URL categories** (malware, phishing, adult)                    | Strata Cloud Manager                  |
-| **Custom topics** (organization policies)                        | Strata Cloud Manager                  |
-| **API key**                                                      | Environment variable                  |
-| **Profile name**                                                 | Environment variable or plugin config |
-| **Plugin behavior** (enable/disable hooks)                       | Plugin config                         |
+| What to Configure                                                | Where                |
+| ---------------------------------------------------------------- | -------------------- |
+| **Detection rules** (prompt injection, DLP, URL filtering, etc.) | Strata Cloud Manager |
+| **Actions** (allow/alert/block per detection)                    | Strata Cloud Manager |
+| **DLP patterns** (SSN, credit cards, API keys)                   | Strata Cloud Manager |
+| **URL categories** (malware, phishing, adult)                    | Strata Cloud Manager |
+| **Custom topics** (organization policies)                        | Strata Cloud Manager |
+| **API key**                                                      | Plugin config        |
+| **Profile name**                                                 | Plugin config        |
+| **Plugin behavior** (enable/disable hooks)                       | Plugin config        |
 
 !!! warning "All Guardrails Are in SCM"
 This plugin does NOT configure AI guardrails. All detection services, sensitivity levels, and actions are configured in your **Strata Cloud Manager** tenant. The plugin simply points to your SCM security profile and applies local enforcement.
 
-## Required: Environment Variables
-
-| Variable                   | Required | Description                                  |
-| -------------------------- | -------- | -------------------------------------------- |
-| `PANW_AI_SEC_API_KEY`      | **Yes**  | API key from Strata Cloud Manager            |
-| `PANW_AI_SEC_PROFILE_NAME` | No       | Security profile name (default: `"default"`) |
-
-Set these on your gateway node:
-
-```bash
-export PANW_AI_SEC_API_KEY="your-api-key-here"
-export PANW_AI_SEC_PROFILE_NAME="your-profile-name"  # optional
-```
-
-## Optional: Plugin Configuration
-
-The plugin config controls **local behavior only** - not detection rules or guardrails.
+## Required: Plugin Configuration
 
 ```yaml
 plugins:
   prisma-airs:
     enabled: true
     config:
-      # Which SCM profile to use (overrides env var)
+      # API key from Strata Cloud Manager (required)
+      api_key: "your-api-key-here"
+
+      # Which SCM profile to use
       profile_name: "default"
 
       # Application name for scan metadata/reporting
       app_name: "openclaw"
 ```
+
+The API key can also be set via the gateway web UI under plugin settings (marked as sensitive/hidden).
 
 ### Hook Toggles
 
@@ -79,8 +68,11 @@ plugins:
       high_risk_tools:
         - exec
         - Bash
+        - bash
         - write
+        - Write
         - edit
+        - Edit
         - gateway
         - message
         - cron
@@ -95,7 +87,7 @@ All detection configuration happens in SCM:
 1. Log into [Strata Cloud Manager](https://stratacloudmanager.paloaltonetworks.com)
 2. Navigate to **Settings** → **API Keys**
 3. Create a new key with AIRS permissions
-4. Copy the key to `PANW_AI_SEC_API_KEY`
+4. Copy the key to the plugin's `api_key` config field
 
 ### 2. Create Security Profile
 
@@ -131,12 +123,11 @@ For each detection service, set the action:
 
 The absolute minimum to get started:
 
-```bash
-# Required
-export PANW_AI_SEC_API_KEY="your-key"
-
-# Optional - defaults to "default"
-export PANW_AI_SEC_PROFILE_NAME="your-profile"
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      api_key: "your-key"
 ```
 
 That's it. All other settings have sensible defaults.

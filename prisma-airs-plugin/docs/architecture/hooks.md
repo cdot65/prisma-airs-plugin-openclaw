@@ -44,9 +44,9 @@ async runModifyingHook(hookName, event) {
 
 ## Hook Events
 
-### agent:bootstrap
+### before_agent_start (guard)
 
-Fires when an agent initializes.
+Fires when an agent initializes. The guard hook is registered at priority 100.
 
 **Event Shape**:
 

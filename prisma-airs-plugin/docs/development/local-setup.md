@@ -67,32 +67,14 @@ openclaw prisma-airs
 
 ## Configure API Key
 
-### Environment Variable
+Set the API key in plugin config (via gateway web UI or config file):
 
-```bash
-export PANW_AI_SEC_API_KEY="your-api-key"
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      api_key: "your-api-key"
 ```
-
-### For Gateway Service
-
-=== "Linux (systemd)"
-
-    ```bash
-    mkdir -p ~/.config/systemd/user/openclaw-gateway.service.d
-    cat > ~/.config/systemd/user/openclaw-gateway.service.d/env.conf << 'EOF'
-    [Service]
-    Environment=PANW_AI_SEC_API_KEY=your-key
-    EOF
-    systemctl --user daemon-reload
-    openclaw gateway restart
-    ```
-
-=== "macOS"
-
-    Add to your shell profile (`~/.zshrc` or `~/.bash_profile`):
-    ```bash
-    export PANW_AI_SEC_API_KEY="your-key"
-    ```
 
 ## Test the Plugin
 
@@ -119,7 +101,7 @@ Expected output:
 ```
 Prisma AIRS Plugin Status
 -------------------------
-Version: 0.2.0
+Version: 0.2.4
 Profile: default
 App Name: openclaw
 Reminder: true
@@ -194,7 +176,7 @@ openclaw prisma-airs-scan "test"
 [--] LOW
 Action: warn
 Categories: api_error
-Error: PANW_AI_SEC_API_KEY not set
+Error: API key not configured. Set it in plugin config.
 ```
 
 ## Project Structure
@@ -258,17 +240,10 @@ npm test -- --filter "test name"
 ### API Key Not Working
 
 ```bash
-# Verify key is set
-echo $PANW_AI_SEC_API_KEY
-
 # Check gateway has key
 openclaw prisma-airs
 # Should show: API Key: configured
 
-# Test directly
-curl -X POST \
-  -H "x-pan-token: $PANW_AI_SEC_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"ai_profile":{"profile_name":"default"},"contents":[{"prompt":"test"}]}' \
-  https://service.api.aisecurity.paloaltonetworks.com/v1/scan/sync/request
+# If showing MISSING, set it in plugin config:
+# plugins.entries.prisma-airs.config.api_key
 ```

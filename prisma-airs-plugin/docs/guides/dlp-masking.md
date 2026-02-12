@@ -144,13 +144,12 @@ Only matches if string has mixed case AND numbers.
 
 These categories always block, regardless of `dlp_mask_only`:
 
-- `malicious_code`
+- `malicious_code`, `malicious_code_prompt`, `malicious_code_response`
 - `malicious_url`
-- `toxicity`
-- `toxic_content`
-- `agent_threat`
+- `toxicity`, `toxic_content`, `toxic_content_prompt`, `toxic_content_response`
+- `agent_threat`, `agent_threat_prompt`, `agent_threat_response`
 - `prompt_injection`
-- `db_security`
+- `db_security`, `db_security_response`
 - `scan-failure`
 
 ## Logging

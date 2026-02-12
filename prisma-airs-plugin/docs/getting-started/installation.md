@@ -35,41 +35,14 @@ openclaw plugins install .
 1. Log in to [Strata Cloud Manager](https://stratacloudmanager.paloaltonetworks.com)
 2. Navigate to **Settings** → **Access Keys**
 3. Create a new access key with AI Security permissions
-4. Set the environment variable:
+4. Set the API key in plugin config (via gateway web UI or config file):
 
-```bash
-export PANW_AI_SEC_API_KEY="your-api-key"
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      api_key: "your-api-key"
 ```
-
-### Persistent Configuration
-
-=== "Linux (systemd)"
-
-    ```bash
-    mkdir -p ~/.config/systemd/user/openclaw-gateway.service.d
-    cat > ~/.config/systemd/user/openclaw-gateway.service.d/env.conf << 'EOF'
-    [Service]
-    Environment=PANW_AI_SEC_API_KEY=your-key-here
-    EOF
-    systemctl --user daemon-reload
-    ```
-
-=== "macOS (launchd)"
-
-    Add to `~/Library/LaunchAgents/com.openclaw.gateway.plist`:
-    ```xml
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PANW_AI_SEC_API_KEY</key>
-        <string>your-key-here</string>
-    </dict>
-    ```
-
-=== "Docker"
-
-    ```dockerfile
-    ENV PANW_AI_SEC_API_KEY=your-key-here
-    ```
 
 ## Restart Gateway
 
@@ -97,7 +70,7 @@ Expected output:
 ```
 Prisma AIRS Plugin Status
 -------------------------
-Version: 0.2.0
+Version: 0.2.4
 Profile: default
 App Name: openclaw
 Reminder: true
@@ -118,12 +91,10 @@ openclaw gateway restart
 ### API Key not configured
 
 ```bash
-# Check environment
-echo $PANW_AI_SEC_API_KEY
-
-# Test directly
+# Check status
 openclaw prisma-airs
 # Should show: API Key: MISSING
+# Set it in plugin config via gateway web UI or config file
 ```
 
 ### Connection errors

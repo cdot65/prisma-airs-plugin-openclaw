@@ -64,6 +64,7 @@ describe("prisma-airs-outbound handler", () => {
               outbound_scanning_enabled: true,
               profile_name: "default",
               app_name: "test-app",
+              api_key: "test-api-key",
               fail_closed: true,
               dlp_mask_only: true,
             },
@@ -284,7 +285,7 @@ describe("prisma-airs-outbound handler", () => {
             entries: {
               "prisma-airs": {
                 config: {
-                  ...baseCtx.cfg?.plugins?.entries?.["prisma-airs"]?.config,
+                  ...baseCtx.cfg.plugins.entries["prisma-airs"].config,
                   fail_closed: false,
                 },
               },

@@ -6,44 +6,30 @@
 1. Strata Cloud Manager (SCM)
    └── Security profiles, detection rules, actions, DLP patterns
 
-2. Environment Variables
-   └── PANW_AI_SEC_API_KEY (required)
-   └── PANW_AI_SEC_PROFILE_NAME (optional)
-
-3. OpenClaw Plugin Config
+2. OpenClaw Plugin Config
+   └── api_key (required)
+   └── profile_name, app_name
    └── Hook toggles, local enforcement behavior
 ```
 
 !!! warning "Guardrails Are in SCM"
 This plugin does NOT configure AI guardrails. All detection services, sensitivity levels, and actions are configured in **Strata Cloud Manager**. The plugin simply points to your SCM security profile and enforces the actions it returns.
 
-## Environment Variables
-
-| Variable                   | Required | Default     | Description                       |
-| -------------------------- | -------- | ----------- | --------------------------------- |
-| `PANW_AI_SEC_API_KEY`      | **Yes**  | —           | API key from Strata Cloud Manager |
-| `PANW_AI_SEC_PROFILE_NAME` | No       | `"default"` | Security profile name from SCM    |
-
-### Setting Environment Variables
-
-```bash
-# On the gateway node
-export PANW_AI_SEC_API_KEY="your-api-key-here"
-export PANW_AI_SEC_PROFILE_NAME="AI-Firewall-High-Security-Profile"
-```
-
 ## Plugin Configuration
 
-Plugin config controls **local behavior only**. Add to OpenClaw config:
+Add to OpenClaw config (via gateway web UI or config file):
 
 ```yaml
 plugins:
   prisma-airs:
     enabled: true
     config:
+      # API key (required)
+      api_key: "your-api-key-here"
+
       # Core settings
-      profile_name: "default" # Overrides env var if set
-      app_name: "openclaw" # For scan metadata
+      profile_name: "default"
+      app_name: "openclaw"
 
       # Hook toggles
       reminder_enabled: true
@@ -58,8 +44,11 @@ plugins:
       high_risk_tools:
         - exec
         - Bash
+        - bash
         - write
+        - Write
         - edit
+        - Edit
         - gateway
         - message
         - cron
@@ -69,13 +58,12 @@ plugins:
 
 ### profile_name
 
-| Property | Value                      |
-| -------- | -------------------------- |
-| Type     | `string`                   |
-| Default  | `"default"`                |
-| Env Var  | `PANW_AI_SEC_PROFILE_NAME` |
+| Property | Value       |
+| -------- | ----------- |
+| Type     | `string`    |
+| Default  | `"default"` |
 
-Security profile name from Strata Cloud Manager. Config value overrides env var.
+Security profile name from Strata Cloud Manager.
 
 ### app_name
 
@@ -120,8 +108,9 @@ When `true`, DLP violations are masked instead of blocked. When `false`, DLP vio
 
 !!! note "Always-Block Categories"
 Regardless of `dlp_mask_only`, these categories always block:
-`malicious_code`, `malicious_url`, `toxicity`, `agent_threat`,
-`prompt_injection`, `db_security`, `scan-failure`
+`malicious_code*`, `malicious_url`, `toxicity`, `toxic_content*`,
+`agent_threat*`, `prompt_injection`, `db_security*`, `scan-failure`
+(includes suffixed variants like `malicious_code_response`)
 
 ### high_risk_tools
 
@@ -163,10 +152,11 @@ These are configured in SCM, **not** the plugin:
 
 ## Example: Minimal Setup
 
-```bash
-# Environment variables only - no plugin config needed
-export PANW_AI_SEC_API_KEY="your-key"
-export PANW_AI_SEC_PROFILE_NAME="your-profile"
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      api_key: "your-key"
 ```
 
 All other settings use sensible defaults.

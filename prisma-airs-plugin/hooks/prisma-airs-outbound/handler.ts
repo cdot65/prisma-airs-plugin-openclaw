@@ -43,6 +43,7 @@ interface PluginConfig {
           outbound_scanning_enabled?: boolean;
           profile_name?: string;
           app_name?: string;
+          api_key?: string;
           fail_closed?: boolean;
           dlp_mask_only?: boolean;
         };
@@ -122,6 +123,7 @@ function getPluginConfig(ctx: HookContext): {
   enabled: boolean;
   profileName: string;
   appName: string;
+  apiKey: string;
   failClosed: boolean;
   dlpMaskOnly: boolean;
 } {
@@ -130,6 +132,7 @@ function getPluginConfig(ctx: HookContext): {
     enabled: cfg?.outbound_scanning_enabled !== false,
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
+    apiKey: cfg?.api_key ?? "",
     failClosed: cfg?.fail_closed ?? true, // Default fail-closed
     dlpMaskOnly: cfg?.dlp_mask_only ?? true, // Default mask instead of block for DLP
   };
@@ -255,6 +258,7 @@ const handler = async (
       response: content,
       profileName: config.profileName,
       appName: config.appName,
+      apiKey: config.apiKey,
     });
   } catch (err) {
     console.error(

@@ -25,8 +25,8 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma
 │                    OpenClaw Gateway                         │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ prisma-airs plugin                                  │   │
-│  │ - PANW_AI_SEC_API_KEY (env var)                     │   │
-│  │ - PANW_AI_SEC_PROFILE_NAME (env var)                │   │
+│  │ - api_key (plugin config)                           │   │
+│  │ - profile_name (plugin config)                      │   │
 │  │ - Sends prompts/responses to AIRS API               │   │
 │  │ - Enforces actions returned by AIRS                 │   │
 │  └─────────────────────────────────────────────────────┘   │
@@ -38,12 +38,11 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma
 ## Quick Start
 
 ```bash
-# 1. Set environment variables
-export PANW_AI_SEC_API_KEY="your-api-key"
-export PANW_AI_SEC_PROFILE_NAME="your-profile-name"
-
-# 2. Install plugin
+# 1. Install plugin
 openclaw plugins install @cdot65/prisma-airs
+
+# 2. Set API key in plugin config (via gateway web UI or config file)
+#    plugins.entries.prisma-airs.config.api_key = "your-api-key"
 
 # 3. Restart gateway
 openclaw gateway restart
@@ -54,14 +53,14 @@ openclaw prisma-airs-scan "test message"
 
 ## What You Configure Where
 
-| Configuration                          | Where                              |
-| -------------------------------------- | ---------------------------------- |
-| Detection services (what to detect)    | Strata Cloud Manager               |
-| Actions (allow/alert/block)            | Strata Cloud Manager               |
-| DLP patterns, URL categories           | Strata Cloud Manager               |
-| API key                                | `PANW_AI_SEC_API_KEY` env var      |
-| Profile name                           | `PANW_AI_SEC_PROFILE_NAME` env var |
-| Plugin behavior (enable/disable hooks) | OpenClaw plugin config             |
+| Configuration                          | Where                          |
+| -------------------------------------- | ------------------------------ |
+| Detection services (what to detect)    | Strata Cloud Manager           |
+| Actions (allow/alert/block)            | Strata Cloud Manager           |
+| DLP patterns, URL categories           | Strata Cloud Manager           |
+| API key                                | Plugin config (`api_key`)      |
+| Profile name                           | Plugin config (`profile_name`) |
+| Plugin behavior (enable/disable hooks) | OpenClaw plugin config         |
 
 ## Features
 
@@ -69,7 +68,7 @@ openclaw prisma-airs-scan "test message"
 
 | Hook                                                  | Event                | Purpose                                   |
 | ----------------------------------------------------- | -------------------- | ----------------------------------------- |
-| [prisma-airs-guard](hooks/prisma-airs-guard.md)       | `agent:bootstrap`    | Reminds agents to scan suspicious content |
+| [prisma-airs-guard](hooks/prisma-airs-guard.md)       | `before_agent_start` | Reminds agents to scan suspicious content |
 | [prisma-airs-audit](hooks/prisma-airs-audit.md)       | `message_received`   | Audit logging with scan caching           |
 | [prisma-airs-context](hooks/prisma-airs-context.md)   | `before_agent_start` | Injects threat warnings into context      |
 | [prisma-airs-outbound](hooks/prisma-airs-outbound.md) | `message_sending`    | Blocks/masks outbound responses           |
@@ -104,7 +103,7 @@ Block dangerous tools during active threats:
 
 ```
 Threat: prompt_injection
-Blocked: exec, Bash, gateway, message, cron
+Blocked: exec, Bash, bash, gateway, message, cron
 ```
 
 ## Requirements

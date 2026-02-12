@@ -53,6 +53,7 @@ export interface ScanRequest {
   appName?: string;
   appUser?: string;
   aiModel?: string;
+  apiKey?: string;
   toolEvents?: ToolEventInput[];
 }
 
@@ -289,9 +290,8 @@ interface AIRSResponse {
  * Scan content through Prisma AIRS API
  */
 export async function scan(request: ScanRequest): Promise<ScanResult> {
-  const apiKey = process.env.PANW_AI_SEC_API_KEY;
-  // Profile name: request param > env var > default
-  const profileName = request.profileName ?? process.env.PANW_AI_SEC_PROFILE_NAME ?? "default";
+  const apiKey = request.apiKey;
+  const profileName = request.profileName ?? "default";
 
   if (!apiKey) {
     return {
@@ -307,7 +307,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       timeout: false,
       hasError: false,
       contentErrors: [],
-      error: "PANW_AI_SEC_API_KEY not set",
+      error: "API key not configured. Set it in plugin config.",
     };
   }
 
@@ -606,6 +606,6 @@ function parseToolDetected(raw?: AIRSToolDetected): ToolDetected | undefined {
 /**
  * Check if API key is configured
  */
-export function isConfigured(): boolean {
-  return !!process.env.PANW_AI_SEC_API_KEY;
+export function isConfigured(apiKey?: string): boolean {
+  return !!apiKey;
 }

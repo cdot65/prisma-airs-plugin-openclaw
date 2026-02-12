@@ -4,23 +4,27 @@ Complete reference for Prisma AIRS detection categories.
 
 ## Categories Overview
 
-| Category                 | Detection Service    | Description                             |
-| ------------------------ | -------------------- | --------------------------------------- |
-| `prompt_injection`       | Prompt Injection     | Attempt to override system instructions |
-| `dlp_prompt`             | Sensitive Data       | PII or secrets in user prompt           |
-| `dlp_response`           | Sensitive Data       | PII or secrets in AI response           |
-| `url_filtering_prompt`   | URL Filtering        | Disallowed URL in prompt                |
-| `url_filtering_response` | URL Filtering        | Disallowed URL in response              |
-| `toxic_content`          | Toxic Content        | Harmful, abusive content                |
-| `db_security`            | Database Security    | Dangerous database operations           |
-| `malicious_code`         | Malicious Code       | Malware, exploits, dangerous code       |
-| `agent_threat`           | AI Agent Protection  | Multi-step agent manipulation           |
-| `ungrounded`             | Contextual Grounding | Hallucination, unverified claims        |
-| `topic_violation`        | Topic Guardrails     | Custom policy violation                 |
-| `safe`                   | —                    | No threats detected                     |
-| `benign`                 | —                    | Alias for `safe`                        |
-| `api_error`              | —                    | API call failed                         |
-| `scan-failure`           | —                    | Scan failed (fail-closed mode)          |
+| Category                   | Detection Service    | Description                             |
+| -------------------------- | -------------------- | --------------------------------------- |
+| `prompt_injection`         | Prompt Injection     | Attempt to override system instructions |
+| `dlp_prompt`               | Sensitive Data       | PII or secrets in user prompt           |
+| `dlp_response`             | Sensitive Data       | PII or secrets in AI response           |
+| `url_filtering_prompt`     | URL Filtering        | Disallowed URL in prompt                |
+| `url_filtering_response`   | URL Filtering        | Disallowed URL in response              |
+| `toxic_content_prompt`     | Toxic Content        | Harmful, abusive content in prompt      |
+| `toxic_content_response`   | Toxic Content        | Harmful, abusive content in response    |
+| `db_security_response`     | Database Security    | Dangerous database operations           |
+| `malicious_code_prompt`    | Malicious Code       | Malware, exploits in prompt             |
+| `malicious_code_response`  | Malicious Code       | Malware, exploits in response           |
+| `agent_threat_prompt`      | AI Agent Protection  | Agent manipulation in prompt            |
+| `agent_threat_response`    | AI Agent Protection  | Agent manipulation in response          |
+| `ungrounded_response`      | Contextual Grounding | Hallucination, unverified claims        |
+| `topic_violation_prompt`   | Topic Guardrails     | Custom policy violation in prompt       |
+| `topic_violation_response` | Topic Guardrails     | Custom policy violation in response     |
+| `safe`                     | —                    | No threats detected                     |
+| `benign`                   | —                    | Alias for `safe`                        |
+| `api_error`                | —                    | API call failed                         |
+| `scan-failure`             | —                    | Scan failed (fail-closed mode)          |
 
 ## Prompt Injection
 
@@ -41,7 +45,7 @@ Detects attempts to override system instructions or manipulate agent behavior.
 
 ### Tool Blocking
 
-`exec`, `Bash`, `gateway`, `message`, `cron`
+`exec`, `Bash`, `bash`, `gateway`, `message`, `cron`
 
 ---
 
@@ -104,13 +108,13 @@ url_filtering_response: "Visit http://phishing-site.example.com to reset passwor
 
 ### Tool Blocking
 
-`web_fetch`, `WebFetch`, `browser`, `curl`
+`web_fetch`, `WebFetch`, `browser`, `Browser`, `curl`
 
 ---
 
 ## Toxic Content
 
-**Category**: `toxic_content`
+**Categories**: `toxic_content_prompt`, `toxic_content_response`
 
 Detects harmful, abusive, or inappropriate content.
 
@@ -131,7 +135,7 @@ Detects harmful, abusive, or inappropriate content.
 
 ## Database Security
 
-**Category**: `db_security`
+**Category**: `db_security_response`
 
 Detects dangerous database operations.
 
@@ -156,13 +160,13 @@ Detects dangerous database operations.
 
 ### Tool Blocking
 
-`exec`, `Bash`, `database`, `query`, `sql`, `eval`
+`exec`, `Bash`, `bash`, `database`, `query`, `sql`, `eval`
 
 ---
 
 ## Malicious Code
 
-**Category**: `malicious_code`
+**Categories**: `malicious_code_prompt`, `malicious_code_response`
 
 Detects malware, exploits, and dangerous code patterns.
 
@@ -192,13 +196,13 @@ subprocess.call(["/bin/sh","-i"])
 
 ### Tool Blocking
 
-`exec`, `Bash`, `write`, `edit`, `eval`, `NotebookEdit`
+`exec`, `Bash`, `bash`, `write`, `Write`, `edit`, `Edit`, `eval`, `NotebookEdit`
 
 ---
 
 ## AI Agent Threats
 
-**Category**: `agent_threat`
+**Categories**: `agent_threat_prompt`, `agent_threat_response`
 
 Detects sophisticated multi-step attacks targeting AI agents.
 
@@ -216,14 +220,14 @@ Detects sophisticated multi-step attacks targeting AI agents.
 
 ### Tool Blocking
 
-ALL external tools blocked:
-`exec`, `Bash`, `write`, `edit`, `gateway`, `message`, `cron`, `browser`, `web_fetch`, `database`, `query`, `sql`, `eval`
+ALL external tools blocked (18 tools):
+`exec`, `Bash`, `bash`, `write`, `Write`, `edit`, `Edit`, `gateway`, `message`, `cron`, `browser`, `web_fetch`, `WebFetch`, `database`, `query`, `sql`, `eval`, `NotebookEdit`
 
 ---
 
 ## Contextual Grounding
 
-**Category**: `ungrounded`
+**Category**: `ungrounded_response`
 
 Detects responses not grounded in factual context.
 
@@ -242,7 +246,7 @@ Detects responses not grounded in factual context.
 
 ## Topic Guardrails
 
-**Category**: `topic_violation`
+**Categories**: `topic_violation_prompt`, `topic_violation_response`
 
 Detects violations of organization-specific content policies.
 
@@ -309,7 +313,7 @@ Returned when the AIRS API call fails (timeout, auth error, network issues, etc)
 
 ### Causes
 
-- `PANW_AI_SEC_API_KEY` not set
+- API key not configured in plugin config
 - API timeout or network failure
 - 401 Unauthorized (invalid/expired key)
 - 429 Rate limiting

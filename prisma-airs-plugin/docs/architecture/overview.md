@@ -121,8 +121,12 @@ interface CacheEntry {
 
 ```typescript
 export default function register(api: PluginApi): void {
-  // 1. Register hooks from directory
-  api.registerPluginHooksFromDir(join(__dirname, "hooks"));
+  // 1. Register hooks via api.on()
+  api.on("before_agent_start", guardAdapter, { priority: 100 });
+  api.on("message_received", auditAdapter);
+  api.on("before_agent_start", contextAdapter, { priority: 50 });
+  api.on("message_sending", outboundAdapter);
+  api.on("before_tool_call", toolsAdapter);
 
   // 2. Register RPC methods
   api.registerGatewayMethod("prisma-airs.scan", handler);
@@ -151,6 +155,7 @@ const response = await fetch(AIRS_SCAN_ENDPOINT, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
     "x-pan-token": apiKey,
   },
   body: JSON.stringify({

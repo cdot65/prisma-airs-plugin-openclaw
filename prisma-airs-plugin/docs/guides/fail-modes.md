@@ -46,13 +46,26 @@ When scan fails:
   "promptDetected": {
     "injection": false,
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "topicViolation": false
   },
   "responseDetected": {
     "dlp": false,
-    "urlCats": false
+    "urlCats": false,
+    "dbSecurity": false,
+    "toxicContent": false,
+    "maliciousCode": false,
+    "agent": false,
+    "ungrounded": false,
+    "topicViolation": false
   },
   "latencyMs": 0,
+  "timeout": false,
+  "hasError": true,
+  "contentErrors": [],
   "error": "Scan failed: connection timeout"
 }
 ```
@@ -240,7 +253,7 @@ fail_closed: false → Allow request
 ### Invalid API Key
 
 ```
-Cause: PANW_AI_SEC_API_KEY invalid or expired
+Cause: API key invalid or expired
 Response: 401 Unauthorized
 fail_closed: true  → Block request
 fail_closed: false → Allow request
