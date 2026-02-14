@@ -2,7 +2,7 @@
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
   "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "entrypoint": "index.ts",
   "hooks": [
     "hooks/prisma-airs-guard",

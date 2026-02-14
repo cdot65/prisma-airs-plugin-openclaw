@@ -50,6 +50,12 @@ node_modules/
 # Ruff
 .ruff_cache/
 
+# MkDocs
+site/
+
+# Reference docs (local only)
+openclaw-docs/
+
 # Claude Code
 .claude/
 CLAUDE.md

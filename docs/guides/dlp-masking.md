@@ -11,7 +11,8 @@ Instead of completely blocking responses that contain sensitive data, the plugin
 ```yaml
 plugins:
   prisma-airs:
-    dlp_mask_only: true # default
+    config:
+      dlp_mask_only: true # default
 ```
 
 When `dlp_mask_only: true`:
@@ -206,8 +207,9 @@ If regex masking doesn't change the content (false positive from AIRS or unusual
 ```yaml
 plugins:
   prisma-airs:
-    dlp_mask_only: true
-    outbound_scanning_enabled: true
+    config:
+      dlp_mask_only: true
+      outbound_scanning_enabled: true
 ```
 
 ### Maximum Security (Block DLP)
@@ -215,8 +217,9 @@ plugins:
 ```yaml
 plugins:
   prisma-airs:
-    dlp_mask_only: false
-    outbound_scanning_enabled: true
+    config:
+      dlp_mask_only: false
+      outbound_scanning_enabled: true
 ```
 
 ### Disable DLP Scanning
@@ -224,7 +227,8 @@ plugins:
 ```yaml
 plugins:
   prisma-airs:
-    outbound_scanning_enabled: false
+    config:
+      outbound_scanning_enabled: false
 ```
 
 Configure DLP detection in Strata Cloud Manager to reduce false positives.

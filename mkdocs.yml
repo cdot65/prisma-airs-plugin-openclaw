@@ -3,7 +3,7 @@ site_description: OpenClaw plugin for Prisma AIRS (AI Runtime Security)
 site_url: https://cdot65.github.io/prisma-airs-plugin-openclaw/
 repo_url: https://github.com/cdot65/prisma-airs-plugin-openclaw
 repo_name: cdot65/prisma-airs-plugin-openclaw
-edit_uri: edit/main/prisma-airs-plugin/docs/
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -93,6 +93,7 @@ nav:
       - DLP Masking: guides/dlp-masking.md
       - Tool Gating: guides/tool-gating.md
       - Fail Modes: guides/fail-modes.md
+      - Docker Deployment: guides/docker.md
   - Development:
       - Contributing: development/contributing.md
       - Testing: development/testing.md

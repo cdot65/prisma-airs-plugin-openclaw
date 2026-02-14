@@ -106,6 +106,23 @@ Threat: prompt_injection
 Blocked: exec, Bash, bash, gateway, message, cron
 ```
 
+## Docker
+
+A base OpenClaw node image is provided in `docker/Dockerfile`:
+
+```bash
+# Build base image
+docker build -t openclaw-base docker/
+
+# Run with config volume mounted
+docker run -d \
+  --name openclaw-node \
+  -v $(pwd)/config.yaml:/home/node/.openclaw/config.yaml \
+  openclaw-base
+```
+
+See the [Docker Deployment](guides/docker.md) guide for full examples including Docker Compose.
+
 ## Requirements
 
 - Node.js 18+

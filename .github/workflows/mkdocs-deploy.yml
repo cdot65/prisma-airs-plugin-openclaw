@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'prisma-airs-plugin/docs/**'
-      - 'prisma-airs-plugin/mkdocs.yml'
+      - 'docs/**'
+      - 'mkdocs.yml'
       - '.github/workflows/mkdocs-deploy.yml'
   workflow_dispatch:
 
@@ -34,12 +34,12 @@ jobs:
         run: pip install mkdocs mkdocs-material
 
       - name: Build documentation
-        run: cd prisma-airs-plugin && mkdocs build
+        run: mkdocs build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: prisma-airs-plugin/site
+          path: site
 
   deploy:
     needs: build

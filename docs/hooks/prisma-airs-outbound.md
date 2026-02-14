@@ -24,9 +24,10 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    outbound_scanning_enabled: true # default
-    fail_closed: true # Block on scan failure (default)
-    dlp_mask_only: true # Mask DLP instead of block (default)
+    config:
+      outbound_scanning_enabled: true # default
+      fail_closed: true # Block on scan failure (default)
+      dlp_mask_only: true # Mask DLP instead of block (default)
 ```
 
 ## Detection Capabilities

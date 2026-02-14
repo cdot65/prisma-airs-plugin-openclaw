@@ -101,7 +101,7 @@ Expected output:
 ```
 Prisma AIRS Plugin Status
 -------------------------
-Version: 0.2.4
+Version: 0.2.5
 Profile: default
 App Name: openclaw
 Reminder: true
@@ -191,13 +191,16 @@ prisma-airs-plugin-openclaw/
 │   ├── src/                 # Core modules
 │   │   ├── scanner.ts
 │   │   └── scan-cache.ts
-│   ├── hooks/               # Hook handlers
-│   │   ├── prisma-airs-guard/
-│   │   ├── prisma-airs-audit/
-│   │   ├── prisma-airs-context/
-│   │   ├── prisma-airs-outbound/
-│   │   └── prisma-airs-tools/
-│   └── docs/                # Documentation
+│   └── hooks/               # Hook handlers
+│       ├── prisma-airs-guard/
+│       ├── prisma-airs-audit/
+│       ├── prisma-airs-context/
+│       ├── prisma-airs-outbound/
+│       └── prisma-airs-tools/
+├── docs/                    # Documentation (MkDocs)
+├── docker/                  # Dockerfile for base image
+├── Makefile                 # 25 dev/build/publish targets
+├── mkdocs.yml               # MkDocs configuration
 ├── README.md
 ├── RELEASE_NOTES.md
 └── .github/workflows/       # CI/CD
