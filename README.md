@@ -53,20 +53,13 @@ openclaw gateway restart
 
 ### 3. Configure API Key
 
-```bash
-export PANW_AI_SEC_API_KEY="your-key-from-strata-cloud-manager"
-```
+Set the API key in plugin config (via gateway web UI or config file):
 
-For systemd service (Linux):
-
-```bash
-mkdir -p ~/.config/systemd/user/openclaw-gateway.service.d
-cat > ~/.config/systemd/user/openclaw-gateway.service.d/env.conf << 'EOF'
-[Service]
-Environment=PANW_AI_SEC_API_KEY=your-key-here
-EOF
-systemctl --user daemon-reload
-openclaw gateway restart
+```yaml
+plugins:
+  prisma-airs:
+    config:
+      api_key: "your-key-from-strata-cloud-manager"
 ```
 
 ### 4. Verify
@@ -93,10 +86,14 @@ prisma-airs-plugin/
 ├── openclaw.plugin.json          # Plugin manifest
 ├── index.ts                      # Plugin entrypoint
 ├── src/
-│   └── scanner.ts                # TypeScript scanner
-└── hooks/prisma-airs-guard/      # Bootstrap reminder hook
-    ├── HOOK.md
-    └── handler.ts
+│   ├── scanner.ts                # TypeScript scanner
+│   └── scan-cache.ts             # Result caching
+└── hooks/
+    ├── prisma-airs-guard/        # Bootstrap reminder
+    ├── prisma-airs-audit/        # Audit logging + caching
+    ├── prisma-airs-context/      # Threat warning injection
+    ├── prisma-airs-outbound/     # Response scanning/blocking/masking
+    └── prisma-airs-tools/        # Tool gating
 ```
 
 ## Configuration
@@ -106,16 +103,18 @@ prisma-airs-plugin/
 ```yaml
 plugins:
   prisma-airs:
-    profile_name: "default"       # SCM profile name
-    app_name: "openclaw"          # App metadata
-    reminder_enabled: true        # Enable bootstrap hook
+    config:
+      api_key: "your-api-key"
+      profile_name: "default"       # SCM profile name
+      app_name: "openclaw"          # App metadata
+      reminder_enabled: true        # Enable bootstrap hook
 ```
 
 ### Where to Configure What
 
 | Setting | Where |
 |---------|-------|
-| API key | Environment variable `PANW_AI_SEC_API_KEY` |
+| API key | Plugin config (`api_key`) |
 | Profile name | Plugin config |
 | Detection services | Strata Cloud Manager |
 | Actions (allow/block) | Strata Cloud Manager |
@@ -128,11 +127,7 @@ plugins:
 1. Log in to Strata Cloud Manager
 2. Navigate to **Settings** → **Access Keys**
 3. Create a new access key for AI Security
-4. Set the environment variable:
-
-```bash
-export PANW_AI_SEC_API_KEY="your-api-key"
-```
+4. Set the key in plugin config (`api_key` field)
 
 ## Usage
 
@@ -211,7 +206,8 @@ Disable via config:
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: false
+    config:
+      reminder_enabled: false
 ```
 
 ## Detection Categories

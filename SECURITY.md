@@ -40,7 +40,7 @@ This security policy covers vulnerabilities in:
 
 When using this plugin:
 
-1. Use environment variables for credentials (`PANW_AI_SEC_API_KEY`)
+1. Set API key via plugin config (`api_key` field), never hardcode in source
 2. Never commit API keys to version control
 3. Monitor scan results for unusual patterns
 4. Keep plugin dependencies updated (`npm update`)

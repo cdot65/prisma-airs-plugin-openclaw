@@ -27,7 +27,8 @@ Enable/disable via plugin config:
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: true # default
+    config:
+      reminder_enabled: true # default
 ```
 
 ## Requirements
