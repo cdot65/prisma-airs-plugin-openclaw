@@ -62,7 +62,7 @@ docker build -t openclaw-prisma-airs -f Dockerfile.prisma-airs .
 # Run the node
 docker run -d \
   --name openclaw-node \
-  -e PRISMA_AIRS_API_KEY=your-api-key \
+  -v $(pwd)/config.yaml:/home/node/.openclaw/config.yaml \
   openclaw-prisma-airs
 ```
 
@@ -74,10 +74,9 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    environment:
-      - PRISMA_AIRS_API_KEY=${PRISMA_AIRS_API_KEY}
     volumes:
-      - openclaw-data:/home/node/.openclaw
+      - ./config.yaml:/home/node/.openclaw/config.yaml
+      - openclaw-data:/home/node/.openclaw/data
     restart: unless-stopped
 
 volumes:

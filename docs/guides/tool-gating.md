@@ -29,7 +29,8 @@ flowchart TB
 ```yaml
 plugins:
   prisma-airs:
-    tool_gating_enabled: true # default
+    config:
+      tool_gating_enabled: true # default
 ```
 
 ### High-Risk Tools
@@ -39,17 +40,18 @@ Tools blocked on ANY threat:
 ```yaml
 plugins:
   prisma-airs:
-    high_risk_tools:
-      - exec
-      - Bash
-      - bash
-      - write
-      - Write
-      - edit
-      - Edit
-      - gateway
-      - message
-      - cron
+    config:
+      high_risk_tools:
+        - exec
+        - Bash
+        - bash
+        - write
+        - Write
+        - edit
+        - Edit
+        - gateway
+        - message
+        - cron
 ```
 
 ## Blocking Rules
@@ -122,17 +124,18 @@ gateway, message, cron
 ```yaml
 plugins:
   prisma-airs:
-    high_risk_tools:
-      - exec
-      - Bash
-      - write
-      - edit
-      # Add your tools
-      - deploy
-      - kubectl
-      - terraform
-      - aws
-      - gcloud
+    config:
+      high_risk_tools:
+        - exec
+        - Bash
+        - write
+        - edit
+        # Add your tools
+        - deploy
+        - kubectl
+        - terraform
+        - aws
+        - gcloud
 ```
 
 ### Minimal Blocking
@@ -140,9 +143,10 @@ plugins:
 ```yaml
 plugins:
   prisma-airs:
-    high_risk_tools:
-      - exec
-      - Bash
+    config:
+      high_risk_tools:
+        - exec
+        - Bash
 ```
 
 ### Disable High-Risk Blocking
@@ -150,7 +154,8 @@ plugins:
 ```yaml
 plugins:
   prisma-airs:
-    high_risk_tools: []
+    config:
+      high_risk_tools: []
 ```
 
 !!! warning "Security Risk"
@@ -248,7 +253,10 @@ Clearing `high_risk_tools` means only category-specific blocking applies.
 ### If Tool Gating Disabled
 
 ```yaml
-tool_gating_enabled: false
+plugins:
+  prisma-airs:
+    config:
+      tool_gating_enabled: false
 ```
 
 - Agent can call any tool
@@ -266,16 +274,19 @@ The default list covers most dangerous operations.
 If you have deployment or infrastructure tools:
 
 ```yaml
-high_risk_tools:
-  # Default
-  - exec
-  - Bash
-  - write
-  - edit
-  # Custom
-  - kubectl
-  - terraform
-  - ansible
+plugins:
+  prisma-airs:
+    config:
+      high_risk_tools:
+        # Default
+        - exec
+        - Bash
+        - write
+        - edit
+        # Custom
+        - kubectl
+        - terraform
+        - ansible
 ```
 
 ### 3. Monitor Blocked Events
@@ -291,9 +302,12 @@ Review `prisma_airs_tool_block` logs for:
 Even with minimal blocking, keep:
 
 ```yaml
-high_risk_tools:
-  - exec
-  - Bash
+plugins:
+  prisma-airs:
+    config:
+      high_risk_tools:
+        - exec
+        - Bash
 ```
 
 These prevent the most dangerous command execution.

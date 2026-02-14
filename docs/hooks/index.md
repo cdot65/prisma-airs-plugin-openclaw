@@ -56,11 +56,12 @@ Each hook can be individually enabled/disabled:
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: true # prisma-airs-guard
-    audit_enabled: true # prisma-airs-audit
-    context_injection_enabled: true # prisma-airs-context
-    outbound_scanning_enabled: true # prisma-airs-outbound
-    tool_gating_enabled: true # prisma-airs-tools
+    config:
+      reminder_enabled: true # prisma-airs-guard
+      audit_enabled: true # prisma-airs-audit
+      context_injection_enabled: true # prisma-airs-context
+      outbound_scanning_enabled: true # prisma-airs-outbound
+      tool_gating_enabled: true # prisma-airs-tools
 ```
 
 ## Data Sharing
@@ -87,13 +88,14 @@ All hooks enabled, fail-closed:
 ```yaml
 plugins:
   prisma-airs:
-    fail_closed: true
-    reminder_enabled: true
-    audit_enabled: true
-    context_injection_enabled: true
-    outbound_scanning_enabled: true
-    tool_gating_enabled: true
-    dlp_mask_only: false # Block instead of mask
+    config:
+      fail_closed: true
+      reminder_enabled: true
+      audit_enabled: true
+      context_injection_enabled: true
+      outbound_scanning_enabled: true
+      tool_gating_enabled: true
+      dlp_mask_only: false # Block instead of mask
 ```
 
 ### Audit Only
@@ -103,11 +105,12 @@ Log threats without enforcement:
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: false
-    audit_enabled: true
-    context_injection_enabled: false
-    outbound_scanning_enabled: false
-    tool_gating_enabled: false
+    config:
+      reminder_enabled: false
+      audit_enabled: true
+      context_injection_enabled: false
+      outbound_scanning_enabled: false
+      tool_gating_enabled: false
 ```
 
 ### Outbound Only
@@ -117,9 +120,10 @@ Only scan responses:
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: false
-    audit_enabled: false
-    context_injection_enabled: false
-    outbound_scanning_enabled: true
-    tool_gating_enabled: false
+    config:
+      reminder_enabled: false
+      audit_enabled: false
+      context_injection_enabled: false
+      outbound_scanning_enabled: true
+      tool_gating_enabled: false
 ```

@@ -24,8 +24,9 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    context_injection_enabled: true # default
-    fail_closed: true # Block on scan failure (default)
+    config:
+      context_injection_enabled: true # default
+      fail_closed: true # Block on scan failure (default)
 ```
 
 ## Warning Levels

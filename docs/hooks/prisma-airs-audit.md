@@ -24,10 +24,11 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    audit_enabled: true # default
-    fail_closed: true # Block on scan failure (default)
-    profile_name: "default"
-    app_name: "openclaw"
+    config:
+      audit_enabled: true # default
+      fail_closed: true # Block on scan failure (default)
+      profile_name: "default"
+      app_name: "openclaw"
 ```
 
 ## Audit Log Format

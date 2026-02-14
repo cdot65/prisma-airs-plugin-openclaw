@@ -70,7 +70,7 @@ Expected output:
 ```
 Prisma AIRS Plugin Status
 -------------------------
-Version: 0.2.4
+Version: 0.2.5
 Profile: default
 App Name: openclaw
 Reminder: true

@@ -24,7 +24,8 @@ When an agent bootstraps, this hook injects a security reminder into the agent's
 ```yaml
 plugins:
   prisma-airs:
-    reminder_enabled: true # default
+    config:
+      reminder_enabled: true # default
 ```
 
 ## Injected Content

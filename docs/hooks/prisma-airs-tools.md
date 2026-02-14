@@ -24,18 +24,19 @@ This hook:
 ```yaml
 plugins:
   prisma-airs:
-    tool_gating_enabled: true # default
-    high_risk_tools: # blocked on ANY threat
-      - exec
-      - Bash
-      - bash
-      - write
-      - Write
-      - edit
-      - Edit
-      - gateway
-      - message
-      - cron
+    config:
+      tool_gating_enabled: true # default
+      high_risk_tools: # blocked on ANY threat
+        - exec
+        - Bash
+        - bash
+        - write
+        - Write
+        - edit
+        - Edit
+        - gateway
+        - message
+        - cron
 ```
 
 ## Tool Blocking Matrix
@@ -195,15 +196,16 @@ interface HookResult {
 ```yaml
 plugins:
   prisma-airs:
-    high_risk_tools:
-      - exec
-      - Bash
-      - write
-      - edit
-      # Add custom tools
-      - deploy
-      - kubectl
-      - terraform
+    config:
+      high_risk_tools:
+        - exec
+        - Bash
+        - write
+        - edit
+        # Add custom tools
+        - deploy
+        - kubectl
+        - terraform
 ```
 
 ## Related Hooks

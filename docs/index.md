@@ -114,10 +114,10 @@ A base OpenClaw node image is provided in `docker/Dockerfile`:
 # Build base image
 docker build -t openclaw-base docker/
 
-# Run with the plugin installed
+# Run with config volume mounted
 docker run -d \
   --name openclaw-node \
-  -e PRISMA_AIRS_API_KEY=your-api-key \
+  -v $(pwd)/config.yaml:/home/node/.openclaw/config.yaml \
   openclaw-base
 ```
 

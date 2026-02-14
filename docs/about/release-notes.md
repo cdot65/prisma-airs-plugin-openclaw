@@ -6,6 +6,21 @@ For detailed release notes including design decisions, see [RELEASE_NOTES.md](ht
 
 ## Version History
 
+### v0.2.5 - Stable Release & Docker Support
+
+**Released**: 2025-02-14
+
+#### Changes
+
+- Dropped alpha prerelease tag (0.2.5-alpha.0 → 0.2.5)
+- Moved docs to repo root (MkDocs site)
+- Added Docker deployment guide and base Dockerfile
+- Added Makefile with 25 dev/build/publish targets
+- API key via plugin config only (env var removed from all docs)
+- npm prerelease workflow support
+
+---
+
 ### v0.2.4 - Config API Key & Hook Registration
 
 **Released**: 2025-02-12
@@ -103,8 +118,9 @@ See [Design Decisions](../architecture/design-decisions.md) for detailed rationa
    ```yaml
    plugins:
      prisma-airs:
-       # Add if you want previous behavior
-       fail_closed: false
+       config:
+         # Add if you want previous behavior
+         fail_closed: false
    ```
 
 2. **Review new hooks**: All new hooks are enabled by default. Disable if needed:
@@ -112,10 +128,11 @@ See [Design Decisions](../architecture/design-decisions.md) for detailed rationa
    ```yaml
    plugins:
      prisma-airs:
-       audit_enabled: false
-       context_injection_enabled: false
-       outbound_scanning_enabled: false
-       tool_gating_enabled: false
+       config:
+         audit_enabled: false
+         context_injection_enabled: false
+         outbound_scanning_enabled: false
+         tool_gating_enabled: false
    ```
 
 3. **Update OpenClaw**: Requires v2026.2.1+

@@ -183,7 +183,8 @@ Description.
 ```yaml
 plugins:
   prisma-airs:
-    newhook_enabled: true
+    config:
+      newhook_enabled: true
 ````
 
 ````
@@ -269,13 +270,11 @@ Include:
 
 ## Release Process
 
-1. Update version in `package.json`
+1. Update version in 3 files: `package.json`, `openclaw.plugin.json`, `index.ts`
 2. Update `RELEASE_NOTES.md`
 3. Create PR for version bump
 4. Merge to main
-5. Tag release: `git tag v0.x.0`
-6. Push tag: `git push origin v0.x.0`
-7. GitHub Actions publishes to npm
+5. Create GitHub Release (triggers npm publish workflow)
 
 ## Questions?
 

@@ -16,9 +16,10 @@ When a scan fails (API error, timeout, network issue), the plugin must decide:
 ```yaml
 plugins:
   prisma-airs:
-    fail_closed: true   # default - block on failure
-    # or
-    fail_closed: false  # allow on failure
+    config:
+      fail_closed: true   # default - block on failure
+      # or
+      fail_closed: false  # allow on failure
 ```
 
 ## Fail-Closed (Default)
@@ -203,15 +204,16 @@ Enable fail-closed only for certain hooks:
 ```yaml
 plugins:
   prisma-airs:
-    # Fail-closed for enforcement
-    fail_closed: true
+    config:
+      # Fail-closed for enforcement
+      fail_closed: true
 
-    # Disable certain hooks to reduce impact
-    context_injection_enabled: false
-    tool_gating_enabled: false
+      # Disable certain hooks to reduce impact
+      context_injection_enabled: false
+      tool_gating_enabled: false
 
-    # Keep outbound scanning
-    outbound_scanning_enabled: true
+      # Keep outbound scanning
+      outbound_scanning_enabled: true
 ```
 
 This blocks outbound violations but doesn't block tool calls on scan failure.
@@ -223,11 +225,12 @@ Log failures but don't block:
 ```yaml
 plugins:
   prisma-airs:
-    fail_closed: false
-    audit_enabled: true
-    context_injection_enabled: false
-    outbound_scanning_enabled: false
-    tool_gating_enabled: false
+    config:
+      fail_closed: false
+      audit_enabled: true
+      context_injection_enabled: false
+      outbound_scanning_enabled: false
+      tool_gating_enabled: false
 ```
 
 Review logs to understand failure patterns before enabling enforcement.
