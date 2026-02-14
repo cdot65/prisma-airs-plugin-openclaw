@@ -40,5 +40,16 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Determine npm dist-tag
+        id: dist-tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if echo "$VERSION" | grep -qE '(alpha|beta|rc)'; then
+            TAG=$(echo "$VERSION" | grep -oE '(alpha|beta|rc)')
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --tag ${{ steps.dist-tag.outputs.tag }}

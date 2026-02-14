@@ -1,6 +1,6 @@
 {
   "name": "@cdot65/prisma-airs",
-  "version": "0.2.4",
+  "version": "0.2.5-alpha.0",
   "description": "Prisma AIRS (AI Runtime Security) plugin for OpenClaw - Full security suite with audit logging, context injection, outbound blocking, and tool gating",
   "type": "module",
   "main": "index.ts",
@@ -59,6 +59,7 @@
     "@types/node": "^25.1.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
