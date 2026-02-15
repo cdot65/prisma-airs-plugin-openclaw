@@ -28,7 +28,7 @@ Enable/disable via plugin config:
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: true # default
+      reminder_mode: "on" # default ("on" / "off")
 ```
 
 ## Requirements

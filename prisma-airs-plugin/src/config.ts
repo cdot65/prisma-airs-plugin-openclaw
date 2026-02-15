@@ -1,7 +1,7 @@
 /**
  * Configuration mode resolution for Prisma AIRS plugin.
  *
- * Maps new tri-state mode enums + deprecated boolean flags to resolved modes.
+ * Maps tri-state mode enums to resolved modes.
  */
 
 export type FeatureMode = "deterministic" | "probabilistic" | "off";
@@ -17,19 +17,11 @@ export interface ResolvedModes {
 
 /** Raw plugin config (from openclaw.plugin.json) */
 export interface RawPluginConfig {
-  // New mode fields
   reminder_mode?: string;
   audit_mode?: string;
   context_injection_mode?: string;
   outbound_mode?: string;
   tool_gating_mode?: string;
-  // Deprecated boolean fields
-  reminder_enabled?: boolean;
-  audit_enabled?: boolean;
-  context_injection_enabled?: boolean;
-  outbound_scanning_enabled?: boolean;
-  tool_gating_enabled?: boolean;
-  // Other config
   fail_closed?: boolean;
   [key: string]: unknown;
 }
@@ -38,46 +30,32 @@ const VALID_FEATURE_MODES: FeatureMode[] = ["deterministic", "probabilistic", "o
 const VALID_REMINDER_MODES: ReminderMode[] = ["on", "off"];
 
 /**
- * Resolve a single feature mode from new mode string + deprecated boolean.
- * New mode field takes precedence when both are set.
+ * Resolve a single feature mode from mode string.
  */
 export function resolveMode(
   modeValue: string | undefined,
-  enabledValue: boolean | undefined,
   defaultMode: FeatureMode = "deterministic"
 ): FeatureMode {
-  // New mode field takes precedence
   if (modeValue !== undefined) {
     if (VALID_FEATURE_MODES.includes(modeValue as FeatureMode)) {
       return modeValue as FeatureMode;
     }
-    // Invalid value → fall through to boolean/default
-  }
-
-  // Deprecated boolean fallback
-  if (enabledValue !== undefined) {
-    return enabledValue ? "deterministic" : "off";
   }
 
   return defaultMode;
 }
 
 /**
- * Resolve reminder mode from new mode string + deprecated boolean.
+ * Resolve reminder mode from mode string.
  */
 export function resolveReminderMode(
   modeValue: string | undefined,
-  enabledValue: boolean | undefined,
   defaultMode: ReminderMode = "on"
 ): ReminderMode {
   if (modeValue !== undefined) {
     if (VALID_REMINDER_MODES.includes(modeValue as ReminderMode)) {
       return modeValue as ReminderMode;
     }
-  }
-
-  if (enabledValue !== undefined) {
-    return enabledValue ? "on" : "off";
   }
 
   return defaultMode;
@@ -89,11 +67,11 @@ export function resolveReminderMode(
  */
 export function resolveAllModes(config: RawPluginConfig): ResolvedModes {
   const modes: ResolvedModes = {
-    reminder: resolveReminderMode(config.reminder_mode, config.reminder_enabled),
-    audit: resolveMode(config.audit_mode, config.audit_enabled),
-    context: resolveMode(config.context_injection_mode, config.context_injection_enabled),
-    outbound: resolveMode(config.outbound_mode, config.outbound_scanning_enabled),
-    toolGating: resolveMode(config.tool_gating_mode, config.tool_gating_enabled),
+    reminder: resolveReminderMode(config.reminder_mode),
+    audit: resolveMode(config.audit_mode),
+    context: resolveMode(config.context_injection_mode),
+    outbound: resolveMode(config.outbound_mode),
+    toolGating: resolveMode(config.tool_gating_mode),
   };
 
   // Validate: fail_closed + probabilistic is not allowed

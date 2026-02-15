@@ -25,10 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outbound handler exports `maskSensitiveData()`, `shouldMaskOnly()`, `buildBlockMessage()`
 - Status RPC response now includes `modes` object
 
-### Deprecated
+### Removed
 
-- Boolean config flags: `audit_enabled`, `context_injection_enabled`, `outbound_scanning_enabled`, `tool_gating_enabled`, `reminder_enabled`
-  - Use `*_mode` fields instead. `true` → `"deterministic"`, `false` → `"off"`
+- Deprecated boolean config flags: `audit_enabled`, `context_injection_enabled`, `outbound_scanning_enabled`, `tool_gating_enabled`, `reminder_enabled`
+  - Use `*_mode` fields instead
 
 ## [0.1.4] - 2026-02-04
 
@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detection categories: prompt injection, DLP (prompt/response), URL filtering
 - Action types: allow, warn, block
 - Severity levels: SAFE, LOW, MEDIUM, HIGH, CRITICAL
-- Plugin config schema for `profile_name`, `app_name`, `reminder_enabled`
+- Plugin config schema for `profile_name`, `app_name`, `reminder_mode`
 - Vitest test suite (22 tests)
 - ESLint 9 + Prettier + TypeScript strict mode
 - Pre-commit hooks via Husky + lint-staged

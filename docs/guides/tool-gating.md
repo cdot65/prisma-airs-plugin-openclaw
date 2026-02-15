@@ -24,13 +24,13 @@ flowchart TB
 
 ## Configuration
 
-### Enable/Disable
+### Scanning Mode
 
 ```yaml
 plugins:
   prisma-airs:
     config:
-      tool_gating_enabled: true # default
+      tool_gating_mode: "deterministic" # default
 ```
 
 ### High-Risk Tools
@@ -256,7 +256,7 @@ Clearing `high_risk_tools` means only category-specific blocking applies.
 plugins:
   prisma-airs:
     config:
-      tool_gating_enabled: false
+      tool_gating_mode: "off"
 ```
 
 - Agent can call any tool

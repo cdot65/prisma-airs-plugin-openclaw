@@ -60,27 +60,6 @@ describe("prisma-airs-guard hook", () => {
     expect(files[1].path).toBe("SECURITY.md");
   });
 
-  it("does not inject when reminder_enabled is false", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: {
-        bootstrapFiles: [],
-        cfg: {
-          plugins: {
-            entries: {
-              "prisma-airs": { config: { reminder_enabled: false } },
-            },
-          },
-        },
-      },
-    };
-
-    await handler(event);
-
-    expect(event.context!.bootstrapFiles).toHaveLength(0);
-  });
-
   it("ignores non-bootstrap events", async () => {
     const event: TestEvent = {
       type: "agent",
@@ -158,7 +137,7 @@ describe("prisma-airs-guard hook", () => {
     expect(event.context!.bootstrapFiles).toHaveLength(0);
   });
 
-  it("reminder_mode takes precedence over reminder_enabled", async () => {
+  it("injects when reminder_mode is on", async () => {
     const event: TestEvent = {
       type: "agent",
       action: "bootstrap",
@@ -168,7 +147,7 @@ describe("prisma-airs-guard hook", () => {
           plugins: {
             entries: {
               "prisma-airs": {
-                config: { reminder_mode: "on", reminder_enabled: false },
+                config: { reminder_mode: "on" },
               },
             },
           },

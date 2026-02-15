@@ -38,6 +38,6 @@ Masked patterns include:
 
 ## Configuration
 
-- `outbound_scanning_enabled`: Enable/disable (default: true)
+- `outbound_mode`: Scanning mode (default: `deterministic`). Options: `deterministic` / `probabilistic` / `off`
 - `fail_closed`: Block on scan failure (default: true)
 - `dlp_mask_only`: Mask DLP instead of blocking (default: true)

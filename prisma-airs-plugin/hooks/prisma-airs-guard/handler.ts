@@ -161,11 +161,9 @@ const handler: HookHandler = async (event: HookEvent) => {
   const pluginSettings = prismaConfig?.config as Record<string, unknown> | undefined;
 
   // Check if reminder is enabled (default true)
-  // Support both new reminder_mode and deprecated reminder_enabled
   const reminderMode = pluginSettings?.reminder_mode as string | undefined;
-  const reminderEnabled = pluginSettings?.reminder_enabled as boolean | undefined;
 
-  if (reminderMode === "off" || (reminderMode === undefined && reminderEnabled === false)) {
+  if (reminderMode === "off") {
     return;
   }
 

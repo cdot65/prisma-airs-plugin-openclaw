@@ -9,7 +9,7 @@ Tool gating hook that blocks dangerous tools during active threats.
 | **Event**     | `before_tool_call`                       |
 | **Emoji**     | :stop_sign:                              |
 | **Can Block** | Yes                                      |
-| **Config**    | `tool_gating_enabled`, `high_risk_tools` |
+| **Config**    | `tool_gating_mode`, `high_risk_tools` |
 
 ## Purpose
 
@@ -25,7 +25,7 @@ This hook:
 plugins:
   prisma-airs:
     config:
-      tool_gating_enabled: true # default
+      tool_gating_mode: "deterministic" # default
       high_risk_tools: # blocked on ANY threat
         - exec
         - Bash

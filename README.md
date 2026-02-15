@@ -107,7 +107,7 @@ plugins:
       api_key: "your-api-key"
       profile_name: "default"       # SCM profile name
       app_name: "openclaw"          # App metadata
-      reminder_enabled: true        # Enable bootstrap hook
+      reminder_mode: "on"           # Bootstrap hook (on / off)
 ```
 
 ### Where to Configure What
@@ -207,7 +207,7 @@ Disable via config:
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: false
+      reminder_mode: "off"
 ```
 
 ## Detection Categories

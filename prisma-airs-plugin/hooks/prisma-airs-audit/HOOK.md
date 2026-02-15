@@ -42,6 +42,6 @@ This hook runs asynchronously on every inbound message. It:
 
 Controlled by plugin config:
 
-- `audit_enabled`: Enable/disable audit logging (default: true)
+- `audit_mode`: Scanning mode (default: `deterministic`). Options: `deterministic` / `probabilistic` / `off`
 - `profile_name`: AIRS profile to use for scanning
 - `app_name`: Application name for scan metadata

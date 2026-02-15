@@ -36,5 +36,5 @@ These tools are blocked on ANY detected threat:
 
 ## Configuration
 
-- `tool_gating_enabled`: Enable/disable (default: true)
+- `tool_gating_mode`: Scanning mode (default: `deterministic`). Options: `deterministic` / `probabilistic` / `off`
 - `high_risk_tools`: List of tools to block on any threat

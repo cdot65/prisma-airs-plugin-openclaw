@@ -9,7 +9,7 @@ Context injection hook that adds threat warnings to agent context.
 | **Event**     | `before_agent_start`                       |
 | **Emoji**     | :warning:                                  |
 | **Can Block** | No (injects warnings)                      |
-| **Config**    | `context_injection_enabled`, `fail_closed` |
+| **Config**    | `context_injection_mode`, `fail_closed` |
 
 ## Purpose
 
@@ -25,7 +25,7 @@ This hook:
 plugins:
   prisma-airs:
     config:
-      context_injection_enabled: true # default
+      context_injection_mode: "deterministic" # default
       fail_closed: true # Block on scan failure (default)
 ```
 

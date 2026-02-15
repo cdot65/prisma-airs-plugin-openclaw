@@ -209,7 +209,7 @@ plugins:
   prisma-airs:
     config:
       dlp_mask_only: true
-      outbound_scanning_enabled: true
+      outbound_mode: "deterministic"
 ```
 
 ### Maximum Security (Block DLP)
@@ -219,7 +219,7 @@ plugins:
   prisma-airs:
     config:
       dlp_mask_only: false
-      outbound_scanning_enabled: true
+      outbound_mode: "deterministic"
 ```
 
 ### Disable DLP Scanning
@@ -228,7 +228,7 @@ plugins:
 plugins:
   prisma-airs:
     config:
-      outbound_scanning_enabled: false
+      outbound_mode: "off"
 ```
 
 Configure DLP detection in Strata Cloud Manager to reduce false positives.

@@ -122,8 +122,6 @@ Each security feature supports three modes:
 - `prisma_airs_scan_response` — replaces outbound scanning
 - `prisma_airs_check_tool_safety` — replaces tool gating
 
-**Backward compatibility**: Old boolean flags (`audit_enabled`, `context_injection_enabled`, etc.) still work. `true` maps to `deterministic`, `false` maps to `off`. New `*_mode` fields take precedence.
-
 **`fail_closed` constraint**: When `fail_closed=true` (default), all features must be `deterministic` or `off`. Probabilistic mode is rejected because the model might skip scanning.
 
 ## Usage

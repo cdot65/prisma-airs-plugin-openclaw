@@ -47,11 +47,10 @@ The bootstrap reminder now adapts its content based on active modes:
 
 `fail_closed=true` (default) rejects probabilistic modes at startup. This prevents the model from silently skipping scans in security-critical deployments.
 
-### Backward Compatibility
+### Breaking: Deprecated Boolean Fields Removed
 
-- Old boolean flags (`audit_enabled`, `context_injection_enabled`, etc.) still work
-- `true` maps to `deterministic`, `false` maps to `off`
-- New `*_mode` fields take precedence when both are set
+- Old boolean flags (`audit_enabled`, `context_injection_enabled`, `outbound_scanning_enabled`, `tool_gating_enabled`, `reminder_enabled`) have been removed
+- Use the `*_mode` fields instead (`deterministic` / `probabilistic` / `off`; `on` / `off` for reminder)
 
 ### Config Module
 

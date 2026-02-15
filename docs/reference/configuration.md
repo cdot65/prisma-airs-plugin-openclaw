@@ -31,12 +31,12 @@ plugins:
       profile_name: "default"
       app_name: "openclaw"
 
-      # Hook toggles
-      reminder_enabled: true
-      audit_enabled: true
-      context_injection_enabled: true
-      outbound_scanning_enabled: true
-      tool_gating_enabled: true
+      # Scanning modes
+      reminder_mode: "on"
+      audit_mode: "deterministic"
+      context_injection_mode: "deterministic"
+      outbound_mode: "deterministic"
+      tool_gating_mode: "deterministic"
 
       # Local enforcement
       fail_closed: true
@@ -74,15 +74,17 @@ Security profile name from Strata Cloud Manager.
 
 Application identifier included in scan metadata for SCM reporting.
 
-## Hook Toggles
+## Scanning Modes
 
-| Option                      | Type    | Default | Hook                 |
-| --------------------------- | ------- | ------- | -------------------- |
-| `reminder_enabled`          | boolean | `true`  | prisma-airs-guard    |
-| `audit_enabled`             | boolean | `true`  | prisma-airs-audit    |
-| `context_injection_enabled` | boolean | `true`  | prisma-airs-context  |
-| `outbound_scanning_enabled` | boolean | `true`  | prisma-airs-outbound |
-| `tool_gating_enabled`       | boolean | `true`  | prisma-airs-tools    |
+| Option                   | Type     | Default           | Hook                 |
+| ------------------------ | -------- | ----------------- | -------------------- |
+| `reminder_mode`          | `string` | `"on"`            | prisma-airs-guard    |
+| `audit_mode`             | `string` | `"deterministic"` | prisma-airs-audit    |
+| `context_injection_mode` | `string` | `"deterministic"` | prisma-airs-context  |
+| `outbound_mode`          | `string` | `"deterministic"` | prisma-airs-outbound |
+| `tool_gating_mode`       | `string` | `"deterministic"` | prisma-airs-tools    |
+
+`reminder_mode` accepts `on` or `off`. All other mode fields accept `deterministic`, `probabilistic`, or `off`.
 
 ## Local Enforcement Settings
 
@@ -167,10 +169,10 @@ All other settings use sensible defaults.
 plugins:
   prisma-airs:
     config:
-      audit_enabled: true
-      context_injection_enabled: false
-      outbound_scanning_enabled: false
-      tool_gating_enabled: false
+      audit_mode: "deterministic"
+      context_injection_mode: "off"
+      outbound_mode: "off"
+      tool_gating_mode: "off"
       fail_closed: false
 ```
 

@@ -51,17 +51,17 @@ flowchart TB
 
 ## Configuration
 
-Each hook can be individually enabled/disabled:
+Each hook can be individually configured via scanning modes:
 
 ```yaml
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: true # prisma-airs-guard
-      audit_enabled: true # prisma-airs-audit
-      context_injection_enabled: true # prisma-airs-context
-      outbound_scanning_enabled: true # prisma-airs-outbound
-      tool_gating_enabled: true # prisma-airs-tools
+      reminder_mode: "on"              # prisma-airs-guard (on / off)
+      audit_mode: "deterministic"      # prisma-airs-audit
+      context_injection_mode: "deterministic"  # prisma-airs-context
+      outbound_mode: "deterministic"   # prisma-airs-outbound
+      tool_gating_mode: "deterministic" # prisma-airs-tools
 ```
 
 ## Data Sharing
@@ -90,11 +90,11 @@ plugins:
   prisma-airs:
     config:
       fail_closed: true
-      reminder_enabled: true
-      audit_enabled: true
-      context_injection_enabled: true
-      outbound_scanning_enabled: true
-      tool_gating_enabled: true
+      reminder_mode: "on"
+      audit_mode: "deterministic"
+      context_injection_mode: "deterministic"
+      outbound_mode: "deterministic"
+      tool_gating_mode: "deterministic"
       dlp_mask_only: false # Block instead of mask
 ```
 
@@ -106,11 +106,11 @@ Log threats without enforcement:
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: false
-      audit_enabled: true
-      context_injection_enabled: false
-      outbound_scanning_enabled: false
-      tool_gating_enabled: false
+      reminder_mode: "off"
+      audit_mode: "deterministic"
+      context_injection_mode: "off"
+      outbound_mode: "off"
+      tool_gating_mode: "off"
 ```
 
 ### Outbound Only
@@ -121,9 +121,9 @@ Only scan responses:
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: false
-      audit_enabled: false
-      context_injection_enabled: false
-      outbound_scanning_enabled: true
-      tool_gating_enabled: false
+      reminder_mode: "off"
+      audit_mode: "off"
+      context_injection_mode: "off"
+      outbound_mode: "deterministic"
+      tool_gating_mode: "off"
 ```

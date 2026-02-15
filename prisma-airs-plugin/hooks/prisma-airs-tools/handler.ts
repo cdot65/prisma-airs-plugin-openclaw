@@ -30,7 +30,6 @@ interface PluginConfig {
     entries?: {
       "prisma-airs"?: {
         config?: {
-          tool_gating_enabled?: boolean;
           high_risk_tools?: string[];
           api_key?: string;
         };
@@ -149,7 +148,7 @@ function getPluginConfig(ctx: HookContext): {
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
   return {
-    enabled: cfg?.tool_gating_enabled !== false,
+    enabled: true,
     highRiskTools: cfg?.high_risk_tools ?? DEFAULT_HIGH_RISK_TOOLS,
   };
 }

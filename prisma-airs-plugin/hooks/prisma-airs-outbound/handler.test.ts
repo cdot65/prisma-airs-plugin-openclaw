@@ -61,7 +61,6 @@ describe("prisma-airs-outbound handler", () => {
         entries: {
           "prisma-airs": {
             config: {
-              outbound_scanning_enabled: true,
               profile_name: "default",
               app_name: "test-app",
               api_key: "test-api-key",
@@ -296,29 +295,6 @@ describe("prisma-airs-outbound handler", () => {
 
       const result = await handler(baseEvent, ctxFailOpen);
       expect(result).toBeUndefined();
-    });
-  });
-
-  describe("disabled scanning", () => {
-    it("should skip scanning when disabled", async () => {
-      const ctxDisabled = {
-        ...baseCtx,
-        cfg: {
-          plugins: {
-            entries: {
-              "prisma-airs": {
-                config: {
-                  outbound_scanning_enabled: false,
-                },
-              },
-            },
-          },
-        },
-      };
-
-      const result = await handler(baseEvent, ctxDisabled);
-      expect(result).toBeUndefined();
-      expect(mockScan).not.toHaveBeenCalled();
     });
   });
 

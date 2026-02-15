@@ -6,59 +6,37 @@ import { describe, it, expect } from "vitest";
 import { resolveMode, resolveReminderMode, resolveAllModes } from "./config";
 
 describe("resolveMode", () => {
-  it("returns default when both undefined", () => {
-    expect(resolveMode(undefined, undefined)).toBe("deterministic");
+  it("returns default when undefined", () => {
+    expect(resolveMode(undefined)).toBe("deterministic");
   });
 
   it("returns custom default", () => {
-    expect(resolveMode(undefined, undefined, "off")).toBe("off");
-  });
-
-  it("mode string takes precedence over boolean", () => {
-    expect(resolveMode("probabilistic", true)).toBe("probabilistic");
-    expect(resolveMode("off", true)).toBe("off");
-    expect(resolveMode("deterministic", false)).toBe("deterministic");
-  });
-
-  it("falls back to boolean when mode undefined", () => {
-    expect(resolveMode(undefined, true)).toBe("deterministic");
-    expect(resolveMode(undefined, false)).toBe("off");
-  });
-
-  it("ignores invalid mode string and falls back to boolean", () => {
-    expect(resolveMode("invalid", true)).toBe("deterministic");
-    expect(resolveMode("invalid", false)).toBe("off");
+    expect(resolveMode(undefined, "off")).toBe("off");
   });
 
   it("ignores invalid mode string and falls back to default", () => {
-    expect(resolveMode("invalid", undefined)).toBe("deterministic");
+    expect(resolveMode("invalid")).toBe("deterministic");
   });
 
   it("accepts all valid mode values", () => {
-    expect(resolveMode("deterministic", undefined)).toBe("deterministic");
-    expect(resolveMode("probabilistic", undefined)).toBe("probabilistic");
-    expect(resolveMode("off", undefined)).toBe("off");
+    expect(resolveMode("deterministic")).toBe("deterministic");
+    expect(resolveMode("probabilistic")).toBe("probabilistic");
+    expect(resolveMode("off")).toBe("off");
   });
 });
 
 describe("resolveReminderMode", () => {
-  it("returns default when both undefined", () => {
-    expect(resolveReminderMode(undefined, undefined)).toBe("on");
+  it("returns default when undefined", () => {
+    expect(resolveReminderMode(undefined)).toBe("on");
   });
 
-  it("mode string takes precedence", () => {
-    expect(resolveReminderMode("off", true)).toBe("off");
-    expect(resolveReminderMode("on", false)).toBe("on");
-  });
-
-  it("falls back to boolean", () => {
-    expect(resolveReminderMode(undefined, true)).toBe("on");
-    expect(resolveReminderMode(undefined, false)).toBe("off");
+  it("resolves valid mode values", () => {
+    expect(resolveReminderMode("off")).toBe("off");
+    expect(resolveReminderMode("on")).toBe("on");
   });
 
   it("ignores invalid mode string", () => {
-    expect(resolveReminderMode("invalid", true)).toBe("on");
-    expect(resolveReminderMode("invalid", undefined)).toBe("on");
+    expect(resolveReminderMode("invalid")).toBe("on");
   });
 });
 
@@ -90,33 +68,6 @@ describe("resolveAllModes", () => {
       outbound: "probabilistic",
       toolGating: "off",
     });
-  });
-
-  it("resolves deprecated booleans", () => {
-    const modes = resolveAllModes({
-      reminder_enabled: false,
-      audit_enabled: false,
-      context_injection_enabled: true,
-      outbound_scanning_enabled: false,
-      tool_gating_enabled: true,
-      fail_closed: false,
-    });
-    expect(modes).toEqual({
-      reminder: "off",
-      audit: "off",
-      context: "deterministic",
-      outbound: "off",
-      toolGating: "deterministic",
-    });
-  });
-
-  it("new mode takes precedence over deprecated boolean", () => {
-    const modes = resolveAllModes({
-      audit_mode: "probabilistic",
-      audit_enabled: false, // would be "off", but mode overrides
-      fail_closed: false,
-    });
-    expect(modes.audit).toBe("probabilistic");
   });
 
   it("throws when fail_closed=true with probabilistic audit", () => {

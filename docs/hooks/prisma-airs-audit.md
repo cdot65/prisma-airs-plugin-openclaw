@@ -9,7 +9,7 @@ Audit logging hook for all inbound messages with scan caching.
 | **Event**     | `message_received`             |
 | **Emoji**     | :clipboard:                    |
 | **Can Block** | No                             |
-| **Config**    | `audit_enabled`, `fail_closed` |
+| **Config**    | `audit_mode`, `fail_closed` |
 
 ## Purpose
 
@@ -25,7 +25,7 @@ This hook:
 plugins:
   prisma-airs:
     config:
-      audit_enabled: true # default
+      audit_mode: "deterministic" # default
       fail_closed: true # Block on scan failure (default)
       profile_name: "default"
       app_name: "openclaw"

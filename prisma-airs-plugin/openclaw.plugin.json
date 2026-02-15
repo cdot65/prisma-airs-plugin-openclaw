@@ -2,7 +2,7 @@
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
   "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
-  "version": "0.3.0-alpha.0",
+  "version": "0.3.0-alpha.1",
   "entrypoint": "index.ts",
   "hooks": [
     "hooks/prisma-airs-guard",
@@ -54,36 +54,6 @@
         "enum": ["deterministic", "probabilistic", "off"],
         "default": "deterministic",
         "description": "Tool gating mode: deterministic (hook, always gate), probabilistic (tool, model decides), or off"
-      },
-      "reminder_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "DEPRECATED: Use reminder_mode instead. Inject security scanning reminder on agent bootstrap",
-        "deprecated": true
-      },
-      "audit_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "DEPRECATED: Use audit_mode instead. Enable audit logging of all inbound messages",
-        "deprecated": true
-      },
-      "context_injection_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "DEPRECATED: Use context_injection_mode instead. Inject security warnings into agent context",
-        "deprecated": true
-      },
-      "outbound_scanning_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "DEPRECATED: Use outbound_mode instead. Enable scanning and blocking of outbound responses",
-        "deprecated": true
-      },
-      "tool_gating_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "DEPRECATED: Use tool_gating_mode instead. Block dangerous tools when threats are detected",
-        "deprecated": true
       },
       "fail_closed": {
         "type": "boolean",
@@ -151,26 +121,6 @@
     "tool_gating_mode": {
       "label": "Tool Gating Mode",
       "description": "deterministic: always gate tool calls via hook; probabilistic: model checks tool safety via tool; off: disabled"
-    },
-    "reminder_enabled": {
-      "label": "Enable Bootstrap Reminder (deprecated)",
-      "description": "DEPRECATED: Use reminder_mode instead"
-    },
-    "audit_enabled": {
-      "label": "Enable Audit Logging (deprecated)",
-      "description": "DEPRECATED: Use audit_mode instead"
-    },
-    "context_injection_enabled": {
-      "label": "Enable Context Injection (deprecated)",
-      "description": "DEPRECATED: Use context_injection_mode instead"
-    },
-    "outbound_scanning_enabled": {
-      "label": "Enable Outbound Scanning (deprecated)",
-      "description": "DEPRECATED: Use outbound_mode instead"
-    },
-    "tool_gating_enabled": {
-      "label": "Enable Tool Gating (deprecated)",
-      "description": "DEPRECATED: Use tool_gating_mode instead"
     },
     "fail_closed": {
       "label": "Fail Closed",
