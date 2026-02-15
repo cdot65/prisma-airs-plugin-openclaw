@@ -44,7 +44,7 @@ docker-build-base:    ## Build local dev base image from docker/
 	docker build --platform $(PLATFORM) -t openclaw-base docker/
 
 docker-build:         ## Build production image (amd64) from talos-cluster
-	docker build --platform $(PLATFORM) -t $(IMAGE):$(TAG) $(TALOS_DIR)
+	docker build --no-cache --platform $(PLATFORM) -t $(IMAGE):$(TAG) $(TALOS_DIR)
 
 docker-push:          ## Push production image to ghcr.io
 	docker push $(IMAGE):$(TAG)
