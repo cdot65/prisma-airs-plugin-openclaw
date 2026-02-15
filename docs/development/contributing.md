@@ -184,7 +184,7 @@ Description.
 plugins:
   prisma-airs:
     config:
-      newhook_enabled: true
+      newhook_mode: "deterministic"
 ````
 
 ````

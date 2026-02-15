@@ -2,7 +2,7 @@
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
   "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
-  "version": "0.2.5",
+  "version": "0.3.0-alpha.1",
   "entrypoint": "index.ts",
   "hooks": [
     "hooks/prisma-airs-guard",
@@ -25,30 +25,35 @@
         "default": "openclaw",
         "description": "Application name for scan metadata"
       },
-      "reminder_enabled": {
-        "type": "boolean",
-        "default": true,
+      "reminder_mode": {
+        "type": "string",
+        "enum": ["on", "off"],
+        "default": "on",
         "description": "Inject security scanning reminder on agent bootstrap"
       },
-      "audit_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "Enable audit logging of all inbound messages"
+      "audit_mode": {
+        "type": "string",
+        "enum": ["deterministic", "probabilistic", "off"],
+        "default": "deterministic",
+        "description": "Audit logging mode: deterministic (hook, always scan), probabilistic (tool, model decides), or off"
       },
-      "context_injection_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "Inject security warnings into agent context"
+      "context_injection_mode": {
+        "type": "string",
+        "enum": ["deterministic", "probabilistic", "off"],
+        "default": "deterministic",
+        "description": "Context injection mode: deterministic (hook, always inject), probabilistic (tool, model decides), or off"
       },
-      "outbound_scanning_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "Enable scanning and blocking of outbound responses"
+      "outbound_mode": {
+        "type": "string",
+        "enum": ["deterministic", "probabilistic", "off"],
+        "default": "deterministic",
+        "description": "Outbound scanning mode: deterministic (hook, always scan), probabilistic (tool, model decides), or off"
       },
-      "tool_gating_enabled": {
-        "type": "boolean",
-        "default": true,
-        "description": "Block dangerous tools when threats are detected"
+      "tool_gating_mode": {
+        "type": "string",
+        "enum": ["deterministic", "probabilistic", "off"],
+        "default": "deterministic",
+        "description": "Tool gating mode: deterministic (hook, always gate), probabilistic (tool, model decides), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -97,24 +102,25 @@
       "label": "Application Name",
       "placeholder": "openclaw"
     },
-    "reminder_enabled": {
-      "label": "Enable Bootstrap Reminder"
+    "reminder_mode": {
+      "label": "Reminder Mode",
+      "description": "on: inject scanning reminder at agent bootstrap; off: no reminder"
     },
-    "audit_enabled": {
-      "label": "Enable Audit Logging",
-      "description": "Log all inbound messages with scan results"
+    "audit_mode": {
+      "label": "Audit Mode",
+      "description": "deterministic: scan every inbound message via hook; probabilistic: model decides when to scan via tool; off: disabled"
     },
-    "context_injection_enabled": {
-      "label": "Enable Context Injection",
-      "description": "Inject security warnings into agent context"
+    "context_injection_mode": {
+      "label": "Context Injection Mode",
+      "description": "deterministic: always inject security context via hook; probabilistic: model decides when to scan via tool; off: disabled"
     },
-    "outbound_scanning_enabled": {
-      "label": "Enable Outbound Scanning",
-      "description": "Scan and block/mask outbound responses"
+    "outbound_mode": {
+      "label": "Outbound Scanning Mode",
+      "description": "deterministic: scan every outbound response via hook; probabilistic: model decides when to scan via tool; off: disabled"
     },
-    "tool_gating_enabled": {
-      "label": "Enable Tool Gating",
-      "description": "Block dangerous tools during active threats"
+    "tool_gating_mode": {
+      "label": "Tool Gating Mode",
+      "description": "deterministic: always gate tool calls via hook; probabilistic: model checks tool safety via tool; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",

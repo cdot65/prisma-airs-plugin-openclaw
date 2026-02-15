@@ -209,11 +209,11 @@ plugins:
       fail_closed: true
 
       # Disable certain hooks to reduce impact
-      context_injection_enabled: false
-      tool_gating_enabled: false
+      context_injection_mode: "off"
+      tool_gating_mode: "off"
 
       # Keep outbound scanning
-      outbound_scanning_enabled: true
+      outbound_mode: "deterministic"
 ```
 
 This blocks outbound violations but doesn't block tool calls on scan failure.
@@ -227,10 +227,10 @@ plugins:
   prisma-airs:
     config:
       fail_closed: false
-      audit_enabled: true
-      context_injection_enabled: false
-      outbound_scanning_enabled: false
-      tool_gating_enabled: false
+      audit_mode: "deterministic"
+      context_injection_mode: "off"
+      outbound_mode: "off"
+      tool_gating_mode: "off"
 ```
 
 Review logs to understand failure patterns before enabling enforcement.

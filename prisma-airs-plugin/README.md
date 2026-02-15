@@ -5,9 +5,11 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/ai-run
 ## Features
 
 - **Gateway RPC**: `prisma-airs.scan`, `prisma-airs.status`
-- **Agent Tool**: `prisma_airs_scan`
+- **Agent Tools**: `prisma_airs_scan`, `prisma_airs_scan_prompt`, `prisma_airs_scan_response`, `prisma_airs_check_tool_safety`
 - **CLI**: `openclaw prisma-airs`, `openclaw prisma-airs-scan`
-- **Bootstrap Hook**: Security reminder on agent startup
+- **Deterministic hooks**: audit, context injection, outbound blocking, tool gating
+- **Probabilistic tools**: model-driven scanning when deterministic hooks are overkill
+- **Scanning modes**: per-feature `deterministic`, `probabilistic`, or `off`
 
 **Detection capabilities:**
 
@@ -82,13 +84,45 @@ Set it in plugin config (via gateway web UI or config file):
           "api_key": "your-key",
           "profile_name": "default",
           "app_name": "openclaw",
-          "reminder_enabled": true
+          "reminder_mode": "on",
+          "audit_mode": "deterministic",
+          "context_injection_mode": "deterministic",
+          "outbound_mode": "deterministic",
+          "tool_gating_mode": "deterministic"
         }
       }
     }
   }
 }
 ```
+
+### Scanning Modes
+
+Each security feature supports three modes:
+
+| Mode            | Behavior                                                                   |
+| --------------- | -------------------------------------------------------------------------- |
+| `deterministic` | Hook fires on every event (default). Scanning is automatic and guaranteed. |
+| `probabilistic` | Registers a tool instead of a hook. The model decides when to scan.        |
+| `off`           | Feature is disabled entirely.                                              |
+
+**Reminder mode** is simpler: `on` (default) or `off`.
+
+| Setting                  | Values                                    | Default         |
+| ------------------------ | ----------------------------------------- | --------------- |
+| `audit_mode`             | `deterministic` / `probabilistic` / `off` | `deterministic` |
+| `context_injection_mode` | `deterministic` / `probabilistic` / `off` | `deterministic` |
+| `outbound_mode`          | `deterministic` / `probabilistic` / `off` | `deterministic` |
+| `tool_gating_mode`       | `deterministic` / `probabilistic` / `off` | `deterministic` |
+| `reminder_mode`          | `on` / `off`                              | `on`            |
+
+**Probabilistic tools** registered when a feature is set to `probabilistic`:
+
+- `prisma_airs_scan_prompt` — replaces audit + context injection
+- `prisma_airs_scan_response` — replaces outbound scanning
+- `prisma_airs_check_tool_safety` — replaces tool gating
+
+**`fail_closed` constraint**: When `fail_closed=true` (default), all features must be `deterministic` or `off`. Probabilistic mode is rejected because the model might skip scanning.
 
 ## Usage
 

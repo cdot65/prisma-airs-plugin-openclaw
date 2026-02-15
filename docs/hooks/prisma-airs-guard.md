@@ -9,7 +9,7 @@ Bootstrap reminder hook that instructs agents to scan suspicious content.
 | **Event**     | `before_agent_start` |
 | **Emoji**     | :shield:             |
 | **Can Block** | No                   |
-| **Config**    | `reminder_enabled`   |
+| **Config**    | `reminder_mode`      |
 
 ## Purpose
 
@@ -25,7 +25,7 @@ When an agent bootstraps, this hook injects a security reminder into the agent's
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: true # default
+      reminder_mode: "on" # default ("on" / "off")
 ```
 
 ## Injected Content
@@ -90,7 +90,7 @@ const handler = async (event: HookEvent) => {
 
   // Check if reminder is enabled
   const config = getPluginConfig(event.context?.cfg);
-  if (config.reminder_enabled === false) {
+  if (config.reminder_mode === "off") {
     return;
   }
 

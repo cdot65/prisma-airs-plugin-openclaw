@@ -41,7 +41,6 @@ interface PluginConfig {
     entries?: {
       "prisma-airs"?: {
         config?: {
-          audit_enabled?: boolean;
           profile_name?: string;
           app_name?: string;
           api_key?: string;
@@ -64,7 +63,7 @@ function getPluginConfig(ctx: HookContext & { cfg?: PluginConfig }): {
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
   return {
-    enabled: cfg?.audit_enabled !== false,
+    enabled: true,
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
     apiKey: cfg?.api_key ?? "",

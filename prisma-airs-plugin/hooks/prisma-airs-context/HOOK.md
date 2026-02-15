@@ -37,5 +37,5 @@ The hook provides category-specific instructions to the agent:
 
 ## Configuration
 
-- `context_injection_enabled`: Enable/disable (default: true)
+- `context_injection_mode`: Scanning mode (default: `deterministic`). Options: `deterministic` / `probabilistic` / `off`
 - `fail_closed`: Block on scan failure (default: true)

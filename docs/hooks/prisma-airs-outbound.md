@@ -9,7 +9,7 @@ Outbound response scanning with blocking and DLP masking.
 | **Event**     | `message_sending`                                           |
 | **Emoji**     | :shield:                                                    |
 | **Can Block** | Yes                                                         |
-| **Config**    | `outbound_scanning_enabled`, `fail_closed`, `dlp_mask_only` |
+| **Config**    | `outbound_mode`, `fail_closed`, `dlp_mask_only` |
 
 ## Purpose
 
@@ -25,7 +25,7 @@ This hook:
 plugins:
   prisma-airs:
     config:
-      outbound_scanning_enabled: true # default
+      outbound_mode: "deterministic" # default
       fail_closed: true # Block on scan failure (default)
       dlp_mask_only: true # Mask DLP instead of block (default)
 ```

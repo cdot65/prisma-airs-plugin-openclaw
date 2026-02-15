@@ -35,20 +35,22 @@ plugins:
 
 The API key can also be set via the gateway web UI under plugin settings (marked as sensitive/hidden).
 
-### Hook Toggles
+### Scanning Modes
 
-Enable/disable individual hooks:
+Configure scanning mode per feature:
 
 ```yaml
 plugins:
   prisma-airs:
     config:
-      reminder_enabled: true # prisma-airs-guard
-      audit_enabled: true # prisma-airs-audit
-      context_injection_enabled: true # prisma-airs-context
-      outbound_scanning_enabled: true # prisma-airs-outbound
-      tool_gating_enabled: true # prisma-airs-tools
+      reminder_mode: "on"              # prisma-airs-guard (on / off)
+      audit_mode: "deterministic"      # prisma-airs-audit
+      context_injection_mode: "deterministic"  # prisma-airs-context
+      outbound_mode: "deterministic"   # prisma-airs-outbound
+      tool_gating_mode: "deterministic" # prisma-airs-tools
 ```
+
+Each mode field (except `reminder_mode`) accepts `deterministic`, `probabilistic`, or `off`.
 
 ### Local Enforcement Settings
 

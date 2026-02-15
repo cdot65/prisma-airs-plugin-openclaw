@@ -123,16 +123,16 @@ See [Design Decisions](../architecture/design-decisions.md) for detailed rationa
          fail_closed: false
    ```
 
-2. **Review new hooks**: All new hooks are enabled by default. Disable if needed:
+2. **Review new hooks**: All new hooks default to `deterministic`. Disable if needed:
 
    ```yaml
    plugins:
      prisma-airs:
        config:
-         audit_enabled: false
-         context_injection_enabled: false
-         outbound_scanning_enabled: false
-         tool_gating_enabled: false
+         audit_mode: "off"
+         context_injection_mode: "off"
+         outbound_mode: "off"
+         tool_gating_mode: "off"
    ```
 
 3. **Update OpenClaw**: Requires v2026.2.1+

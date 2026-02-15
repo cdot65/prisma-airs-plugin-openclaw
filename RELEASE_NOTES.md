@@ -1,5 +1,65 @@
 # Release Notes
 
+## v0.3.0-alpha.0 - Deterministic vs Probabilistic Scanning Modes
+
+**Released**: 2026-02-14
+
+### New Features
+
+#### Per-Feature Scanning Modes
+
+Each security feature now supports three modes:
+
+| Mode | Behavior |
+|------|----------|
+| `deterministic` | Hook fires on every event (default). Scanning is automatic and guaranteed. |
+| `probabilistic` | Registers a tool instead of a hook. The model decides when to scan. |
+| `off` | Feature disabled entirely. |
+
+New config fields:
+
+```json
+{
+  "audit_mode": "deterministic",
+  "context_injection_mode": "deterministic",
+  "outbound_mode": "deterministic",
+  "tool_gating_mode": "deterministic",
+  "reminder_mode": "on"
+}
+```
+
+#### 3 New Probabilistic Tools
+
+When a feature is set to `probabilistic`, a tool is registered instead of a hook:
+
+1. **`prisma_airs_scan_prompt`** - Replaces audit + context injection. Model calls it on suspicious messages.
+2. **`prisma_airs_scan_response`** - Replaces outbound hook. Model calls it before sending responses.
+3. **`prisma_airs_check_tool_safety`** - Replaces tool gating hook. Model calls it before invoking risky tools.
+
+#### Mode-Aware Guard Reminder
+
+The bootstrap reminder now adapts its content based on active modes:
+- All deterministic: simple "scanning runs automatically" reminder
+- All probabilistic: detailed "you MUST call these tools" reminder
+- Mixed: lists which features are automatic vs manual
+
+#### Config Validation
+
+`fail_closed=true` (default) rejects probabilistic modes at startup. This prevents the model from silently skipping scans in security-critical deployments.
+
+### Breaking: Deprecated Boolean Fields Removed
+
+- Old boolean flags (`audit_enabled`, `context_injection_enabled`, `outbound_scanning_enabled`, `tool_gating_enabled`, `reminder_enabled`) have been removed
+- Use the `*_mode` fields instead (`deterministic` / `probabilistic` / `off`; `on` / `off` for reminder)
+
+### Config Module
+
+New `src/config.ts` centralizes mode resolution logic. Exported for use by consumers:
+- `resolveMode()` / `resolveReminderMode()` / `resolveAllModes()`
+- `FeatureMode` / `ReminderMode` / `ResolvedModes` types
+
+---
+
 ## v0.2.0 - Multi-Layer Security Architecture
 
 **Released**: 2024-02-04

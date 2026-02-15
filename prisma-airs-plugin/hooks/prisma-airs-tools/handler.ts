@@ -30,7 +30,6 @@ interface PluginConfig {
     entries?: {
       "prisma-airs"?: {
         config?: {
-          tool_gating_enabled?: boolean;
           high_risk_tools?: string[];
           api_key?: string;
         };
@@ -83,7 +82,7 @@ const SENSITIVE_TOOLS = ["exec", "Bash", "bash", "gateway", "message", "cron"];
 const WEB_TOOLS = ["web_fetch", "WebFetch", "browser", "Browser", "curl"];
 
 // Tool blocking rules by threat category
-const TOOL_BLOCKS: Record<string, string[]> = {
+export const TOOL_BLOCKS: Record<string, string[]> = {
   // AI Agent threats - block ALL external actions
   "agent-threat": ALL_EXTERNAL_TOOLS,
   agent_threat: ALL_EXTERNAL_TOOLS,
@@ -127,7 +126,7 @@ const TOOL_BLOCKS: Record<string, string[]> = {
 };
 
 // Default high-risk tools (blocked on any threat)
-const DEFAULT_HIGH_RISK_TOOLS = [
+export const DEFAULT_HIGH_RISK_TOOLS = [
   "exec",
   "Bash",
   "bash",
@@ -149,7 +148,7 @@ function getPluginConfig(ctx: HookContext): {
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
   return {
-    enabled: cfg?.tool_gating_enabled !== false,
+    enabled: true,
     highRiskTools: cfg?.high_risk_tools ?? DEFAULT_HIGH_RISK_TOOLS,
   };
 }
@@ -157,7 +156,7 @@ function getPluginConfig(ctx: HookContext): {
 /**
  * Determine if a tool should be blocked based on scan result
  */
-function shouldBlockTool(
+export function shouldBlockTool(
   toolName: string,
   scanResult: ScanResult,
   highRiskTools: string[]
