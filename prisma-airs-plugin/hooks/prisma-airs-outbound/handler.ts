@@ -144,7 +144,7 @@ function getPluginConfig(ctx: HookContext): {
  * Uses regex patterns for common PII types.
  * TODO: Use AIRS API match offsets for precision masking when available.
  */
-function maskSensitiveData(content: string): string {
+export function maskSensitiveData(content: string): string {
   let masked = content;
 
   // Social Security Numbers (XXX-XX-XXXX)
@@ -195,7 +195,7 @@ function maskSensitiveData(content: string): string {
 /**
  * Build user-friendly block message
  */
-function buildBlockMessage(result: ScanResult): string {
+export function buildBlockMessage(result: ScanResult): string {
   const reasons = result.categories
     .map((cat) => CATEGORY_MESSAGES[cat] || cat.replace(/_/g, " "))
     .filter((r) => r !== "safe")
@@ -211,7 +211,7 @@ function buildBlockMessage(result: ScanResult): string {
 /**
  * Determine if result should be masked vs blocked
  */
-function shouldMaskOnly(result: ScanResult, config: { dlpMaskOnly: boolean }): boolean {
+export function shouldMaskOnly(result: ScanResult, config: { dlpMaskOnly: boolean }): boolean {
   if (!config.dlpMaskOnly) return false;
 
   // Check if any always-block categories are present
