@@ -1,12 +1,12 @@
 /**
- * Prisma AIRS Scanner - TypeScript Implementation
+ * Prisma AIRS Scanner - SDK-backed Implementation
  *
- * Direct HTTP calls to Prisma AIRS API.
+ * Uses @cdot65/prisma-airs-sdk for HTTP communication with the AIRS API.
+ * Exports a stable ScanResult interface consumed by all hook handlers.
  */
 
-// AIRS API endpoint
-const AIRS_API_BASE = "https://service.api.aisecurity.paloaltonetworks.com";
-const AIRS_SCAN_ENDPOINT = `${AIRS_API_BASE}/v1/scan/sync/request`;
+import { init, Scanner as SDKScanner, Content, AISecSDKException } from "@cdot65/prisma-airs-sdk";
+import type { ScanResponse } from "@cdot65/prisma-airs-sdk";
 
 // Types
 export type Action = "allow" | "warn" | "block";
@@ -160,134 +160,8 @@ export function defaultResponseDetected(): ResponseDetected {
   };
 }
 
-// AIRS API request/response types (per OpenAPI spec)
-interface AIRSContentItem {
-  prompt?: string;
-  response?: string;
-  tool_calls?: AIRSToolEvent[];
-}
-
-interface AIRSToolEvent {
-  metadata: {
-    ecosystem: string;
-    method: string;
-    server_name: string;
-    tool_invoked?: string;
-  };
-  input?: string;
-  output?: string;
-}
-
-interface AIRSRequest {
-  ai_profile: {
-    profile_name?: string;
-    profile_id?: string;
-  };
-  contents: AIRSContentItem[];
-  tr_id?: string;
-  session_id?: string;
-  metadata?: {
-    app_name?: string;
-    app_user?: string;
-    ai_model?: string;
-  };
-}
-
-interface AIRSPromptDetected {
-  injection?: boolean;
-  dlp?: boolean;
-  url_cats?: boolean;
-  toxic_content?: boolean;
-  malicious_code?: boolean;
-  agent?: boolean;
-  topic_violation?: boolean;
-}
-
-interface AIRSResponseDetected {
-  dlp?: boolean;
-  url_cats?: boolean;
-  db_security?: boolean;
-  toxic_content?: boolean;
-  malicious_code?: boolean;
-  agent?: boolean;
-  ungrounded?: boolean;
-  topic_violation?: boolean;
-}
-
-interface AIRSTopicGuardrails {
-  allowed_topics?: string[];
-  blocked_topics?: string[];
-}
-
-interface AIRSDetectionDetails {
-  topic_guardrails_details?: AIRSTopicGuardrails;
-}
-
-interface AIRSPatternDetection {
-  pattern?: string;
-  locations?: number[][];
-}
-
-interface AIRSMaskedData {
-  data?: string;
-  pattern_detections?: AIRSPatternDetection[];
-}
-
-interface AIRSContentError {
-  content_type?: string;
-  feature?: string;
-  status?: string;
-}
-
-interface AIRSToolDetectionFlags {
-  injection?: boolean;
-  url_cats?: boolean;
-  dlp?: boolean;
-  db_security?: boolean;
-  toxic_content?: boolean;
-  malicious_code?: boolean;
-  agent?: boolean;
-  topic_violation?: boolean;
-}
-
-interface AIRSToolDetected {
-  verdict?: string;
-  metadata?: {
-    ecosystem?: string;
-    method?: string;
-    server_name?: string;
-    tool_invoked?: string;
-  };
-  summary?: string;
-  input_detected?: AIRSToolDetectionFlags;
-  output_detected?: AIRSToolDetectionFlags;
-}
-
-interface AIRSResponse {
-  scan_id?: string;
-  report_id?: string;
-  profile_name?: string;
-  category?: string;
-  action?: string;
-  prompt_detected?: AIRSPromptDetected;
-  response_detected?: AIRSResponseDetected;
-  prompt_detection_details?: AIRSDetectionDetails;
-  response_detection_details?: AIRSDetectionDetails;
-  prompt_masked_data?: AIRSMaskedData;
-  response_masked_data?: AIRSMaskedData;
-  tr_id?: string;
-  timeout?: boolean;
-  error?: boolean;
-  errors?: AIRSContentError[];
-  tool_detected?: AIRSToolDetected;
-  source?: string;
-  profile_id?: string;
-  created_at?: string;
-  completed_at?: string;
-}
-
 /**
- * Scan content through Prisma AIRS API
+ * Scan content through Prisma AIRS API using the SDK
  */
 export async function scan(request: ScanRequest): Promise<ScanResult> {
   const apiKey = request.apiKey;
@@ -313,79 +187,49 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
 
   const startTime = Date.now();
 
-  // Build contents array
-  const contentItem: AIRSContentItem = {};
-  if (request.prompt) contentItem.prompt = request.prompt;
-  if (request.response) contentItem.response = request.response;
-
-  // Map tool events into contents
-  if (request.toolEvents && request.toolEvents.length > 0) {
-    contentItem.tool_calls = request.toolEvents.map((te) => ({
-      metadata: {
-        ecosystem: te.metadata.ecosystem,
-        method: te.metadata.method,
-        server_name: te.metadata.serverName,
-        ...(te.metadata.toolInvoked ? { tool_invoked: te.metadata.toolInvoked } : {}),
-      },
-      ...(te.input ? { input: te.input } : {}),
-      ...(te.output ? { output: te.output } : {}),
-    }));
-  }
-
-  // Build request body (per OpenAPI spec)
-  const body: AIRSRequest = {
-    ai_profile: {
-      profile_name: profileName,
-    },
-    contents: [contentItem],
-  };
-
-  // Add optional tracking IDs
-  if (request.trId) body.tr_id = request.trId;
-  if (request.sessionId) body.session_id = request.sessionId;
-
-  // Add metadata if provided
-  if (request.appName || request.appUser || request.aiModel) {
-    body.metadata = {};
-    if (request.appName) body.metadata.app_name = request.appName;
-    if (request.appUser) body.metadata.app_user = request.appUser;
-    if (request.aiModel) body.metadata.ai_model = request.aiModel;
-  }
-
   try {
-    const resp = await fetch(AIRS_SCAN_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "x-pan-token": apiKey,
-      },
-      body: JSON.stringify(body),
-    });
+    // Initialize SDK with the API key from plugin config
+    init({ apiKey });
 
-    const latencyMs = Date.now() - startTime;
+    // Build Content object
+    const contentOpts: Record<string, unknown> = {};
+    if (request.prompt) contentOpts.prompt = request.prompt;
+    if (request.response) contentOpts.response = request.response;
 
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      return {
-        action: "warn",
-        severity: "LOW",
-        categories: ["api_error"],
-        scanId: "",
-        reportId: "",
-        profileName,
-        promptDetected: defaultPromptDetected(),
-        responseDetected: defaultResponseDetected(),
-        latencyMs,
-        timeout: false,
-        hasError: true,
-        contentErrors: [],
-        error: `API error ${resp.status}: ${errorText}`,
+    // Map first tool event if present (SDK supports single toolEvent per Content)
+    if (request.toolEvents && request.toolEvents.length > 0) {
+      const te = request.toolEvents[0];
+      contentOpts.toolEvent = {
+        metadata: {
+          ecosystem: te.metadata.ecosystem,
+          method: te.metadata.method,
+          server_name: te.metadata.serverName,
+          ...(te.metadata.toolInvoked ? { tool_invoked: te.metadata.toolInvoked } : {}),
+        },
+        ...(te.input ? { input: te.input } : {}),
+        ...(te.output ? { output: te.output } : {}),
       };
     }
 
-    const data: AIRSResponse = await resp.json();
-    return parseResponse(data, profileName, request, latencyMs);
+    const content = new Content(contentOpts as ConstructorParameters<typeof Content>[0]);
+
+    // Build scan options
+    const opts: Record<string, unknown> = {};
+    if (request.trId) opts.trId = request.trId;
+    if (request.sessionId) opts.sessionId = request.sessionId;
+    if (request.appName || request.appUser || request.aiModel) {
+      const metadata: Record<string, string> = {};
+      if (request.appName) metadata.app_name = request.appName;
+      if (request.appUser) metadata.app_user = request.appUser;
+      if (request.aiModel) metadata.ai_model = request.aiModel;
+      opts.metadata = metadata;
+    }
+
+    const scanner = new SDKScanner();
+    const data = await scanner.syncScan({ profile_name: profileName }, content, opts);
+
+    const latencyMs = Date.now() - startTime;
+    return mapScanResponse(data, profileName, request, latencyMs);
   } catch (err) {
     const latencyMs = Date.now() - startTime;
     return {
@@ -401,16 +245,21 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       timeout: false,
       hasError: true,
       contentErrors: [],
-      error: err instanceof Error ? err.message : String(err),
+      error:
+        err instanceof AISecSDKException
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : String(err),
     };
   }
 }
 
 /**
- * Parse AIRS API response into ScanResult
+ * Map SDK ScanResponse to plugin ScanResult
  */
-function parseResponse(
-  data: AIRSResponse,
+export function mapScanResponse(
+  data: ScanResponse,
   defaultProfileName: string,
   request: ScanRequest,
   latencyMs: number
@@ -445,7 +294,6 @@ function parseResponse(
 
   // Build categories list
   const categories: string[] = [];
-  // Prompt detections
   if (promptDetected.injection) categories.push("prompt_injection");
   if (promptDetected.dlp) categories.push("dlp_prompt");
   if (promptDetected.urlCats) categories.push("url_filtering_prompt");
@@ -453,7 +301,6 @@ function parseResponse(
   if (promptDetected.maliciousCode) categories.push("malicious_code_prompt");
   if (promptDetected.agent) categories.push("agent_threat_prompt");
   if (promptDetected.topicViolation) categories.push("topic_violation_prompt");
-  // Response detections
   if (responseDetected.dlp) categories.push("dlp_response");
   if (responseDetected.urlCats) categories.push("url_filtering_response");
   if (responseDetected.dbSecurity) categories.push("db_security_response");
@@ -547,19 +394,28 @@ function parseResponse(
   return result;
 }
 
-function parseDetectionDetails(raw?: AIRSDetectionDetails): DetectionDetails | undefined {
+function parseDetectionDetails(raw?: {
+  topic_guardrails_details?: Record<string, unknown>;
+}): DetectionDetails | undefined {
   if (!raw) return undefined;
   const details: DetectionDetails = {};
   if (raw.topic_guardrails_details) {
+    const tg = raw.topic_guardrails_details as {
+      allowed_topics?: string[];
+      blocked_topics?: string[];
+    };
     details.topicGuardrailsDetails = {
-      allowedTopics: raw.topic_guardrails_details.allowed_topics ?? [],
-      blockedTopics: raw.topic_guardrails_details.blocked_topics ?? [],
+      allowedTopics: tg.allowed_topics ?? [],
+      blockedTopics: tg.blocked_topics ?? [],
     };
   }
   return Object.keys(details).length > 0 ? details : undefined;
 }
 
-function parseMaskedData(raw?: AIRSMaskedData): MaskedData | undefined {
+function parseMaskedData(raw?: {
+  data?: string;
+  pattern_detections?: { pattern?: string; locations?: number[][] }[];
+}): MaskedData | undefined {
   if (!raw) return undefined;
   return {
     data: raw.data,
@@ -570,31 +426,37 @@ function parseMaskedData(raw?: AIRSMaskedData): MaskedData | undefined {
   };
 }
 
-function parseToolDetectionFlags(raw?: AIRSToolDetectionFlags): ToolDetectionFlags | undefined {
+function parseToolDetectionFlags(raw?: Record<string, unknown>): ToolDetectionFlags | undefined {
   if (!raw) return undefined;
   const flags: ToolDetectionFlags = {};
-  if (raw.injection != null) flags.injection = raw.injection;
-  if (raw.url_cats != null) flags.urlCats = raw.url_cats;
-  if (raw.dlp != null) flags.dlp = raw.dlp;
-  if (raw.db_security != null) flags.dbSecurity = raw.db_security;
-  if (raw.toxic_content != null) flags.toxicContent = raw.toxic_content;
-  if (raw.malicious_code != null) flags.maliciousCode = raw.malicious_code;
-  if (raw.agent != null) flags.agent = raw.agent;
-  if (raw.topic_violation != null) flags.topicViolation = raw.topic_violation;
+  if (raw.injection != null) flags.injection = raw.injection as boolean;
+  if (raw.url_cats != null) flags.urlCats = raw.url_cats as boolean;
+  if (raw.dlp != null) flags.dlp = raw.dlp as boolean;
+  if (raw.db_security != null) flags.dbSecurity = raw.db_security as boolean;
+  if (raw.toxic_content != null) flags.toxicContent = raw.toxic_content as boolean;
+  if (raw.malicious_code != null) flags.maliciousCode = raw.malicious_code as boolean;
+  if (raw.agent != null) flags.agent = raw.agent as boolean;
+  if (raw.topic_violation != null) flags.topicViolation = raw.topic_violation as boolean;
   return Object.keys(flags).length > 0 ? flags : undefined;
 }
 
-function parseToolDetected(raw?: AIRSToolDetected): ToolDetected | undefined {
+function parseToolDetected(raw?: {
+  verdict?: string;
+  metadata?: Record<string, unknown>;
+  summary?: unknown;
+  input_detected?: Record<string, unknown>;
+  output_detected?: Record<string, unknown>;
+}): ToolDetected | undefined {
   if (!raw || !raw.metadata) return undefined;
   const result: ToolDetected = {
     verdict: raw.verdict ?? "",
     metadata: {
-      ecosystem: raw.metadata.ecosystem ?? "",
-      method: raw.metadata.method ?? "",
-      serverName: raw.metadata.server_name ?? "",
-      toolInvoked: raw.metadata.tool_invoked,
+      ecosystem: (raw.metadata.ecosystem as string) ?? "",
+      method: (raw.metadata.method as string) ?? "",
+      serverName: (raw.metadata.server_name as string) ?? "",
+      toolInvoked: raw.metadata.tool_invoked as string | undefined,
     },
-    summary: raw.summary ?? "",
+    summary: typeof raw.summary === "string" ? raw.summary : "",
   };
   const inputDetected = parseToolDetectionFlags(raw.input_detected);
   const outputDetected = parseToolDetectionFlags(raw.output_detected);

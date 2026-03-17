@@ -86,7 +86,7 @@ Create PR on GitHub.
 prisma-airs-plugin/
 ├── index.ts              # Plugin entrypoint
 ├── src/
-│   ├── scanner.ts        # AIRS API integration
+│   ├── scanner.ts        # SDK-backed scanner adapter
 │   ├── scanner.test.ts   # Scanner tests
 │   ├── scan-cache.ts     # Result caching
 │   └── scan-cache.test.ts

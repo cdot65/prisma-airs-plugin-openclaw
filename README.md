@@ -10,7 +10,7 @@ OpenClaw plugin for [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma
 
 ## Overview
 
-Pure TypeScript plugin with direct AIRS API integration via `fetch()`.
+Pure TypeScript plugin powered by the [`@cdot65/prisma-airs-sdk`](https://www.npmjs.com/package/@cdot65/prisma-airs-sdk) for AIRS API integration.
 
 **Provides:**
 - **Gateway RPC**: `prisma-airs.scan` - Programmatic scanning
@@ -86,7 +86,7 @@ prisma-airs-plugin/
 ├── openclaw.plugin.json          # Plugin manifest
 ├── index.ts                      # Plugin entrypoint
 ├── src/
-│   ├── scanner.ts                # TypeScript scanner
+│   ├── scanner.ts                # SDK-backed scanner adapter
 │   └── scan-cache.ts             # Result caching
 └── hooks/
     ├── prisma-airs-guard/        # Bootstrap reminder
