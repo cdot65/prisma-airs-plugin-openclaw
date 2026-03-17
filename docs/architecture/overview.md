@@ -6,7 +6,7 @@ The Prisma AIRS plugin consists of:
 
 | Component        | File                 | Purpose                                   |
 | ---------------- | -------------------- | ----------------------------------------- |
-| **Scanner**      | `src/scanner.ts`     | Direct AIRS API integration via `fetch()` |
+| **Scanner**      | `src/scanner.ts`     | AIRS API integration via `@cdot65/prisma-airs-sdk` |
 | **Scan Cache**   | `src/scan-cache.ts`  | Share scan results between hooks          |
 | **Plugin Entry** | `index.ts`           | RPC methods, CLI, agent tool registration |
 | **Hooks**        | `hooks/*/handler.ts` | Event handlers for security layers        |
