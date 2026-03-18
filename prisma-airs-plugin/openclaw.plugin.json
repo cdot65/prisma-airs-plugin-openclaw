@@ -14,7 +14,8 @@
     "hooks/prisma-airs-outbound-block",
     "hooks/prisma-airs-tool-guard",
     "hooks/prisma-airs-prompt-scan",
-    "hooks/prisma-airs-tool-redact"
+    "hooks/prisma-airs-tool-redact",
+    "hooks/prisma-airs-llm-audit"
   ],
   "configSchema": {
     "type": "object",
@@ -89,6 +90,12 @@
         "enum": ["deterministic", "off"],
         "default": "deterministic",
         "description": "Tool redact mode: deterministic (redact PII/credentials from tool outputs before persistence), or off"
+      },
+      "llm_audit_mode": {
+        "type": "string",
+        "enum": ["deterministic", "off"],
+        "default": "deterministic",
+        "description": "LLM audit mode: deterministic (scan all LLM inputs/outputs through AIRS for audit logging), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -176,6 +183,10 @@
     "tool_redact_mode": {
       "label": "Tool Redact Mode",
       "description": "deterministic: redact PII/credentials from tool outputs before session persistence; off: disabled"
+    },
+    "llm_audit_mode": {
+      "label": "LLM Audit Mode",
+      "description": "deterministic: scan all LLM inputs and outputs through AIRS for audit logging; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",
