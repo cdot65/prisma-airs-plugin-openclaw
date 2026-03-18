@@ -95,7 +95,7 @@ describe("scan", () => {
       }),
     } as Response);
 
-    const result = await scan({ prompt: "test", apiKey: "test-key" });
+    const result = await scan({ prompt: "test" });
 
     expect(result.action).toBe("allow");
     expect(result.scanId).toBe("scan_123");
@@ -108,7 +108,7 @@ describe("scan", () => {
       text: async () => "Internal Server Error",
     } as Response);
 
-    const result = await scan({ prompt: "test", apiKey: "test-key" });
+    const result = await scan({ prompt: "test" });
 
     expect(result.action).toBe("warn");
     expect(result.error).toContain("API error 500");
@@ -116,36 +116,23 @@ describe("scan", () => {
 });
 ```
 
-### Testing API Key via ScanRequest
+### Testing SDK Initialization
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const TEST_API_KEY = "test-api-key-12345";
-
-describe("scan with API key", () => {
+describe("scan with SDK init", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it("should return error when API key missing", async () => {
+  it("should return error when SDK not initialized", async () => {
+    // Mock globalConfiguration.initialized = false
     const { scan } = await import("./scanner");
     const result = await scan({ prompt: "test" });
 
-    expect(result.error).toBe("API key not configured. Set it in plugin config.");
-  });
-
-  it("should call API when key present", async () => {
-    const { scan } = await import("./scanner");
-    await scan({ prompt: "test", apiKey: TEST_API_KEY });
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "x-pan-token": TEST_API_KEY,
-        }),
-      })
+    expect(result.error).toBe(
+      "SDK not initialized. Call init({ apiKey }) in register() first."
     );
   });
 });

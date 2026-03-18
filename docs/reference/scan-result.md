@@ -14,7 +14,6 @@ interface ScanRequest {
   appName?: string;
   appUser?: string;
   aiModel?: string;
-  apiKey?: string;
   toolEvents?: ToolEventInput[];
 }
 ```
@@ -31,7 +30,6 @@ interface ScanRequest {
 | `appName`     | `string?`           | Application name for scan metadata             |
 | `appUser`     | `string?`           | User identifier for scan metadata              |
 | `aiModel`     | `string?`           | AI model name for scan metadata                |
-| `apiKey`      | `string?`           | Prisma AIRS API key from plugin config         |
 | `toolEvents`  | `ToolEventInput[]?` | Tool call events to scan                       |
 
 ## ScanResult Interface
@@ -427,7 +425,7 @@ Error message if scan failed.
 }
 ```
 
-### Missing API Key
+### SDK Not Initialized
 
 ```json
 {
@@ -460,6 +458,6 @@ Error message if scan failed.
   "timeout": false,
   "hasError": false,
   "contentErrors": [],
-  "error": "API key not configured. Set it in plugin config."
+  "error": "SDK not initialized. Call init({ apiKey }) in register() first."
 }
 ```

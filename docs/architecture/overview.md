@@ -148,21 +148,28 @@ export default function register(api: PluginApi): void {
 
 ## AIRS API Integration
 
-### Request Flow
+### SDK Initialization
+
+The SDK is initialized once during plugin registration:
 
 ```typescript
-const response = await fetch(AIRS_SCAN_ENDPOINT, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    "x-pan-token": apiKey,
-  },
-  body: JSON.stringify({
-    ai_profile: { profile_name: "default" },
-    contents: [{ prompt: "...", response: "..." }],
-    metadata: { app_name: "openclaw" },
-  }),
+import { init } from "@cdot65/prisma-airs-sdk";
+
+// In register():
+init({ apiKey: config.apiKey });
+```
+
+### Request Flow
+
+Scans use the pre-initialized SDK client:
+
+```typescript
+import { SDKScanner } from "@cdot65/prisma-airs-sdk";
+
+const response = await SDKScanner.syncScan({
+  ai_profile: { profile_name: "default" },
+  contents: [{ prompt: "...", response: "..." }],
+  metadata: { app_name: "openclaw" },
 });
 ```
 

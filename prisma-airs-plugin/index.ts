@@ -12,6 +12,7 @@
  * - Deterministic hooks: audit, context, outbound, tools (conditional)
  */
 
+import { init } from "@cdot65/prisma-airs-sdk";
 import { scan, isConfigured, ScanRequest } from "./src/scanner";
 import { resolveAllModes, type RawPluginConfig, type ResolvedModes } from "./src/config";
 import { buildReminder } from "./hooks/prisma-airs-guard/handler";
@@ -108,7 +109,6 @@ function buildScanRequest(params: ScanRequest | undefined, config: PrismaAirsCon
     appName: params?.appName ?? config.app_name ?? "openclaw",
     appUser: params?.appUser,
     aiModel: params?.aiModel,
-    apiKey: config.api_key,
   };
 }
 
@@ -134,6 +134,13 @@ export default function register(api: PluginApi): void {
       `Prisma AIRS config error: ${err instanceof Error ? err.message : String(err)}`
     );
     throw err;
+  }
+
+  // Initialize SDK once with the API key from plugin config
+  if (config.api_key) {
+    init({ apiKey: config.api_key });
+  } else {
+    api.logger.warn("Prisma AIRS: no API key configured. Scans will fail until key is set.");
   }
 
   api.logger.info(

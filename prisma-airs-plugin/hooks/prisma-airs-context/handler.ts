@@ -139,7 +139,6 @@ function getPluginConfig(ctx: HookContext): {
   enabled: boolean;
   profileName: string;
   appName: string;
-  apiKey: string;
   failClosed: boolean;
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
@@ -147,7 +146,6 @@ function getPluginConfig(ctx: HookContext): {
     enabled: true,
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
-    apiKey: cfg?.api_key ?? "",
     failClosed: cfg?.fail_closed ?? true, // Default fail-closed
   };
 }
@@ -271,7 +269,6 @@ const handler = async (
         prompt: content,
         profileName: config.profileName,
         appName: config.appName,
-        apiKey: config.apiKey,
       });
 
       // Cache for downstream hooks (before_tool_call)

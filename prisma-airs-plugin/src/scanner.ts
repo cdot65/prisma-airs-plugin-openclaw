@@ -2,11 +2,18 @@
  * Prisma AIRS Scanner - SDK-backed Implementation
  *
  * Uses @cdot65/prisma-airs-sdk for HTTP communication with the AIRS API.
+ * SDK must be initialized via init() before calling scan().
  * Exports a stable ScanResult interface consumed by all hook handlers.
+ * CamelCase adapter types remain plugin-defined (SDK uses snake_case).
  */
 
-import { init, Scanner as SDKScanner, Content, AISecSDKException } from "@cdot65/prisma-airs-sdk";
-import type { ScanResponse } from "@cdot65/prisma-airs-sdk";
+import {
+  globalConfiguration,
+  Scanner as SDKScanner,
+  Content,
+  AISecSDKException,
+} from "@cdot65/prisma-airs-sdk";
+import type { ScanResponse, ContentErrorType, ErrorStatus } from "@cdot65/prisma-airs-sdk";
 
 // Types
 export type Action = "allow" | "warn" | "block";
@@ -53,7 +60,6 @@ export interface ScanRequest {
   appName?: string;
   appUser?: string;
   aiModel?: string;
-  apiKey?: string;
   toolEvents?: ToolEventInput[];
 }
 
@@ -97,8 +103,7 @@ export interface MaskedData {
   patternDetections: PatternDetection[];
 }
 
-export type ContentErrorType = "prompt" | "response";
-export type ErrorStatus = "error" | "timeout";
+export type { ContentErrorType, ErrorStatus };
 
 export interface ContentError {
   contentType: ContentErrorType;
@@ -164,10 +169,9 @@ export function defaultResponseDetected(): ResponseDetected {
  * Scan content through Prisma AIRS API using the SDK
  */
 export async function scan(request: ScanRequest): Promise<ScanResult> {
-  const apiKey = request.apiKey;
   const profileName = request.profileName ?? "default";
 
-  if (!apiKey) {
+  if (!globalConfiguration.initialized) {
     return {
       action: "warn",
       severity: "LOW",
@@ -181,16 +185,13 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       timeout: false,
       hasError: false,
       contentErrors: [],
-      error: "API key not configured. Set it in plugin config.",
+      error: "SDK not initialized. Call init() before scanning.",
     };
   }
 
   const startTime = Date.now();
 
   try {
-    // Initialize SDK with the API key from plugin config
-    init({ apiKey });
-
     // Build Content object
     const contentOpts: Record<string, unknown> = {};
     if (request.prompt) contentOpts.prompt = request.prompt;
@@ -466,8 +467,9 @@ function parseToolDetected(raw?: {
 }
 
 /**
- * Check if API key is configured
+ * Check if SDK is initialized (API key configured)
  */
 export function isConfigured(apiKey?: string): boolean {
-  return !!apiKey;
+  // Support both: direct apiKey check (for plugin config) and SDK state
+  return apiKey ? true : globalConfiguration.initialized;
 }
