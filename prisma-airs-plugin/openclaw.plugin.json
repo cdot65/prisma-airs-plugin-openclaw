@@ -11,7 +11,8 @@
     "hooks/prisma-airs-outbound",
     "hooks/prisma-airs-tools",
     "hooks/prisma-airs-inbound-block",
-    "hooks/prisma-airs-outbound-block"
+    "hooks/prisma-airs-outbound-block",
+    "hooks/prisma-airs-tool-guard"
   ],
   "configSchema": {
     "type": "object",
@@ -68,6 +69,12 @@
         "enum": ["deterministic", "off"],
         "default": "deterministic",
         "description": "Outbound blocking mode: deterministic (block non-allow assistant messages at persistence layer), or off"
+      },
+      "tool_guard_mode": {
+        "type": "string",
+        "enum": ["deterministic", "off"],
+        "default": "deterministic",
+        "description": "Tool guard mode: deterministic (scan tool inputs through AIRS before execution), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -143,6 +150,10 @@
     "outbound_block_mode": {
       "label": "Outbound Blocking Mode",
       "description": "deterministic: block assistant messages at persistence layer unless AIRS returns allow; off: disabled"
+    },
+    "tool_guard_mode": {
+      "label": "Tool Guard Mode",
+      "description": "deterministic: scan tool inputs through AIRS before execution; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",
