@@ -1,0 +1,38 @@
+FROM python:3.12-slim
+
+# Install system dependencies + Node.js 22
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install openclaw CLI globally
+RUN npm install -g openclaw@latest
+
+# Create non-root user with standard directories
+RUN useradd -m -u 1000 node && \
+    mkdir -p /home/node/.openclaw /home/node/workspace/skills && \
+    chown -R node:node /home/node
+
+# Install uv for node user
+USER node
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/home/node/.local/bin:$PATH"
+
+WORKDIR /home/node
+
+# ── Seed OpenClaw config (copied to non-volume path; entrypoint moves it) ─
+COPY --chown=node:node docker/openclaw-e2e.json /home/node/openclaw-seed.json
+
+# ── E2E test scripts ──────────────────────────────────────────────────────
+COPY --chown=node:node e2e /home/node/e2e
+RUN chmod +x /home/node/e2e/*.sh
+
+# ── Entrypoint handles plugin deps + link-install on first run ────────────
+COPY --chown=node:node docker/entrypoint.sh /home/node/entrypoint.sh
+RUN chmod +x /home/node/entrypoint.sh
+
+ENTRYPOINT ["/home/node/entrypoint.sh"]
+CMD ["openclaw", "gateway", "run", "--port", "18789", "--bind", "lan", "--allow-unconfigured"]

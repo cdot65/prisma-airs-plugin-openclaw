@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.13"
+  },
+  "gateway": {
+    "controlUi": {
+      "dangerouslyAllowHostHeaderOriginFallback": true
+    },
+    "auth": {
+      "token": "e2e-dev-token"
+    }
+  },
+  "plugins": {
+    "load": {
+      "paths": [
+        "/home/node/workspace/skills/prisma-airs-plugin"
+      ]
+    },
+    "entries": {
+      "prisma-airs": {
+        "enabled": true
+      }
+    },
+    "installs": {
+      "prisma-airs": {
+        "source": "path",
+        "sourcePath": "/home/node/workspace/skills/prisma-airs-plugin",
+        "installPath": "/home/node/workspace/skills/prisma-airs-plugin",
+        "version": "0.3.0",
+        "installedAt": "2026-03-17T00:00:00.000Z"
+      }
+    }
+  }
+}

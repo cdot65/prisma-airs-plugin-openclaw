@@ -58,6 +58,44 @@ docker-run:           ## Run base image locally (port 18789)
 docker-stop:          ## Stop and remove local container
 	docker rm -f openclaw-dev 2>/dev/null || true
 
+# -- E2E Testing (Docker Compose) -----------------------------------------
+.PHONY: e2e-build e2e-up e2e-down e2e-test e2e-logs e2e-shell e2e
+
+e2e-build:            ## Build E2E image (no cache)
+	docker compose build --no-cache
+
+e2e-up:               ## Start gateway (requires PANW_AI_SEC_API_KEY + PANW_AI_SEC_PROFILE)
+	docker compose up -d
+	@echo ""
+	@echo "OpenClaw gateway starting on http://localhost:18789"
+	@echo "Run: make e2e-test"
+
+e2e-down:             ## Stop E2E environment (data persists in volume)
+	docker compose down
+
+e2e-clean:            ## Stop E2E and delete persistent volume
+	docker compose down -v
+
+e2e-test:             ## Run E2E smoke tests against running gateway
+	docker compose exec gateway bash /home/node/e2e/smoke-test.sh
+
+e2e-scan:             ## Run a manual scan (usage: make e2e-scan MSG="hello")
+	docker compose exec gateway openclaw prisma-airs-scan "$(MSG)" --json
+
+e2e-status:           ## Check plugin status via RPC (fast)
+	docker compose exec gateway openclaw gateway call prisma-airs.status --token e2e-dev-token --json
+
+e2e-health:           ## Check gateway health
+	docker compose exec gateway openclaw gateway health
+
+e2e-logs:             ## Tail E2E gateway logs
+	docker compose logs -f gateway
+
+e2e-shell:            ## Shell into E2E gateway container
+	docker compose exec gateway bash
+
+e2e: e2e-build e2e-up ## Build and start E2E environment
+
 # -- Kubernetes (Talos) ----------------------------------------------------
 .PHONY: k8s-apply k8s-restart k8s-status k8s-logs k8s-shell k8s-deploy
 

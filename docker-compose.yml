@@ -1,0 +1,24 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.e2e
+    ports:
+      - "18789:18789"
+    environment:
+      - PANW_AI_SEC_API_KEY=${PANW_AI_SEC_API_KEY:-}
+      - PANW_AI_SEC_PROFILE=${PANW_AI_SEC_PROFILE:-}
+      - LIVE_CONFIG=/home/node/.openclaw/openclaw.json
+    volumes:
+      - openclaw-data:/home/node/.openclaw
+      - ./prisma-airs-plugin:/home/node/workspace/skills/prisma-airs-plugin
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "openclaw", "gateway", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  openclaw-data:
