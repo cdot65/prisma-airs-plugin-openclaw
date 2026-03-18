@@ -13,7 +13,15 @@ import {
   Content,
   AISecSDKException,
 } from "@cdot65/prisma-airs-sdk";
-import type { ScanResponse, ContentErrorType, ErrorStatus } from "@cdot65/prisma-airs-sdk";
+import type {
+  ScanResponse,
+  ContentErrorType,
+  ErrorStatus,
+  ToolDetected as SDKToolDetected,
+  ToolEvent as SDKToolEvent,
+  ToolEventMetadata as SDKToolEventMetadata,
+  MaskedData as SDKMaskedData,
+} from "@cdot65/prisma-airs-sdk";
 
 // Types
 export type Action = "allow" | "warn" | "block";
@@ -200,16 +208,18 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
     // Map first tool event if present (SDK supports single toolEvent per Content)
     if (request.toolEvents && request.toolEvents.length > 0) {
       const te = request.toolEvents[0];
-      contentOpts.toolEvent = {
-        metadata: {
-          ecosystem: te.metadata.ecosystem,
-          method: te.metadata.method,
-          server_name: te.metadata.serverName,
-          ...(te.metadata.toolInvoked ? { tool_invoked: te.metadata.toolInvoked } : {}),
-        },
+      const sdkMetadata: SDKToolEventMetadata = {
+        ecosystem: te.metadata.ecosystem,
+        method: te.metadata.method,
+        server_name: te.metadata.serverName,
+        ...(te.metadata.toolInvoked ? { tool_invoked: te.metadata.toolInvoked } : {}),
+      };
+      const sdkToolEvent: SDKToolEvent = {
+        metadata: sdkMetadata,
         ...(te.input ? { input: te.input } : {}),
         ...(te.output ? { output: te.output } : {}),
       };
+      contentOpts.toolEvent = sdkToolEvent;
     }
 
     const content = new Content(contentOpts as ConstructorParameters<typeof Content>[0]);
@@ -413,10 +423,7 @@ function parseDetectionDetails(raw?: {
   return Object.keys(details).length > 0 ? details : undefined;
 }
 
-function parseMaskedData(raw?: {
-  data?: string;
-  pattern_detections?: { pattern?: string; locations?: number[][] }[];
-}): MaskedData | undefined {
+function parseMaskedData(raw?: SDKMaskedData): MaskedData | undefined {
   if (!raw) return undefined;
   return {
     data: raw.data,
@@ -441,26 +448,34 @@ function parseToolDetectionFlags(raw?: Record<string, unknown>): ToolDetectionFl
   return Object.keys(flags).length > 0 ? flags : undefined;
 }
 
-function parseToolDetected(raw?: {
-  verdict?: string;
-  metadata?: Record<string, unknown>;
-  summary?: unknown;
-  input_detected?: Record<string, unknown>;
-  output_detected?: Record<string, unknown>;
-}): ToolDetected | undefined {
+function parseToolDetected(raw?: SDKToolDetected): ToolDetected | undefined {
   if (!raw || !raw.metadata) return undefined;
+  const meta = raw.metadata as SDKToolEventMetadata;
+  // SDK summary may be string (legacy) or { verdict?, action? } object
+  let summary: string;
+  if (typeof raw.summary === "string") {
+    summary = raw.summary;
+  } else if (raw.summary && typeof raw.summary === "object") {
+    summary = (raw.summary as { verdict?: string }).verdict ?? "";
+  } else {
+    summary = "";
+  }
   const result: ToolDetected = {
     verdict: raw.verdict ?? "",
     metadata: {
-      ecosystem: (raw.metadata.ecosystem as string) ?? "",
-      method: (raw.metadata.method as string) ?? "",
-      serverName: (raw.metadata.server_name as string) ?? "",
-      toolInvoked: raw.metadata.tool_invoked as string | undefined,
+      ecosystem: meta.ecosystem ?? "",
+      method: meta.method ?? "",
+      serverName: meta.server_name ?? "",
+      toolInvoked: meta.tool_invoked,
     },
-    summary: typeof raw.summary === "string" ? raw.summary : "",
+    summary,
   };
-  const inputDetected = parseToolDetectionFlags(raw.input_detected);
-  const outputDetected = parseToolDetectionFlags(raw.output_detected);
+  const inputDetected = parseToolDetectionFlags(
+    raw.input_detected as Record<string, unknown> | undefined
+  );
+  const outputDetected = parseToolDetectionFlags(
+    raw.output_detected as Record<string, unknown> | undefined
+  );
   if (inputDetected) result.inputDetected = inputDetected;
   if (outputDetected) result.outputDetected = outputDetected;
   return result;
