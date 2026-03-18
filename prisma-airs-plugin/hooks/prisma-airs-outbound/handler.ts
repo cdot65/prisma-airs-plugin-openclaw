@@ -122,7 +122,6 @@ function getPluginConfig(ctx: HookContext): {
   enabled: boolean;
   profileName: string;
   appName: string;
-  apiKey: string;
   failClosed: boolean;
   dlpMaskOnly: boolean;
 } {
@@ -131,7 +130,6 @@ function getPluginConfig(ctx: HookContext): {
     enabled: true,
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
-    apiKey: cfg?.api_key ?? "",
     failClosed: cfg?.fail_closed ?? true, // Default fail-closed
     dlpMaskOnly: cfg?.dlp_mask_only ?? true, // Default mask instead of block for DLP
   };
@@ -257,7 +255,6 @@ const handler = async (
       response: content,
       profileName: config.profileName,
       appName: config.appName,
-      apiKey: config.apiKey,
     });
   } catch (err) {
     console.error(
