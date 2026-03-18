@@ -96,7 +96,7 @@ describe("prisma-airs-outbound handler", () => {
   });
 
   describe("warn action", () => {
-    it("should allow through with warning logged", async () => {
+    it("should block responses with warn action", async () => {
       mockScan.mockResolvedValue({
         action: "warn",
         severity: "MEDIUM",
@@ -113,8 +113,32 @@ describe("prisma-airs-outbound handler", () => {
       });
 
       const result = await handler(baseEvent, baseCtx);
-      expect(result).toBeUndefined();
-      expect(console.log).toHaveBeenCalled();
+      expect(result?.content).toContain("security policy");
+    });
+
+    it("should mask DLP-only warn responses when dlp_mask_only is true", async () => {
+      mockScan.mockResolvedValue({
+        action: "warn",
+        severity: "MEDIUM",
+        categories: ["dlp_response"],
+        scanId: "scan_123",
+        reportId: "report_456",
+        profileName: "default",
+        promptDetected: defaultPromptDetected(),
+        responseDetected: { ...defaultResponseDetected(), dlp: true },
+        latencyMs: 50,
+        timeout: false,
+        hasError: false,
+        contentErrors: [],
+      });
+
+      const eventWithSSN = {
+        ...baseEvent,
+        content: "Your SSN is 123-45-6789",
+      };
+
+      const result = await handler(eventWithSSN, baseCtx);
+      expect(result?.content).toContain("[SSN REDACTED]");
     });
   });
 

@@ -10,7 +10,7 @@
  * - Custom Topics: org-specific policy violations
  * - Grounding: hallucination detection
  *
- * CAN BLOCK via { cancel: true } or modify via { content: "..." }
+ * BLOCKS unless AIRS action is "allow". DLP-only results masked when dlp_mask_only is true.
  */
 
 import { scan, type ScanResult } from "../../src/scanner";
@@ -293,68 +293,51 @@ const handler = async (
     })
   );
 
-  // Handle allow - no modification needed
+  // Allow only when AIRS explicitly says "allow"
   if (result.action === "allow") {
     return;
   }
 
-  // Handle warn - log but allow through
-  if (result.action === "warn") {
-    console.log(
-      JSON.stringify({
-        event: "prisma_airs_outbound_warn",
-        timestamp: new Date().toISOString(),
-        sessionKey,
-        severity: result.severity,
-        categories: result.categories,
-        scanId: result.scanId,
-      })
-    );
-    return; // Allow through with warning logged
-  }
+  // Block or warn — check if we should mask instead of block (DLP-only)
+  if (shouldMaskOnly(result, config)) {
+    const maskedContent = maskSensitiveData(content);
 
-  // Handle block
-  if (result.action === "block") {
-    // Check if we should mask instead of block (DLP-only)
-    if (shouldMaskOnly(result, config)) {
-      const maskedContent = maskSensitiveData(content);
+    // Only return modified content if masking actually changed something
+    if (maskedContent !== content) {
+      console.log(
+        JSON.stringify({
+          event: "prisma_airs_outbound_mask",
+          timestamp: new Date().toISOString(),
+          sessionKey,
+          action: result.action,
+          categories: result.categories,
+          scanId: result.scanId,
+        })
+      );
 
-      // Only return modified content if masking actually changed something
-      if (maskedContent !== content) {
-        console.log(
-          JSON.stringify({
-            event: "prisma_airs_outbound_mask",
-            timestamp: new Date().toISOString(),
-            sessionKey,
-            categories: result.categories,
-            scanId: result.scanId,
-          })
-        );
-
-        return {
-          content: maskedContent,
-        };
-      }
+      return {
+        content: maskedContent,
+      };
     }
-
-    // Full block - replace content entirely
-    console.log(
-      JSON.stringify({
-        event: "prisma_airs_outbound_block",
-        timestamp: new Date().toISOString(),
-        sessionKey,
-        action: result.action,
-        severity: result.severity,
-        categories: result.categories,
-        scanId: result.scanId,
-        reportId: result.reportId,
-      })
-    );
-
-    return {
-      content: buildBlockMessage(result),
-    };
   }
+
+  // Full block - replace content entirely
+  console.log(
+    JSON.stringify({
+      event: "prisma_airs_outbound_block",
+      timestamp: new Date().toISOString(),
+      sessionKey,
+      action: result.action,
+      severity: result.severity,
+      categories: result.categories,
+      scanId: result.scanId,
+      reportId: result.reportId,
+    })
+  );
+
+  return {
+    content: buildBlockMessage(result),
+  };
 };
 
 export default handler;
