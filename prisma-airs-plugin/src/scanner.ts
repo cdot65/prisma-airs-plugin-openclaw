@@ -2,7 +2,9 @@
  * Prisma AIRS Scanner - SDK-backed Implementation
  *
  * Uses @cdot65/prisma-airs-sdk for HTTP communication with the AIRS API.
+ * SDK must be initialized via init() before calling scan().
  * Exports a stable ScanResult interface consumed by all hook handlers.
+ * CamelCase adapter types remain plugin-defined (SDK uses snake_case).
  */
 
 import {
@@ -11,7 +13,7 @@ import {
   Content,
   AISecSDKException,
 } from "@cdot65/prisma-airs-sdk";
-import type { ScanResponse } from "@cdot65/prisma-airs-sdk";
+import type { ScanResponse, ContentErrorType, ErrorStatus } from "@cdot65/prisma-airs-sdk";
 
 // Types
 export type Action = "allow" | "warn" | "block";
@@ -101,8 +103,7 @@ export interface MaskedData {
   patternDetections: PatternDetection[];
 }
 
-export type ContentErrorType = "prompt" | "response";
-export type ErrorStatus = "error" | "timeout";
+export type { ContentErrorType, ErrorStatus };
 
 export interface ContentError {
   contentType: ContentErrorType;
