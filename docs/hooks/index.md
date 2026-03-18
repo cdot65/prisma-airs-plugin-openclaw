@@ -1,16 +1,17 @@
 # Hooks Overview
 
-The Prisma AIRS plugin provides 5 security hooks that work together for defense-in-depth.
+The Prisma AIRS plugin provides 6 security hooks that work together for defense-in-depth.
 
 ## Hook Summary
 
-| Hook                                            | Event                | Purpose                 | Can Block |
-| ----------------------------------------------- | -------------------- | ----------------------- | --------- |
-| [prisma-airs-guard](prisma-airs-guard.md)       | `before_agent_start` | Remind agents to scan   | No        |
-| [prisma-airs-audit](prisma-airs-audit.md)       | `message_received`   | Audit logging + caching | No        |
-| [prisma-airs-context](prisma-airs-context.md)   | `before_agent_start` | Inject threat warnings  | No\*      |
-| [prisma-airs-outbound](prisma-airs-outbound.md) | `message_sending`    | Block/mask responses    | Yes       |
-| [prisma-airs-tools](prisma-airs-tools.md)       | `before_tool_call`   | Block dangerous tools   | Yes       |
+| Hook                                                              | Event                  | Purpose                   | Can Block |
+| ----------------------------------------------------------------- | ---------------------- | ------------------------- | --------- |
+| [prisma-airs-guard](prisma-airs-guard.md)                         | `before_agent_start`   | Remind agents to scan     | No        |
+| [prisma-airs-audit](prisma-airs-audit.md)                         | `message_received`     | Audit logging + caching   | No        |
+| [prisma-airs-context](prisma-airs-context.md)                     | `before_agent_start`   | Inject threat warnings    | No\*      |
+| [prisma-airs-inbound-block](prisma-airs-inbound-block.md)         | `before_message_write` | Block unsafe user messages| Yes       |
+| [prisma-airs-outbound](prisma-airs-outbound.md)                   | `message_sending`      | Block/mask responses      | Yes       |
+| [prisma-airs-tools](prisma-airs-tools.md)                         | `before_tool_call`     | Block dangerous tools     | Yes       |
 
 \*Cannot block directly, but can influence agent behavior via context
 
@@ -60,6 +61,7 @@ plugins:
       reminder_mode: "on"              # prisma-airs-guard (on / off)
       audit_mode: "deterministic"      # prisma-airs-audit
       context_injection_mode: "deterministic"  # prisma-airs-context
+      inbound_block_mode: "deterministic"     # prisma-airs-inbound-block
       outbound_mode: "deterministic"   # prisma-airs-outbound
       tool_gating_mode: "deterministic" # prisma-airs-tools
 ```
@@ -93,6 +95,7 @@ plugins:
       reminder_mode: "on"
       audit_mode: "deterministic"
       context_injection_mode: "deterministic"
+      inbound_block_mode: "deterministic"
       outbound_mode: "deterministic"
       tool_gating_mode: "deterministic"
       dlp_mask_only: false # Block instead of mask
