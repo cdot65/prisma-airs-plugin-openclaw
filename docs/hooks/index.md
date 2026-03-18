@@ -1,6 +1,6 @@
 # Hooks Overview
 
-The Prisma AIRS plugin provides 7 security hooks that work together for defense-in-depth.
+The Prisma AIRS plugin provides 8 security hooks that work together for defense-in-depth.
 
 ## Hook Summary
 
@@ -12,7 +12,8 @@ The Prisma AIRS plugin provides 7 security hooks that work together for defense-
 | [prisma-airs-inbound-block](prisma-airs-inbound-block.md)         | `before_message_write` | Block unsafe user messages   | Yes       |
 | [prisma-airs-outbound-block](prisma-airs-outbound-block.md)       | `before_message_write` | Block unsafe assistant msgs  | Yes       |
 | [prisma-airs-outbound](prisma-airs-outbound.md)                   | `message_sending`      | Block/mask responses         | Yes       |
-| [prisma-airs-tools](prisma-airs-tools.md)                         | `before_tool_call`     | Block dangerous tools        | Yes       |
+| [prisma-airs-tools](prisma-airs-tools.md)                         | `before_tool_call`     | Block tools (cached result)  | Yes       |
+| [prisma-airs-tool-guard](prisma-airs-tool-guard.md)               | `before_tool_call`     | Scan tool inputs via AIRS    | Yes       |
 
 \*Cannot block directly, but can influence agent behavior via context
 
@@ -65,7 +66,8 @@ plugins:
       inbound_block_mode: "deterministic"      # prisma-airs-inbound-block
       outbound_block_mode: "deterministic"    # prisma-airs-outbound-block
       outbound_mode: "deterministic"          # prisma-airs-outbound
-      tool_gating_mode: "deterministic" # prisma-airs-tools
+      tool_gating_mode: "deterministic"       # prisma-airs-tools
+      tool_guard_mode: "deterministic"        # prisma-airs-tool-guard
 ```
 
 ## Data Sharing
@@ -101,6 +103,7 @@ plugins:
       outbound_block_mode: "deterministic"
       outbound_mode: "deterministic"
       tool_gating_mode: "deterministic"
+      tool_guard_mode: "deterministic"
       dlp_mask_only: false # Block instead of mask
 ```
 
