@@ -1,6 +1,6 @@
 # Hooks Overview
 
-The Prisma AIRS plugin provides 9 security hooks that work together for defense-in-depth.
+The Prisma AIRS plugin provides 10 security hooks that work together for defense-in-depth.
 
 ## Hook Summary
 
@@ -15,6 +15,9 @@ The Prisma AIRS plugin provides 9 security hooks that work together for defense-
 | [prisma-airs-outbound](prisma-airs-outbound.md)                   | `message_sending`      | Block/mask responses            | Yes       |
 | [prisma-airs-tools](prisma-airs-tools.md)                         | `before_tool_call`     | Block tools (cached result)     | Yes       |
 | [prisma-airs-tool-guard](prisma-airs-tool-guard.md)               | `before_tool_call`     | Scan tool inputs via AIRS       | Yes       |
+| [prisma-airs-tool-redact](prisma-airs-tool-redact.md)             | `tool_result_persist`  | Redact PII from tool outputs    | No\*\*\*  |
+
+\*\*\*Modifies persisted message content — does not block tool execution
 
 \*\*Injects warnings via `prependSystemContext` — cannot block directly
 
@@ -71,6 +74,7 @@ plugins:
       outbound_mode: "deterministic"          # prisma-airs-outbound
       tool_gating_mode: "deterministic"       # prisma-airs-tools
       tool_guard_mode: "deterministic"        # prisma-airs-tool-guard
+      tool_redact_mode: "deterministic"       # prisma-airs-tool-redact
 ```
 
 ## Data Sharing
@@ -107,6 +111,7 @@ plugins:
       outbound_mode: "deterministic"
       tool_gating_mode: "deterministic"
       tool_guard_mode: "deterministic"
+      tool_redact_mode: "deterministic"
       dlp_mask_only: false # Block instead of mask
 ```
 

@@ -13,7 +13,8 @@
     "hooks/prisma-airs-inbound-block",
     "hooks/prisma-airs-outbound-block",
     "hooks/prisma-airs-tool-guard",
-    "hooks/prisma-airs-prompt-scan"
+    "hooks/prisma-airs-prompt-scan",
+    "hooks/prisma-airs-tool-redact"
   ],
   "configSchema": {
     "type": "object",
@@ -82,6 +83,12 @@
         "enum": ["deterministic", "off"],
         "default": "deterministic",
         "description": "Prompt scan mode: deterministic (scan full conversation context before prompt assembly), or off"
+      },
+      "tool_redact_mode": {
+        "type": "string",
+        "enum": ["deterministic", "off"],
+        "default": "deterministic",
+        "description": "Tool redact mode: deterministic (redact PII/credentials from tool outputs before persistence), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -165,6 +172,10 @@
     "prompt_scan_mode": {
       "label": "Prompt Scan Mode",
       "description": "deterministic: scan full conversation context before prompt assembly; off: disabled"
+    },
+    "tool_redact_mode": {
+      "label": "Tool Redact Mode",
+      "description": "deterministic: redact PII/credentials from tool outputs before session persistence; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",
