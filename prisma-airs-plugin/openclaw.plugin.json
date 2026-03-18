@@ -9,7 +9,8 @@
     "hooks/prisma-airs-audit",
     "hooks/prisma-airs-context",
     "hooks/prisma-airs-outbound",
-    "hooks/prisma-airs-tools"
+    "hooks/prisma-airs-tools",
+    "hooks/prisma-airs-inbound-block"
   ],
   "configSchema": {
     "type": "object",
@@ -54,6 +55,12 @@
         "enum": ["deterministic", "probabilistic", "off"],
         "default": "deterministic",
         "description": "Tool gating mode: deterministic (hook, always gate), probabilistic (tool, model decides), or off"
+      },
+      "inbound_block_mode": {
+        "type": "string",
+        "enum": ["deterministic", "off"],
+        "default": "deterministic",
+        "description": "Inbound blocking mode: deterministic (block non-allow user messages), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -121,6 +128,10 @@
     "tool_gating_mode": {
       "label": "Tool Gating Mode",
       "description": "deterministic: always gate tool calls via hook; probabilistic: model checks tool safety via tool; off: disabled"
+    },
+    "inbound_block_mode": {
+      "label": "Inbound Blocking Mode",
+      "description": "deterministic: block user messages unless AIRS returns allow; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",
