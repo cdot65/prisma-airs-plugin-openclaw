@@ -62,23 +62,58 @@ flowchart TB
 
 ## Configuration
 
-Each hook can be individually configured via scanning modes:
+Each hook can be individually enabled or disabled. Settings are organized into groups in the web UI and can be searched by tags.
+
+### Connection
 
 ```yaml
 plugins:
   prisma-airs:
     config:
-      reminder_mode: "on"              # prisma-airs-guard (on / off)
-      audit_mode: "deterministic"      # prisma-airs-audit
-      context_injection_mode: "deterministic"  # prisma-airs-context
-      inbound_block_mode: "deterministic"      # prisma-airs-inbound-block
-      outbound_block_mode: "deterministic"    # prisma-airs-outbound-block
-      outbound_mode: "deterministic"          # prisma-airs-outbound
-      tool_gating_mode: "deterministic"       # prisma-airs-tools
-      tool_guard_mode: "deterministic"        # prisma-airs-tool-guard
-      tool_redact_mode: "deterministic"       # prisma-airs-tool-redact
-      llm_audit_mode: "deterministic"         # prisma-airs-llm-audit
-      tool_audit_mode: "deterministic"        # prisma-airs-tool-audit
+      api_key: "your-api-key"           # Required
+      profile_name: "default"            # AIRS profile from SCM
+      app_name: "openclaw"               # App name in scan metadata
+```
+
+### Blocking Hooks
+
+Hard guardrails that block content unless AIRS returns `allow`.
+
+```yaml
+      inbound_block_mode: "deterministic"    # Block unsafe user messages
+      outbound_block_mode: "deterministic"   # Block unsafe assistant messages
+      outbound_mode: "deterministic"         # Block/mask outbound responses
+      tool_guard_mode: "deterministic"       # Block tools with unsafe inputs
+      tool_gating_mode: "deterministic"      # Block tools via cached scan
+```
+
+### Scanning Hooks
+
+Inspect content and inject warnings or redact sensitive data.
+
+```yaml
+      prompt_scan_mode: "deterministic"      # Scan full conversation context
+      tool_redact_mode: "deterministic"      # Redact PII from tool outputs
+      context_injection_mode: "deterministic" # Inject threat warnings
+      reminder_mode: "on"                    # Security reminder on startup
+```
+
+### Audit Hooks
+
+Log scan results for compliance and monitoring (cannot block).
+
+```yaml
+      audit_mode: "deterministic"            # Message audit logging
+      llm_audit_mode: "deterministic"        # LLM I/O audit logging
+      tool_audit_mode: "deterministic"       # Tool output audit logging
+```
+
+### Advanced Settings
+
+```yaml
+      fail_closed: true                      # Block on scan failure
+      dlp_mask_only: true                    # Mask DLP instead of block
+      high_risk_tools: ["Bash", "Write"]     # Tools blocked on any threat
 ```
 
 ## Data Sharing
@@ -106,19 +141,24 @@ All hooks enabled, fail-closed:
 plugins:
   prisma-airs:
     config:
-      fail_closed: true
-      reminder_mode: "on"
-      audit_mode: "deterministic"
-      context_injection_mode: "deterministic"
+      # Blocking
       inbound_block_mode: "deterministic"
       outbound_block_mode: "deterministic"
       outbound_mode: "deterministic"
-      tool_gating_mode: "deterministic"
       tool_guard_mode: "deterministic"
+      tool_gating_mode: "deterministic"
+      # Scanning
+      prompt_scan_mode: "deterministic"
       tool_redact_mode: "deterministic"
+      context_injection_mode: "deterministic"
+      reminder_mode: "on"
+      # Audit
+      audit_mode: "deterministic"
       llm_audit_mode: "deterministic"
       tool_audit_mode: "deterministic"
-      dlp_mask_only: false # Block instead of mask
+      # Advanced
+      fail_closed: true
+      dlp_mask_only: false
 ```
 
 ### Audit Only
@@ -129,24 +169,42 @@ Log threats without enforcement:
 plugins:
   prisma-airs:
     config:
-      reminder_mode: "off"
-      audit_mode: "deterministic"
-      context_injection_mode: "off"
+      # Blocking — all off
+      inbound_block_mode: "off"
+      outbound_block_mode: "off"
       outbound_mode: "off"
+      tool_guard_mode: "off"
       tool_gating_mode: "off"
+      # Scanning — off
+      prompt_scan_mode: "off"
+      tool_redact_mode: "off"
+      context_injection_mode: "off"
+      reminder_mode: "off"
+      # Audit — enabled
+      audit_mode: "deterministic"
+      llm_audit_mode: "deterministic"
+      tool_audit_mode: "deterministic"
 ```
 
-### Outbound Only
+### Blocking Only
 
-Only scan responses:
+Block threats, no audit logging:
 
 ```yaml
 plugins:
   prisma-airs:
     config:
-      reminder_mode: "off"
-      audit_mode: "off"
-      context_injection_mode: "off"
+      # Blocking — enabled
+      inbound_block_mode: "deterministic"
+      outbound_block_mode: "deterministic"
       outbound_mode: "deterministic"
-      tool_gating_mode: "off"
+      tool_guard_mode: "deterministic"
+      tool_gating_mode: "deterministic"
+      # Scanning
+      prompt_scan_mode: "deterministic"
+      tool_redact_mode: "deterministic"
+      # Audit — off
+      audit_mode: "off"
+      llm_audit_mode: "off"
+      tool_audit_mode: "off"
 ```
