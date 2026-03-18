@@ -1,19 +1,22 @@
 # Hooks Overview
 
-The Prisma AIRS plugin provides 8 security hooks that work together for defense-in-depth.
+The Prisma AIRS plugin provides 9 security hooks that work together for defense-in-depth.
 
 ## Hook Summary
 
-| Hook                                                              | Event                  | Purpose                      | Can Block |
-| ----------------------------------------------------------------- | ---------------------- | ---------------------------- | --------- |
-| [prisma-airs-guard](prisma-airs-guard.md)                         | `before_agent_start`   | Remind agents to scan        | No        |
-| [prisma-airs-audit](prisma-airs-audit.md)                         | `message_received`     | Audit logging + caching      | No        |
-| [prisma-airs-context](prisma-airs-context.md)                     | `before_agent_start`   | Inject threat warnings       | No\*      |
-| [prisma-airs-inbound-block](prisma-airs-inbound-block.md)         | `before_message_write` | Block unsafe user messages   | Yes       |
-| [prisma-airs-outbound-block](prisma-airs-outbound-block.md)       | `before_message_write` | Block unsafe assistant msgs  | Yes       |
-| [prisma-airs-outbound](prisma-airs-outbound.md)                   | `message_sending`      | Block/mask responses         | Yes       |
-| [prisma-airs-tools](prisma-airs-tools.md)                         | `before_tool_call`     | Block tools (cached result)  | Yes       |
-| [prisma-airs-tool-guard](prisma-airs-tool-guard.md)               | `before_tool_call`     | Scan tool inputs via AIRS    | Yes       |
+| Hook                                                              | Event                  | Purpose                         | Can Block |
+| ----------------------------------------------------------------- | ---------------------- | ------------------------------- | --------- |
+| [prisma-airs-guard](prisma-airs-guard.md)                         | `before_agent_start`   | Remind agents to scan           | No        |
+| [prisma-airs-audit](prisma-airs-audit.md)                         | `message_received`     | Audit logging + caching         | No        |
+| [prisma-airs-context](prisma-airs-context.md)                     | `before_agent_start`   | Inject threat warnings          | No\*      |
+| [prisma-airs-prompt-scan](prisma-airs-prompt-scan.md)             | `before_prompt_build`  | Full context scanning           | No\*\*    |
+| [prisma-airs-inbound-block](prisma-airs-inbound-block.md)         | `before_message_write` | Block unsafe user messages      | Yes       |
+| [prisma-airs-outbound-block](prisma-airs-outbound-block.md)       | `before_message_write` | Block unsafe assistant msgs     | Yes       |
+| [prisma-airs-outbound](prisma-airs-outbound.md)                   | `message_sending`      | Block/mask responses            | Yes       |
+| [prisma-airs-tools](prisma-airs-tools.md)                         | `before_tool_call`     | Block tools (cached result)     | Yes       |
+| [prisma-airs-tool-guard](prisma-airs-tool-guard.md)               | `before_tool_call`     | Scan tool inputs via AIRS       | Yes       |
+
+\*\*Injects warnings via `prependSystemContext` — cannot block directly
 
 \*Cannot block directly, but can influence agent behavior via context
 

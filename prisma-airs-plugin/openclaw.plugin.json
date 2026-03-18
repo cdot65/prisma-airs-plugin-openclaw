@@ -12,7 +12,8 @@
     "hooks/prisma-airs-tools",
     "hooks/prisma-airs-inbound-block",
     "hooks/prisma-airs-outbound-block",
-    "hooks/prisma-airs-tool-guard"
+    "hooks/prisma-airs-tool-guard",
+    "hooks/prisma-airs-prompt-scan"
   ],
   "configSchema": {
     "type": "object",
@@ -75,6 +76,12 @@
         "enum": ["deterministic", "off"],
         "default": "deterministic",
         "description": "Tool guard mode: deterministic (scan tool inputs through AIRS before execution), or off"
+      },
+      "prompt_scan_mode": {
+        "type": "string",
+        "enum": ["deterministic", "off"],
+        "default": "deterministic",
+        "description": "Prompt scan mode: deterministic (scan full conversation context before prompt assembly), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -154,6 +161,10 @@
     "tool_guard_mode": {
       "label": "Tool Guard Mode",
       "description": "deterministic: scan tool inputs through AIRS before execution; off: disabled"
+    },
+    "prompt_scan_mode": {
+      "label": "Prompt Scan Mode",
+      "description": "deterministic: scan full conversation context before prompt assembly; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",
