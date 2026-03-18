@@ -44,7 +44,9 @@ plugins:
 
 ## Actions
 
-### Block
+Any AIRS response that is **not** `action: "allow"` is blocked. This includes both `block` and `warn` verdicts.
+
+### Block (default for non-allow)
 
 Replace the entire response with an error message:
 
@@ -56,7 +58,7 @@ After:  "I apologize, but I'm unable to provide that response
 
 ### Mask (DLP Only)
 
-When `dlp_mask_only: true` and only DLP violations detected:
+When `dlp_mask_only: true` and only DLP violations detected (no other threat categories):
 
 ```
 Before: "Your SSN is 123-45-6789 and card is 4111-1111-1111-1111"
@@ -65,7 +67,7 @@ After:  "Your SSN is [SSN REDACTED] and card is [CARD REDACTED]"
 
 ### Allow
 
-No modification.
+No modification. Only when AIRS returns `action: "allow"`.
 
 ## Masking Patterns
 
@@ -101,30 +103,21 @@ const handler = async (event, ctx) => {
     return; // Fail-open
   }
 
-  // Allow
+  // Only allow when AIRS explicitly says "allow"
   if (result.action === "allow") return;
 
-  // Warn - log but allow
-  if (result.action === "warn") {
-    console.log(JSON.stringify({ event: "prisma_airs_outbound_warn", ... }));
-    return;
-  }
-
-  // Block
-  if (result.action === "block") {
-    // Check if DLP-only (can mask instead of block)
-    if (shouldMaskOnly(result, config)) {
-      const masked = maskSensitiveData(content);
-      if (masked !== content) {
-        return { content: masked };
-      }
+  // Block or warn — check if DLP-only (can mask instead of block)
+  if (shouldMaskOnly(result, config)) {
+    const masked = maskSensitiveData(content);
+    if (masked !== content) {
+      return { content: masked };
     }
-
-    // Full block
-    return {
-      content: buildBlockMessage(result)
-    };
   }
+
+  // Full block — any non-allow action
+  return {
+    content: buildBlockMessage(result)
+  };
 };
 ```
 
