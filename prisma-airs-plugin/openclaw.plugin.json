@@ -10,7 +10,8 @@
     "hooks/prisma-airs-context",
     "hooks/prisma-airs-outbound",
     "hooks/prisma-airs-tools",
-    "hooks/prisma-airs-inbound-block"
+    "hooks/prisma-airs-inbound-block",
+    "hooks/prisma-airs-outbound-block"
   ],
   "configSchema": {
     "type": "object",
@@ -61,6 +62,12 @@
         "enum": ["deterministic", "off"],
         "default": "deterministic",
         "description": "Inbound blocking mode: deterministic (block non-allow user messages), or off"
+      },
+      "outbound_block_mode": {
+        "type": "string",
+        "enum": ["deterministic", "off"],
+        "default": "deterministic",
+        "description": "Outbound blocking mode: deterministic (block non-allow assistant messages at persistence layer), or off"
       },
       "fail_closed": {
         "type": "boolean",
@@ -132,6 +139,10 @@
     "inbound_block_mode": {
       "label": "Inbound Blocking Mode",
       "description": "deterministic: block user messages unless AIRS returns allow; off: disabled"
+    },
+    "outbound_block_mode": {
+      "label": "Outbound Blocking Mode",
+      "description": "deterministic: block assistant messages at persistence layer unless AIRS returns allow; off: disabled"
     },
     "fail_closed": {
       "label": "Fail Closed",
