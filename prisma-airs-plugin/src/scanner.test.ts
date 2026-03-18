@@ -541,6 +541,32 @@ describe("scanner", () => {
       expect(result.toolDetected?.outputDetected?.dlp).toBe(true);
     });
 
+    it("parses tool_detected with SDK object summary format", async () => {
+      mockSyncScan.mockResolvedValueOnce({
+        scan_id: "tool-obj-123",
+        report_id: "Rtool-obj-123",
+        category: "malicious",
+        action: "block",
+        prompt_detected: {},
+        response_detected: {},
+        tool_detected: {
+          verdict: "malicious",
+          metadata: {
+            ecosystem: "mcp",
+            method: "tool_call",
+            server_name: "test-server",
+          },
+          summary: { verdict: "malicious", action: "block" },
+          input_detected: { injection: true },
+        },
+      });
+
+      const result = await scan({ prompt: "test" });
+
+      expect(result.toolDetected).toBeDefined();
+      expect(result.toolDetected?.summary).toBe("malicious");
+    });
+
     it("sends toolEvents via SDK Content", async () => {
       mockSyncScan.mockResolvedValueOnce({
         scan_id: "tevt-123",

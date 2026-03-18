@@ -2,7 +2,7 @@
  * Prisma AIRS Plugin for OpenClaw
  *
  * AI Runtime Security scanning via Palo Alto Networks.
- * Pure TypeScript implementation with direct AIRS API integration.
+ * Uses @cdot65/prisma-airs-sdk for AIRS API communication.
  *
  * Provides:
  * - Gateway RPC method: prisma-airs.scan
