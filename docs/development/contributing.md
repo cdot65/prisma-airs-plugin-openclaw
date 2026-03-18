@@ -137,7 +137,7 @@ describe('scan', () => {
     vi.spyOn(global, 'fetch').mockResolvedValue(...);
 
     // Act
-    const result = await scan({ prompt: 'hello', apiKey: 'test-key' });
+    const result = await scan({ prompt: 'hello' });
 
     // Assert
     expect(result.action).toBe('allow');
@@ -149,8 +149,8 @@ describe('scan', () => {
 
 Use Vitest mocks for:
 
-- `fetch` - AIRS API calls
-- Plugin config (pass `apiKey` as param)
+- `@cdot65/prisma-airs-sdk` module (SDK scanner)
+- Plugin config
 - Time (for cache TTL tests)
 
 ## Adding a New Hook

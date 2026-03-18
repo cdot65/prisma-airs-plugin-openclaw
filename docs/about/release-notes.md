@@ -28,12 +28,15 @@ For detailed release notes including design decisions, see [RELEASE_NOTES.md](ht
 #### Breaking Changes
 
 - API key moved from `PANW_AI_SEC_API_KEY` env var to plugin config `api_key`
-- `ScanRequest` now requires `apiKey` parameter instead of reading from `process.env`
+- `apiKey` removed from `ScanRequest` interface; SDK initialized once via `init({ apiKey })` in `register()`
+- `scan()` checks `globalConfiguration.initialized` instead of requiring apiKey per call
 
 #### Changes
 
 - API key set via plugin config (`api_key` field) instead of environment variable
+- SDK init-once pattern: `init({ apiKey })` called in `register()`, not per-scan
 - Hook registration via `api.on()` adapters instead of `registerPluginHooksFromDir`
+- `ContentErrorType` and `ErrorStatus` re-exported from SDK
 - Removed `requires.env` from plugin manifest
 - Updated all documentation to reflect config-based API key
 
