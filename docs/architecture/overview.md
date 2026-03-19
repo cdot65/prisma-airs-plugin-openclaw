@@ -74,6 +74,8 @@ graph TB
     H_GUARD --> CFG
 ```
 
+> **Interactive version**: [Open in Excalidraw](https://excalidraw.com/#json=tRUS4db9JK8MPdCVLlG0K,10uBMRHW5MIjejef7oLoqA){ target="_blank" } — zoom, pan, and edit the architecture diagram.
+
 ## Full Request Lifecycle
 
 ```mermaid

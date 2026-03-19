@@ -75,6 +75,8 @@ graph TD
     R --> S[Response Delivered]
 ```
 
+> **Interactive version**: [Open in Excalidraw](https://excalidraw.com/#json=1nwlp7wDbZ6oXcq-SS2md,VM9DjKucXCFK5uldPpui3Q){ target="_blank" } — zoom, pan, and edit the execution order diagram.
+
 ## Data Sharing: Scan Cache
 
 The audit hook (`message_received`) scans inbound messages and caches results keyed by session. Downstream hooks consume this cache:
@@ -87,6 +89,8 @@ graph LR
     C -->|getCachedScanResult| E[prisma-airs-tool-redact]
     B -->|fallback scan + cacheScanResult| C
 ```
+
+> **Interactive version**: [Open in Excalidraw](https://excalidraw.com/#json=noqTQfGkC73NCtZmHh15S,6b9tNCFRcY1JVCLy3MZqkg){ target="_blank" } — zoom, pan, and edit the scan cache diagram.
 
 - **prisma-airs-audit** writes to the cache (keyed by session + message hash).
 - **prisma-airs-context** reads from cache with hash verification; falls back to a fresh scan on cache miss.

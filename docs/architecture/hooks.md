@@ -24,6 +24,8 @@ graph LR
     end
 ```
 
+> **Interactive version**: [Open in Excalidraw](https://excalidraw.com/#json=1nwlp7wDbZ6oXcq-SS2md,VM9DjKucXCFK5uldPpui3Q){ target="_blank" } — full hook execution lifecycle diagram with all 12 hooks.
+
 | Event                  | Sync/Async       | Can Block | Return Type                            | Hooks Using It                  |
 | ---------------------- | ---------------- | --------- | -------------------------------------- | ------------------------------- |
 | `before_message_write` | Sync             | Yes       | `{ block: boolean }` or void          | inbound-block, outbound-block   |
