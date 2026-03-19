@@ -4,22 +4,20 @@
  * AI Runtime Security scanning via Palo Alto Networks.
  * Uses @cdot65/prisma-airs-sdk for AIRS API communication.
  *
- * Provides:
- * - Gateway RPC method: prisma-airs.scan
+ * Hooks are auto-discovered by OpenClaw from HOOK.md files in the hooks/ directory.
+ * Each hook handler self-checks its mode and accesses config via ctx.cfg.
+ *
+ * This file provides:
+ * - SDK initialization (api_key)
+ * - Gateway RPC methods: prisma-airs.status, prisma-airs.scan
  * - Agent tool: prisma_airs_scan (always registered)
  * - Probabilistic tools: prisma_airs_scan_prompt, prisma_airs_scan_response, prisma_airs_check_tool_safety
- * - Bootstrap hook: prisma-airs-guard (mode-aware reminder)
- * - Deterministic hooks: audit, context, outbound, tools (conditional)
+ * - CLI commands: prisma-airs, prisma-airs-scan
  */
 
 import { init } from "@cdot65/prisma-airs-sdk";
 import { scan, isConfigured, ScanRequest } from "./src/scanner";
 import { resolveAllModes, type RawPluginConfig, type ResolvedModes } from "./src/config";
-import { buildReminder } from "./hooks/prisma-airs-guard/handler";
-import auditHandler from "./hooks/prisma-airs-audit/handler";
-import contextHandler from "./hooks/prisma-airs-context/handler";
-import outboundHandler from "./hooks/prisma-airs-outbound/handler";
-import toolsHandler from "./hooks/prisma-airs-tools/handler";
 import {
   maskSensitiveData,
   shouldMaskOnly,
@@ -89,8 +87,6 @@ interface PluginApi {
     execute: (_id: string, params: Record<string, unknown>) => Promise<ToolResult>;
   }) => void;
   registerCli: (setup: (ctx: { program: unknown }) => void, opts: { commands: string[] }) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  on: (hookName: string, handler: (...args: any[]) => any, opts?: { priority?: number }) => void;
 }
 
 // Get plugin config from OpenClaw config
@@ -147,70 +143,10 @@ export default function register(api: PluginApi): void {
     `Prisma AIRS plugin loaded (audit=${modes.audit}, context=${modes.context}, outbound=${modes.outbound}, toolGating=${modes.toolGating}, reminder=${modes.reminder})`
   );
 
-  // ── DETERMINISTIC HOOKS ──────────────────────────────────────────────
-
-  // Guard: inject mode-aware security reminder at agent bootstrap
-  if (modes.reminder === "on") {
-    api.on(
-      "before_agent_start",
-      async () => {
-        const reminderText = buildReminder(modes);
-        return { systemPrompt: reminderText };
-      },
-      { priority: 100 }
-    );
-  }
-
-  // Audit: fire-and-forget inbound message scan logging
-  if (modes.audit === "deterministic") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("message_received", async (event: any, ctx: any) => {
-      await auditHandler(event, { ...ctx, cfg: api.config });
-    });
-  }
-
-  // Context: inject security warnings before agent processes message
-  if (modes.context === "deterministic") {
-    api.on(
-      "before_agent_start",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async (event: any, ctx: any) => {
-        return await contextHandler(
-          {
-            sessionKey: ctx.sessionKey,
-            message: { content: event.prompt },
-            messages: event.messages,
-          },
-          { ...ctx, cfg: api.config }
-        );
-      },
-      { priority: 50 }
-    );
-  }
-
-  // Outbound: scan and block/mask outgoing responses
-  if (modes.outbound === "deterministic") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("message_sending", async (event: any, ctx: any) => {
-      return await outboundHandler(event, { ...ctx, cfg: api.config });
-    });
-  }
-
-  // Tools: block dangerous tool calls during active threats
-  if (modes.toolGating === "deterministic") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_tool_call", async (event: any, ctx: any) => {
-      return await toolsHandler(event, { ...ctx, cfg: api.config });
-    });
-  }
-
-  const hookCount =
-    (modes.reminder === "on" ? 1 : 0) +
-    (modes.audit === "deterministic" ? 1 : 0) +
-    (modes.context === "deterministic" ? 1 : 0) +
-    (modes.outbound === "deterministic" ? 1 : 0) +
-    (modes.toolGating === "deterministic" ? 1 : 0);
-  api.logger.info(`Registered ${hookCount} deterministic hooks`);
+  // ── HOOKS ────────────────────────────────────────────────────────────
+  // All 12 hooks are auto-discovered by OpenClaw from HOOK.md files.
+  // Each handler checks its own mode and accesses config via ctx.cfg.
+  // No api.on() registrations needed.
 
   // ── PROBABILISTIC TOOLS ──────────────────────────────────────────────
 

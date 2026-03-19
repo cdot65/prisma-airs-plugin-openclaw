@@ -12,13 +12,14 @@ services:
     volumes:
       - openclaw-data:/home/node/.openclaw
       - ./prisma-airs-plugin:/home/node/workspace/skills/prisma-airs-plugin
+    init: true
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "openclaw", "gateway", "health"]
-      interval: 5s
+      test: ["CMD", "curl", "-sf", "http://localhost:18789/__openclaw__/canvas/"]
+      interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 15s
+      start_period: 30s
 
 volumes:
   openclaw-data:

@@ -43,6 +43,7 @@ interface PluginConfig {
           profile_name?: string;
           app_name?: string;
           api_key?: string;
+          outbound_mode?: string;
           fail_closed?: boolean;
           dlp_mask_only?: boolean;
         };
@@ -119,7 +120,7 @@ const ALWAYS_BLOCK_CATEGORIES = [
  * Get plugin configuration
  */
 function getPluginConfig(ctx: HookContext): {
-  enabled: boolean;
+  mode: string;
   profileName: string;
   appName: string;
   failClosed: boolean;
@@ -127,7 +128,7 @@ function getPluginConfig(ctx: HookContext): {
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
   return {
-    enabled: true,
+    mode: cfg?.outbound_mode ?? "deterministic",
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
     failClosed: cfg?.fail_closed ?? true, // Default fail-closed
@@ -235,7 +236,7 @@ const handler = async (
   const config = getPluginConfig(ctx);
 
   // Check if outbound scanning is enabled
-  if (!config.enabled) {
+  if (config.mode === "off") {
     return;
   }
 

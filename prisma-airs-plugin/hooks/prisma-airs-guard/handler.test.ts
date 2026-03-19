@@ -5,158 +5,85 @@
 import { describe, it, expect } from "vitest";
 import handler, { buildReminder, DETERMINISTIC_REMINDER, PROBABILISTIC_REMINDER } from "./handler";
 
-interface BootstrapFile {
-  path: string;
-  content: string;
-  source?: string;
-}
-
-interface TestContext {
-  bootstrapFiles?: BootstrapFile[];
-  cfg?: Record<string, unknown>;
-}
-
-interface TestEvent {
-  type: string;
-  action: string;
-  context?: TestContext;
+function makeCtx(config?: Record<string, unknown>) {
+  return {
+    cfg: {
+      plugins: {
+        entries: {
+          "prisma-airs": { config: config ?? {} },
+        },
+      },
+    },
+  };
 }
 
 describe("prisma-airs-guard hook", () => {
-  it("injects security reminder on agent bootstrap", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: {
-        bootstrapFiles: [],
-        cfg: { plugins: { entries: { "prisma-airs": { config: {} } } } },
-      },
-    };
-
-    await handler(event);
-
-    const files = event.context!.bootstrapFiles!;
-    expect(files).toHaveLength(1);
-    expect(files[0].path).toBe("SECURITY.md");
-    expect(files[0].content).toContain("MANDATORY Security Scanning");
-    expect(files[0].source).toBe("prisma-airs-guard");
+  it("returns systemPrompt with deterministic reminder by default", async () => {
+    const result = await handler({}, makeCtx());
+    expect(result).toBeDefined();
+    expect(result!.systemPrompt).toContain("Security Scanning Active");
   });
 
-  it("appends to existing bootstrapFiles", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: {
-        bootstrapFiles: [{ path: "EXISTING.md", content: "existing" }],
-        cfg: {},
-      },
-    };
-
-    await handler(event);
-
-    const files = event.context!.bootstrapFiles!;
-    expect(files).toHaveLength(2);
-    expect(files[0].path).toBe("EXISTING.md");
-    expect(files[1].path).toBe("SECURITY.md");
+  it("returns deterministic reminder when all modes are deterministic", async () => {
+    const result = await handler(
+      {},
+      makeCtx({
+        audit_mode: "deterministic",
+        context_injection_mode: "deterministic",
+        outbound_mode: "deterministic",
+        tool_gating_mode: "deterministic",
+      })
+    );
+    expect(result!.systemPrompt).toBe(DETERMINISTIC_REMINDER);
   });
 
-  it("ignores non-bootstrap events", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "shutdown",
-      context: { bootstrapFiles: [] },
-    };
-
-    await handler(event);
-
-    expect(event.context!.bootstrapFiles).toHaveLength(0);
+  it("returns undefined when reminder_mode is off", async () => {
+    const result = await handler({}, makeCtx({ reminder_mode: "off" }));
+    expect(result).toBeUndefined();
   });
 
-  it("ignores non-agent events", async () => {
-    const event: TestEvent = {
-      type: "command",
-      action: "bootstrap",
-      context: { bootstrapFiles: [] },
-    };
-
-    await handler(event);
-
-    expect(event.context!.bootstrapFiles).toHaveLength(0);
+  it("returns systemPrompt when reminder_mode is on", async () => {
+    const result = await handler({}, makeCtx({ reminder_mode: "on" }));
+    expect(result).toBeDefined();
+    expect(result!.systemPrompt).toBeDefined();
   });
 
-  it("handles missing context gracefully", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-    };
-
-    // Should not throw
-    await expect(handler(event)).resolves.toBeUndefined();
+  it("handles missing config gracefully", async () => {
+    const result = await handler({}, {});
+    // Default reminder_mode is "on", should still return a reminder
+    expect(result).toBeDefined();
+    expect(result!.systemPrompt).toContain("Security Scanning");
   });
 
-  it("handles missing bootstrapFiles array", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: { cfg: {} },
-    };
-
-    // Should not throw, just skip injection
-    await expect(handler(event)).resolves.toBeUndefined();
+  it("builds mode-aware reminder for probabilistic modes", async () => {
+    const result = await handler(
+      {},
+      makeCtx({
+        audit_mode: "probabilistic",
+        context_injection_mode: "probabilistic",
+        outbound_mode: "probabilistic",
+        tool_gating_mode: "probabilistic",
+        fail_closed: false,
+      })
+    );
+    expect(result!.systemPrompt).toContain("MANDATORY Security Scanning");
+    expect(result!.systemPrompt).toContain("prisma_airs_scan_prompt");
   });
 
-  it("injects by default when no config provided", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: { bootstrapFiles: [] },
-    };
-
-    await handler(event);
-
-    expect(event.context!.bootstrapFiles).toHaveLength(1);
-  });
-
-  it("does not inject when reminder_mode is off", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: {
-        bootstrapFiles: [],
-        cfg: {
-          plugins: {
-            entries: {
-              "prisma-airs": { config: { reminder_mode: "off" } },
-            },
-          },
-        },
-      },
-    };
-
-    await handler(event);
-    expect(event.context!.bootstrapFiles).toHaveLength(0);
-  });
-
-  it("injects when reminder_mode is on", async () => {
-    const event: TestEvent = {
-      type: "agent",
-      action: "bootstrap",
-      context: {
-        bootstrapFiles: [],
-        cfg: {
-          plugins: {
-            entries: {
-              "prisma-airs": {
-                config: { reminder_mode: "on" },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    await handler(event);
-    expect(event.context!.bootstrapFiles).toHaveLength(1);
+  it("builds mixed mode reminder", async () => {
+    const result = await handler(
+      {},
+      makeCtx({
+        audit_mode: "deterministic",
+        context_injection_mode: "deterministic",
+        outbound_mode: "probabilistic",
+        tool_gating_mode: "off",
+        fail_closed: false,
+      })
+    );
+    expect(result!.systemPrompt).toContain("Mixed Mode");
+    expect(result!.systemPrompt).toContain("Audit logging");
+    expect(result!.systemPrompt).toContain("prisma_airs_scan_response");
   });
 });
 
@@ -210,7 +137,7 @@ describe("buildReminder", () => {
       outbound: "off",
       toolGating: "off",
     });
-    // All off → no probabilistic → deterministic reminder (empty deterministic list but still deterministic path)
+    // All off → no probabilistic → deterministic reminder
     expect(text).toBe(DETERMINISTIC_REMINDER);
   });
 });
