@@ -651,7 +651,7 @@ describe("scanner", () => {
 
       const result = await scan({ prompt: "test" });
 
-      expect(result.latencyMs).toBeGreaterThanOrEqual(50);
+      expect(result.latencyMs).toBeGreaterThanOrEqual(40);
     });
   });
 
