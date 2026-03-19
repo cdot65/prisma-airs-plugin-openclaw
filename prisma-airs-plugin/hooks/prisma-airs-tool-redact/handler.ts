@@ -8,8 +8,8 @@
  * Cannot call AIRS API (async) — relies on regex patterns + cached scan results.
  */
 
-import { getCachedScanResult } from "../../src/scan-cache";
-import type { ScanResult } from "../../src/scanner";
+import { getCachedScanResult } from "../../src/scan-cache.ts";
+import type { ScanResult } from "../../src/scanner.ts";
 
 // Content item types matching OpenClaw's AgentMessage
 interface ContentItem {

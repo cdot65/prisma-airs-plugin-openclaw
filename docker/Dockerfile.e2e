@@ -25,6 +25,9 @@ WORKDIR /home/node
 
 # ── Seed OpenClaw config (copied to non-volume path; entrypoint moves it) ─
 COPY --chown=node:node docker/openclaw-e2e.json /home/node/openclaw-seed.json
+COPY --chown=node:node docker/auth-profiles-e2e.json /home/node/auth-profiles-seed.json
+COPY --chown=node:node docker/auto-pair.sh /home/node/auto-pair.sh
+RUN chmod +x /home/node/auto-pair.sh
 
 # ── E2E test scripts ──────────────────────────────────────────────────────
 COPY --chown=node:node e2e /home/node/e2e

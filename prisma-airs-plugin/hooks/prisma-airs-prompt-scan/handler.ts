@@ -6,7 +6,7 @@
  * Catches multi-message injection attacks that per-message scanning misses.
  */
 
-import { scan } from "../../src/scanner";
+import { scan } from "../../src/scanner.ts";
 
 // Event shape from OpenClaw before_prompt_build hook
 interface BeforePromptBuildEvent {

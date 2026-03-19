@@ -5,7 +5,7 @@
  * Provides audit trail of tool output threats — complements tool-guard (pre-execution).
  */
 
-import { scan, type ScanResult } from "../../src/scanner";
+import { scan, type ScanResult } from "../../src/scanner.ts";
 
 interface AfterToolCallEvent {
   toolName: string;

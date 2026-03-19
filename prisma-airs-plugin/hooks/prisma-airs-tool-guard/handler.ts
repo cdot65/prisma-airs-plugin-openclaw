@@ -5,7 +5,7 @@
  * Blocks tool execution unless AIRS returns action "allow".
  */
 
-import { scan } from "../../src/scanner";
+import { scan } from "../../src/scanner.ts";
 
 // Event shape from OpenClaw before_tool_call hook
 interface BeforeToolCallEvent {

@@ -8,7 +8,7 @@
  * - llm_output: scans the response received from the model
  */
 
-import { scan, type ScanResult } from "../../src/scanner";
+import { scan, type ScanResult } from "../../src/scanner.ts";
 
 // Discriminated union for both event types
 interface LlmInputEvent {

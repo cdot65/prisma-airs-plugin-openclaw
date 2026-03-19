@@ -5,8 +5,8 @@
  * Cannot block - only logs scan results and caches for downstream hooks.
  */
 
-import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner";
-import { cacheScanResult, hashMessage } from "../../src/scan-cache";
+import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner.ts";
+import { cacheScanResult, hashMessage } from "../../src/scan-cache.ts";
 
 // Event shape from OpenClaw message_received hook
 interface MessageReceivedEvent {

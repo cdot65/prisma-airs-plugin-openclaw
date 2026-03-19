@@ -1,0 +1,9 @@
+{
+  "litellm:default": {
+    "provider": "litellm",
+    "mode": "api_key"
+  },
+  "order": {
+    "litellm": ["litellm:default"]
+  }
+}
