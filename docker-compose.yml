@@ -23,5 +23,29 @@ services:
       retries: 10
       start_period: 30s
 
+  gateway-npm:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.npm-e2e
+    ports:
+      - "18790:18790"
+    environment:
+      - PANW_AI_SEC_API_KEY=${PANW_AI_SEC_API_KEY:-}
+      - PANW_AI_SEC_PROFILE=${PANW_AI_SEC_PROFILE:-}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LIVE_CONFIG=/home/node/.openclaw/openclaw.json
+    volumes:
+      - openclaw-npm-data:/home/node/.openclaw
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:18790/__openclaw__/canvas/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
 volumes:
   openclaw-data:
+  openclaw-npm-data:
