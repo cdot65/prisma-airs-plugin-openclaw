@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.13"
+  },
+  "gateway": {
+    "controlUi": {
+      "dangerouslyAllowHostHeaderOriginFallback": true
+    },
+    "auth": {
+      "token": "e2e-dev-token"
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "litellm": {
+        "baseUrl": "https://litellm.cdot.io/v1",
+        "apiKey": "${LITELLM_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "mistral-7b",
+            "name": "Mistral 7B",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 32000,
+            "maxTokens": 8000
+          }
+        ]
+      },
+      "openai": {
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "${OPENAI_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "gpt-5.4",
+            "name": "GPT-5.4",
+            "reasoning": true,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 32000
+          }
+        ]
+      }
+    }
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true
+    }
+  },
+  "tools": {
+    "byProvider": {
+      "litellm": { "deny": ["*"] },
+      "openai": { "deny": ["*"] }
+    }
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "workspace": "/home/node/.openclaw/workspace",
+        "model": "openai/gpt-5.4"
+      }
+    ]
+  },
+  "plugins": {
+    "load": {
+      "paths": [
+        "/home/node/workspace/skills/prisma-airs-plugin/node_modules/@cdot65/prisma-airs"
+      ]
+    },
+    "entries": {
+      "prisma-airs": {
+        "enabled": true,
+        "config": {
+          "profile_name": "default",
+          "app_name": "openclaw",
+          "reminder_mode": "on",
+          "audit_mode": "deterministic",
+          "context_injection_mode": "deterministic",
+          "outbound_mode": "deterministic",
+          "tool_gating_mode": "deterministic",
+          "inbound_block_mode": "deterministic",
+          "outbound_block_mode": "deterministic",
+          "tool_guard_mode": "deterministic",
+          "prompt_scan_mode": "deterministic",
+          "tool_redact_mode": "deterministic",
+          "llm_audit_mode": "deterministic",
+          "tool_audit_mode": "deterministic",
+          "fail_closed": true,
+          "dlp_mask_only": true,
+          "high_risk_tools": ["exec", "Bash", "bash", "write", "Write", "edit", "Edit", "gateway", "message", "cron"]
+        }
+      }
+    },
+    "installs": {
+      "prisma-airs": {
+        "source": "npm",
+        "sourcePath": "@cdot65/prisma-airs",
+        "installPath": "/home/node/workspace/skills/prisma-airs-plugin/node_modules/@cdot65/prisma-airs",
+        "version": "1.1.0",
+        "installedAt": "2026-03-19T00:00:00.000Z"
+      }
+    }
+  }
+}
