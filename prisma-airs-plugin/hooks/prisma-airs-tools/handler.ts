@@ -30,6 +30,7 @@ interface PluginConfig {
     entries?: {
       "prisma-airs"?: {
         config?: {
+          tool_gating_mode?: string;
           high_risk_tools?: string[];
           api_key?: string;
         };
@@ -143,12 +144,12 @@ export const DEFAULT_HIGH_RISK_TOOLS = [
  * Get plugin configuration
  */
 function getPluginConfig(ctx: HookContext): {
-  enabled: boolean;
+  mode: string;
   highRiskTools: string[];
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
   return {
-    enabled: true,
+    mode: cfg?.tool_gating_mode ?? "deterministic",
     highRiskTools: cfg?.high_risk_tools ?? DEFAULT_HIGH_RISK_TOOLS,
   };
 }
@@ -210,7 +211,7 @@ const handler = async (
   const config = getPluginConfig(ctx);
 
   // Check if tool gating is enabled
-  if (!config.enabled) {
+  if (config.mode === "off") {
     return;
   }
 

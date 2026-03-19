@@ -44,6 +44,7 @@ interface PluginConfig {
           profile_name?: string;
           app_name?: string;
           api_key?: string;
+          audit_mode?: string;
           fail_closed?: boolean;
         };
       };
@@ -55,14 +56,14 @@ interface PluginConfig {
  * Get plugin configuration
  */
 function getPluginConfig(ctx: HookContext & { cfg?: PluginConfig }): {
-  enabled: boolean;
+  mode: string;
   profileName: string;
   appName: string;
   failClosed: boolean;
 } {
   const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
   return {
-    enabled: true,
+    mode: cfg?.audit_mode ?? "deterministic",
     profileName: cfg?.profile_name ?? "default",
     appName: cfg?.app_name ?? "openclaw",
     failClosed: cfg?.fail_closed ?? true, // Default fail-closed
@@ -79,7 +80,7 @@ const handler = async (
   const config = getPluginConfig(ctx);
 
   // Check if audit is enabled
-  if (!config.enabled) {
+  if (config.mode === "off") {
     return;
   }
 

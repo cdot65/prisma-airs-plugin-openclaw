@@ -1,33 +1,35 @@
 /**
- * Prisma AIRS Security Reminder Hook
+ * Prisma AIRS Security Reminder Hook (before_agent_start)
  *
  * Injects security scanning reminder into agent bootstrap context.
  * Supports deterministic vs probabilistic mode-aware reminders.
+ * Self-contained: resolves modes from plugin config, no external registration needed.
  */
 
 import type { FeatureMode, ResolvedModes } from "../../src/config";
+import { resolveAllModes, type RawPluginConfig } from "../../src/config";
 
-// Types for OpenClaw hook system
-interface BootstrapFile {
-  path: string;
-  content: string;
-  source?: string;
+// Hook context from OpenClaw
+interface HookContext {
+  cfg?: {
+    plugins?: {
+      entries?: {
+        "prisma-airs"?: {
+          config?: RawPluginConfig & {
+            profile_name?: string;
+            app_name?: string;
+            api_key?: string;
+          };
+        };
+      };
+    };
+  };
 }
 
-interface AgentBootstrapContext {
-  workspaceDir?: string;
-  bootstrapFiles?: BootstrapFile[];
-  cfg?: Record<string, unknown>;
+// Hook result type
+interface HookResult {
+  systemPrompt?: string;
 }
-
-interface HookEvent {
-  type: string;
-  action: string;
-  context?: AgentBootstrapContext;
-  messages?: string[];
-}
-
-type HookHandler = (event: HookEvent) => Promise<void> | void;
 
 export const DETERMINISTIC_REMINDER = `# Security Scanning Active
 
@@ -144,37 +146,36 @@ Failure to scan suspicious content is a security violation.
 `;
 }
 
-// Legacy reminder (kept for backward compat when called without modes)
-const SECURITY_REMINDER = PROBABILISTIC_REMINDER;
+/**
+ * Main hook handler — auto-discovered by OpenClaw from HOOK.md
+ * Resolves modes from plugin config, builds mode-aware reminder, returns { systemPrompt }
+ */
+const handler = async (_event: unknown, ctx: HookContext): Promise<HookResult | void> => {
+  const cfg = ctx.cfg?.plugins?.entries?.["prisma-airs"]?.config;
 
-const handler: HookHandler = async (event: HookEvent) => {
-  // Only handle agent bootstrap events
-  if (event.type !== "agent" || event.action !== "bootstrap") {
-    return;
-  }
-
-  // Get plugin config from context.cfg
-  const cfg = event.context?.cfg as Record<string, unknown> | undefined;
-  const plugins = cfg?.plugins as Record<string, unknown> | undefined;
-  const entries = plugins?.entries as Record<string, unknown> | undefined;
-  const prismaConfig = entries?.["prisma-airs"] as Record<string, unknown> | undefined;
-  const pluginSettings = prismaConfig?.config as Record<string, unknown> | undefined;
-
-  // Check if reminder is enabled (default true)
-  const reminderMode = pluginSettings?.reminder_mode as string | undefined;
-
+  // Check if reminder is enabled (default: on)
+  const reminderMode = cfg?.reminder_mode ?? "on";
   if (reminderMode === "off") {
     return;
   }
 
-  // Inject security reminder as a bootstrap file
-  if (event.context && Array.isArray(event.context.bootstrapFiles)) {
-    event.context.bootstrapFiles.push({
-      path: "SECURITY.md",
-      content: SECURITY_REMINDER,
-      source: "prisma-airs-guard",
-    });
+  // Resolve all modes from config to build mode-aware reminder
+  let modes: ResolvedModes;
+  try {
+    modes = resolveAllModes(cfg ?? {});
+  } catch {
+    // If mode resolution fails, use deterministic reminder as safe default
+    modes = {
+      reminder: "on",
+      audit: "deterministic",
+      context: "deterministic",
+      outbound: "deterministic",
+      toolGating: "deterministic",
+    };
   }
+
+  const reminderText = buildReminder(modes);
+  return { systemPrompt: reminderText };
 };
 
 export default handler;
