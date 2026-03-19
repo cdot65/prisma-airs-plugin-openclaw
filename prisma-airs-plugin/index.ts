@@ -485,7 +485,7 @@ export default function register(api: PluginApi): void {
     const hasApiKey = isConfigured(cfg.api_key);
     respond(true, {
       plugin: "prisma-airs",
-      version: "1.0.0",
+      version: "1.1.0",
       modes,
       config: {
         profile_name: cfg.profile_name ?? "default",
@@ -577,7 +577,7 @@ export default function register(api: PluginApi): void {
           const hasKey = isConfigured(cfg.api_key);
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 1.0.0`);
+          console.log(`Version: 1.1.0`);
           console.log(`Profile: ${cfg.profile_name ?? "default"}`);
           console.log(`App Name: ${cfg.app_name ?? "openclaw"}`);
           console.log(`Modes:`);
@@ -633,7 +633,7 @@ export default function register(api: PluginApi): void {
 // Export plugin metadata for discovery
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "1.0.0";
+export const version = "1.1.0";
 
 // Re-export scanner types and functions
 export { scan, isConfigured } from "./src/scanner";
