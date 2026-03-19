@@ -1,60 +1,63 @@
 # prisma-airs-outbound-block
 
-Hard outbound blocking — prevents assistant messages from being persisted unless AIRS allows them.
+Hard guardrail that blocks assistant messages unless AIRS returns `allow`.
 
 ## Overview
 
-| Property      | Value                                                |
-| ------------- | ---------------------------------------------------- |
-| **Event**     | `before_message_write`                               |
-| **Emoji**     | :no_entry:                                           |
-| **Can Block** | Yes (`{ block: true }`)                              |
-| **Config**    | `outbound_block_mode`, `fail_closed`                 |
+| Field | Value |
+|-------|-------|
+| Event | `before_message_write` |
+| Config field | `outbound_block_mode` |
+| Can Block | Yes (`{ block: true }`) |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Prevents unsafe assistant responses from being persisted to conversation history. Operates at the persistence layer, meaning blocked messages are never stored and never delivered.
 
-1. Fires **before** an assistant message is written to conversation history
-2. Scans assistant responses through Prisma AIRS
-3. Blocks any message where AIRS does not return `action: "allow"`
-4. Blocked messages are never persisted or shown to the user
+## How It Works
 
-## How It Differs from prisma-airs-outbound
+1. Reads `outbound_block_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Checks `event.role` -- only scans `"assistant"` messages. Skips user messages (handled by `prisma-airs-inbound-block`).
+3. Validates `event.content` is a non-empty string.
+4. Calls `scan({ response: content, profileName, appName })`.
+5. If AIRS returns `action: "allow"`, returns void (message persists).
+6. Otherwise, returns `{ block: true }` -- message is rejected.
 
-| Feature | prisma-airs-outbound | prisma-airs-outbound-block |
-| ------- | -------------------- | -------------------------- |
-| Event   | `message_sending`    | `before_message_write`     |
-| Timing  | Before display       | Before persistence         |
-| DLP     | Can mask content     | Block only                 |
-| Result  | `{ content, cancel }` | `{ block: true }`         |
+### Error Handling
 
-Use **both** for defense-in-depth: outbound-block prevents persistence, outbound handles display-level masking/blocking.
+On scan failure:
+
+- If `fail_closed=true` (default): Returns `{ block: true }`.
+- If `fail_closed=false`: Returns void (message persists).
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      outbound_block_mode: "deterministic" # default
-      fail_closed: true # Block on scan failure (default)
+  entries:
+    prisma-airs:
+      config:
+        outbound_block_mode: "deterministic"  # "deterministic" | "probabilistic" | "off"
+        profile_name: "default"
+        app_name: "openclaw"
+        fail_closed: true
 ```
 
-## Actions
+## Behavior
 
-| AIRS Action | Result                           |
-| ----------- | -------------------------------- |
-| `allow`     | Message persisted normally       |
-| `warn`      | **Blocked** — message rejected   |
-| `block`     | **Blocked** — message rejected   |
-| (error)     | Blocked if `fail_closed: true`   |
-
-## Role Filtering
-
-Only **assistant** messages are scanned. User messages are skipped (handled by the [inbound block hook](prisma-airs-inbound-block.md)).
+| Condition | Result |
+|-----------|--------|
+| `outbound_block_mode` = `off` | No-op |
+| `event.role` is not `"assistant"` | No-op |
+| Empty or non-string content | No-op |
+| AIRS action = `allow` | Pass through |
+| AIRS action = `block` or `warn` | `{ block: true }` |
+| Scan fails + `fail_closed=true` | `{ block: true }` |
+| Scan fails + `fail_closed=false` | Pass through |
 
 ## Related Hooks
 
-- [prisma-airs-inbound-block](prisma-airs-inbound-block.md) — Inbound (user) message blocking
-- [prisma-airs-outbound](prisma-airs-outbound.md) — Display-level blocking and DLP masking
+- [prisma-airs-inbound-block](prisma-airs-inbound-block.md) -- Companion hook that blocks user messages at the same persistence layer.
+- [prisma-airs-outbound](prisma-airs-outbound.md) -- Operates at the delivery layer; can mask content instead of blocking.

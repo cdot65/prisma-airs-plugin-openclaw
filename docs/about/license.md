@@ -30,6 +30,10 @@ SOFTWARE.
 
 ## Third-Party Licenses
 
+### Prisma AIRS SDK
+
+This plugin depends on [`@cdot65/prisma-airs-sdk`](https://www.npmjs.com/package/@cdot65/prisma-airs-sdk) for AIRS API communication. The SDK handles HTTP, authentication, retries, and content validation.
+
 ### Prisma AIRS
 
 This plugin integrates with [Prisma AIRS](https://www.paloaltonetworks.com/prisma/prisma-ai-runtime-security) by Palo Alto Networks. Use of the AIRS API is subject to Palo Alto Networks' terms of service.

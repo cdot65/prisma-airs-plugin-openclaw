@@ -1,5 +1,5 @@
 site_name: Prisma AIRS Plugin
-site_description: OpenClaw plugin for Prisma AIRS (AI Runtime Security)
+site_description: OpenClaw plugin for Prisma AI Runtime Security — defense-in-depth with 12 security hooks
 site_url: https://cdot65.github.io/prisma-airs-plugin-openclaw/
 repo_url: https://github.com/cdot65/prisma-airs-plugin-openclaw
 repo_name: cdot65/prisma-airs-plugin-openclaw
@@ -9,14 +9,14 @@ theme:
   name: material
   palette:
     - scheme: default
-      primary: indigo
-      accent: teal
+      primary: deep purple
+      accent: amber
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
-      accent: teal
+      primary: deep purple
+      accent: amber
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -55,36 +55,50 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.mark
+  - pymdownx.critic
+  - pymdownx.keys
   - tables
   - attr_list
   - md_in_html
   - toc:
       permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/cdot65
-  version:
-    provider: mike
 
 nav:
   - Home: index.md
   - Getting Started:
       - Installation: getting-started/installation.md
-      - Configuration: getting-started/configuration.md
       - Quick Start: getting-started/quick-start.md
+      - Configuration: getting-started/configuration.md
   - Architecture:
       - Overview: architecture/overview.md
       - Hook Lifecycle: architecture/hooks.md
       - Design Decisions: architecture/design-decisions.md
   - Hooks:
       - Overview: hooks/index.md
-      - prisma-airs-guard: hooks/prisma-airs-guard.md
-      - prisma-airs-audit: hooks/prisma-airs-audit.md
-      - prisma-airs-context: hooks/prisma-airs-context.md
-      - prisma-airs-outbound: hooks/prisma-airs-outbound.md
-      - prisma-airs-tools: hooks/prisma-airs-tools.md
+      - Blocking Hooks:
+          - prisma-airs-inbound-block: hooks/prisma-airs-inbound-block.md
+          - prisma-airs-outbound-block: hooks/prisma-airs-outbound-block.md
+          - prisma-airs-outbound: hooks/prisma-airs-outbound.md
+          - prisma-airs-tool-guard: hooks/prisma-airs-tool-guard.md
+          - prisma-airs-tools: hooks/prisma-airs-tools.md
+      - Scanning Hooks:
+          - prisma-airs-prompt-scan: hooks/prisma-airs-prompt-scan.md
+          - prisma-airs-tool-redact: hooks/prisma-airs-tool-redact.md
+          - prisma-airs-context: hooks/prisma-airs-context.md
+          - prisma-airs-guard: hooks/prisma-airs-guard.md
+      - Audit Hooks:
+          - prisma-airs-audit: hooks/prisma-airs-audit.md
+          - prisma-airs-llm-audit: hooks/prisma-airs-llm-audit.md
+          - prisma-airs-tool-audit: hooks/prisma-airs-tool-audit.md
   - Reference:
       - Configuration Options: reference/configuration.md
       - Scan Result: reference/scan-result.md

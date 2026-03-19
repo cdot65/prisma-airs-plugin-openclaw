@@ -1,206 +1,102 @@
 # prisma-airs-outbound
 
-Outbound response scanning with blocking and DLP masking.
+Scans outbound assistant responses and blocks or masks content based on AIRS results.
 
 ## Overview
 
-| Property      | Value                                                       |
-| ------------- | ----------------------------------------------------------- |
-| **Event**     | `message_sending`                                           |
-| **Emoji**     | :shield:                                                    |
-| **Can Block** | Yes                                                         |
-| **Config**    | `outbound_mode`, `fail_closed`, `dlp_mask_only` |
+| Field | Value |
+|-------|-------|
+| Event | `message_sending` |
+| Config field | `outbound_mode` |
+| Can Block | Yes (via content replacement) |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Scans every outbound response through AIRS before delivery. Blocks on any non-`allow` action. When the only detection is DLP (and `dlp_mask_only` is true), applies regex-based masking instead of a full block.
 
-1. Scans ALL outbound responses using Prisma AIRS
-2. Blocks responses containing malicious content
-3. Masks sensitive data (DLP) instead of blocking (configurable)
+## How It Works
+
+1. Reads `outbound_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Validates `event.content` is a non-empty string.
+3. Calls `scan({ response: content, profileName, appName })`.
+4. If AIRS returns `action: "allow"`, returns void (message passes through).
+5. If result qualifies for DLP masking (see below), applies `maskSensitiveData()` and returns `{ content: maskedContent }`.
+6. Otherwise, returns `{ content: blockMessage }` replacing the entire response.
+
+### DLP Mask vs Full Block
+
+The `shouldMaskOnly()` function determines whether to mask or block:
+
+- `dlp_mask_only` must be `true` (default).
+- No "always-block" categories may be present.
+- All categories must be maskable (`dlp_response`, `dlp_prompt`, `dlp`) or safe/benign.
+
+**Always-block categories** (never maskable):
+
+`malicious_code`, `malicious_code_prompt`, `malicious_code_response`, `malicious_url`, `toxicity`, `toxic_content`, `toxic_content_prompt`, `toxic_content_response`, `agent_threat`, `agent_threat_prompt`, `agent_threat_response`, `prompt_injection`, `db_security`, `db_security_response`, `scan-failure`
+
+### DLP Masking Patterns
+
+The `maskSensitiveData()` function applies these regex patterns:
+
+| Pattern | Replacement |
+|---------|-------------|
+| SSN (`XXX-XX-XXXX`) | `[SSN REDACTED]` |
+| Credit card (4 groups of 4 digits) | `[CARD REDACTED]` |
+| Email addresses | `[EMAIL REDACTED]` |
+| API keys/tokens (`sk-`, `pk-`, `api_key`, `token`, `secret`, `password` + 16+ chars) | `[API KEY REDACTED]` |
+| AWS keys (`AKIA`, `ABIA`, `ACCA`, `ASIA` + 16 chars) | `[AWS KEY REDACTED]` |
+| Long mixed-case alphanumeric strings (40+ chars with lowercase + uppercase + digits) | `[SECRET REDACTED]` |
+| US phone numbers | `[PHONE REDACTED]` |
+| Private IP addresses (10.x, 172.16-31.x, 192.168.x) | `[IP REDACTED]` |
+
+### Block Message Format
+
+When fully blocked, the response is replaced with:
+
+```
+I apologize, but I'm unable to provide that response due to security policy (<reasons>). Please rephrase your request or contact support if you believe this is an error.
+```
+
+Where `<reasons>` is a comma-separated list of human-readable category descriptions.
+
+### Error Handling
+
+On scan failure:
+
+- If `fail_closed=true` (default): Returns a generic security verification error message as replacement content.
+- If `fail_closed=false`: Returns void (message passes through).
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      outbound_mode: "deterministic" # default
-      fail_closed: true # Block on scan failure (default)
-      dlp_mask_only: true # Mask DLP instead of block (default)
+  entries:
+    prisma-airs:
+      config:
+        outbound_mode: "deterministic"  # "deterministic" | "probabilistic" | "off"
+        profile_name: "default"
+        app_name: "openclaw"
+        fail_closed: true
+        dlp_mask_only: true             # true = mask DLP-only results; false = always block
 ```
 
-## Detection Capabilities
+## Behavior
 
-| Detection          | Description               | Action        |
-| ------------------ | ------------------------- | ------------- |
-| **WildFire**       | Malicious URL/content     | Block         |
-| **Toxicity**       | Harmful, abusive content  | Block         |
-| **URL Filtering**  | Disallowed URL categories | Block         |
-| **DLP**            | PII, credentials leakage  | Mask or Block |
-| **Malicious Code** | Malware, exploits         | Block         |
-| **Custom Topics**  | Policy violations         | Block         |
-| **Grounding**      | Hallucinations            | Block         |
-
-## Actions
-
-Any AIRS response that is **not** `action: "allow"` is blocked. This includes both `block` and `warn` verdicts.
-
-### Block (default for non-allow)
-
-Replace the entire response with an error message:
-
-```
-Before: "Here's the malware code you requested: ..."
-After:  "I apologize, but I'm unable to provide that response
-        due to security policy (malicious code detected)."
-```
-
-### Mask (DLP Only)
-
-When `dlp_mask_only: true` and only DLP violations detected (no other threat categories):
-
-```
-Before: "Your SSN is 123-45-6789 and card is 4111-1111-1111-1111"
-After:  "Your SSN is [SSN REDACTED] and card is [CARD REDACTED]"
-```
-
-### Allow
-
-No modification. Only when AIRS returns `action: "allow"`.
-
-## Masking Patterns
-
-| Pattern     | Example                | Masked As            |
-| ----------- | ---------------------- | -------------------- |
-| SSN         | `123-45-6789`          | `[SSN REDACTED]`     |
-| Credit Card | `4111-1111-1111-1111`  | `[CARD REDACTED]`    |
-| Email       | `user@example.com`     | `[EMAIL REDACTED]`   |
-| API Key     | `sk-abc123...`         | `[API KEY REDACTED]` |
-| AWS Key     | `AKIAIOSFODNN7EXAMPLE` | `[AWS KEY REDACTED]` |
-| Phone       | `(555) 123-4567`       | `[PHONE REDACTED]`   |
-| Private IP  | `192.168.1.1`          | `[IP REDACTED]`      |
-
-## Handler Logic
-
-```typescript
-const handler = async (event, ctx) => {
-  const config = getPluginConfig(ctx);
-  if (!config.enabled) return;
-
-  const content = event.content;
-  if (!content) return;
-
-  let result;
-  try {
-    result = await scan({ response: content, ... });
-  } catch (err) {
-    if (config.failClosed) {
-      return {
-        content: "Unable to provide response due to security verification issue."
-      };
-    }
-    return; // Fail-open
-  }
-
-  // Only allow when AIRS explicitly says "allow"
-  if (result.action === "allow") return;
-
-  // Block or warn — check if DLP-only (can mask instead of block)
-  if (shouldMaskOnly(result, config)) {
-    const masked = maskSensitiveData(content);
-    if (masked !== content) {
-      return { content: masked };
-    }
-  }
-
-  // Full block — any non-allow action
-  return {
-    content: buildBlockMessage(result)
-  };
-};
-```
-
-## Return Value
-
-```typescript
-interface HookResult {
-  content?: string; // Modified or blocked content
-  cancel?: boolean; // Cancel sending entirely
-}
-```
-
-## Audit Logging
-
-### Scan Result
-
-```json
-{
-  "event": "prisma_airs_outbound_scan",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "action": "block",
-  "severity": "HIGH",
-  "categories": ["dlp_response"],
-  "scanId": "scan_xyz789",
-  "latencyMs": 120,
-  "responseDetected": {
-    "dlp": true,
-    "urlCats": false,
-    "dbSecurity": false,
-    "toxicContent": false,
-    "maliciousCode": false,
-    "agent": false,
-    "ungrounded": false,
-    "topicViolation": false
-  }
-}
-```
-
-### Mask Event
-
-```json
-{
-  "event": "prisma_airs_outbound_mask",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "categories": ["dlp_response"],
-  "scanId": "scan_xyz789"
-}
-```
-
-### Block Event
-
-```json
-{
-  "event": "prisma_airs_outbound_block",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "action": "block",
-  "severity": "CRITICAL",
-  "categories": ["malicious_code_response"],
-  "scanId": "scan_xyz789",
-  "reportId": "report_abc123"
-}
-```
-
-## Always-Block Categories
-
-These categories always block, even with `dlp_mask_only: true`:
-
-- `malicious_code`, `malicious_code_prompt`, `malicious_code_response`
-- `malicious_url`
-- `toxicity`, `toxic_content`, `toxic_content_prompt`, `toxic_content_response`
-- `agent_threat`, `agent_threat_prompt`, `agent_threat_response`
-- `prompt_injection`
-- `db_security`, `db_security_response`
-- `scan-failure`
+| Condition | Result |
+|-----------|--------|
+| `outbound_mode` = `off` | No-op |
+| Empty or non-string content | No-op |
+| AIRS action = `allow` | Pass through |
+| DLP-only categories + `dlp_mask_only=true` | Regex-mask sensitive data |
+| DLP-only but masking changes nothing | Full block message |
+| Any always-block category | Full block message |
+| Scan fails + `fail_closed=true` | Generic error replacement |
+| Scan fails + `fail_closed=false` | Pass through |
 
 ## Related Hooks
 
-- [prisma-airs-audit](prisma-airs-audit.md) - Inbound scanning
-- [prisma-airs-tools](prisma-airs-tools.md) - Tool blocking
-
-## Guides
-
-- [DLP Masking Guide](../guides/dlp-masking.md) - Configure masking behavior
+- [prisma-airs-outbound-block](prisma-airs-outbound-block.md) -- Hard guardrail at persistence layer; this hook operates at delivery layer.
+- [prisma-airs-tool-redact](prisma-airs-tool-redact.md) -- Uses identical DLP regex patterns for tool output redaction.

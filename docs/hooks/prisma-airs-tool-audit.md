@@ -1,67 +1,80 @@
 # prisma-airs-tool-audit
 
-Post-execution audit logging of tool outputs through Prisma AIRS.
+Fire-and-forget audit logging of tool execution results through AIRS.
 
 ## Overview
 
-| Property      | Value                                               |
-| ------------- | --------------------------------------------------- |
-| **Event**     | `after_tool_call`                                   |
-| **Emoji**     | :mag_right:                                         |
-| **Can Block** | No (fire-and-forget)                                |
-| **Config**    | `tool_audit_mode`                                   |
+| Field | Value |
+|-------|-------|
+| Event | `after_tool_call` |
+| Config field | `tool_audit_mode` |
+| Can Block | No |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Scans tool execution results through AIRS after a tool call completes. Provides a post-execution audit trail that complements the pre-execution scanning done by `prisma-airs-tool-guard`. Detects threats in tool outputs that may not have been present in the inputs.
 
-1. Fires after tool execution completes
-2. Serializes the tool result to a scannable string
-3. Scans the result through AIRS using toolEvent content type
-4. Logs structured JSON audit entries with tool metadata and scan results
-5. Complements tool-guard (pre-execution) by auditing what tools actually returned
+## How It Works
 
-## Why Post-Execution Auditing Matters
+1. Reads `tool_audit_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Serializes `event.result` to a string:
+   - If `null`/`undefined`: skips.
+   - If string: uses directly.
+   - Otherwise: `JSON.stringify()`, falling back to `String()`.
+3. Skips if serialized result is empty after trimming.
+4. Calls `scan()` with both `response` and `toolEvents`:
+   ```json
+   {
+     "response": "<resultStr>",
+     "profileName": "...",
+     "appName": "...",
+     "toolEvents": [{
+       "metadata": {
+         "ecosystem": "mcp",
+         "method": "tool_result",
+         "serverName": "local",
+         "toolInvoked": "<event.toolName>"
+       },
+       "input": "<resultStr>"
+     }]
+   }
+   ```
+5. Logs structured JSON to stdout with: toolName, durationMs, action, severity, categories, scanId, reportId, latencyMs, responseDetected.
 
-The tool-guard hook scans inputs before execution, but cannot inspect what the tool returns. A tool might return sensitive data, malicious content, or policy-violating information that was not apparent from the input. This hook provides the audit trail for tool outputs.
+### Error Handling
+
+On scan failure:
+
+- Logs error to stderr.
+- Returns void (fire-and-forget, no blocking).
+- No fail-closed behavior.
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      tool_audit_mode: "deterministic" # default
-```
-
-## Audit Log Format
-
-```json
-{
-  "event": "prisma_airs_tool_output_audit",
-  "timestamp": "2025-01-01T00:00:00.000Z",
-  "sessionKey": "session-123",
-  "toolName": "Read",
-  "durationMs": 15,
-  "action": "allow",
-  "severity": "SAFE",
-  "categories": ["safe"],
-  "scanId": "scan_abc",
-  "latencyMs": 42
-}
+  entries:
+    prisma-airs:
+      config:
+        tool_audit_mode: "deterministic"  # "deterministic" | "probabilistic" | "off"
+        profile_name: "default"
+        app_name: "openclaw"
 ```
 
 ## Behavior
 
-| Condition          | Result                           |
-| ------------------ | -------------------------------- |
-| Result present     | Scanned through AIRS, logged     |
-| No result / error  | Skipped (nothing to scan)        |
-| Mode = off         | Skipped                          |
-| Scan failure       | Error logged, execution unaffected |
+| Condition | Result |
+|-----------|--------|
+| `tool_audit_mode` = `off` | No-op |
+| `event.result` is null/undefined | No-op |
+| Serialized result is empty | No-op |
+| Scan succeeds | Log audit entry |
+| Scan fails | Log error, no-op |
 
 ## Related Hooks
 
-- [prisma-airs-tool-guard](prisma-airs-tool-guard.md) — Pre-execution tool input scanning (can block)
-- [prisma-airs-tools](prisma-airs-tools.md) — Cache-based tool gating (can block)
-- [prisma-airs-tool-redact](prisma-airs-tool-redact.md) — DLP redaction before persistence
+- [prisma-airs-tool-guard](prisma-airs-tool-guard.md) -- Pre-execution tool input scanning. This hook provides post-execution output audit.
+- [prisma-airs-llm-audit](prisma-airs-llm-audit.md) -- Companion audit hook for LLM I/O.
+- [prisma-airs-tool-redact](prisma-airs-tool-redact.md) -- Redacts tool output at persistence time (synchronous). This hook scans asynchronously after the fact.

@@ -1,5 +1,52 @@
 # Release Notes
 
+## v1.0.0 - Production Release
+
+**Released**: 2026-03-18
+
+### Highlights
+
+12 security hooks across 9 event types provide defense-in-depth protection for OpenClaw agents. Per-hook configuration, DLP masking, tool gating, and fail-closed defaults.
+
+### New Hooks (7 added since v0.3.0)
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `prisma-airs-inbound-block` | `before_message_write` | Block user messages at persistence layer |
+| `prisma-airs-outbound-block` | `before_message_write` | Block assistant messages at persistence layer |
+| `prisma-airs-tool-guard` | `before_tool_call` | Active AIRS scanning of tool inputs |
+| `prisma-airs-prompt-scan` | `before_prompt_build` | Full conversation context scanning |
+| `prisma-airs-tool-redact` | `tool_result_persist` | DLP redaction of tool outputs (regex-based, sync) |
+| `prisma-airs-llm-audit` | `llm_input` / `llm_output` | Audit log exact LLM prompts/responses |
+| `prisma-airs-tool-audit` | `after_tool_call` | Audit log tool execution results |
+
+### Architecture Improvements
+
+- **Self-contained hooks**: Each handler checks its own mode and accesses config via `ctx.cfg`. No more duplicate registrations in `index.ts`.
+- **Auto-discovery**: All 12 hooks loaded from `HOOK.md` files by OpenClaw — `index.ts` only handles SDK init, RPC, tools, and CLI.
+- **UI hints**: Config fields organized into groups (Connection, Blocking, Scanning, Audit, Advanced) with labels, help text, and ordering.
+
+### New Config Fields
+
+```yaml
+inbound_block_mode: "deterministic"   # deterministic / off
+outbound_block_mode: "deterministic"  # deterministic / off
+tool_guard_mode: "deterministic"      # deterministic / off
+prompt_scan_mode: "deterministic"     # deterministic / off
+tool_redact_mode: "deterministic"     # deterministic / off
+llm_audit_mode: "deterministic"       # deterministic / off
+tool_audit_mode: "deterministic"      # deterministic / off
+```
+
+### Infrastructure
+
+- CI workflow (lint, typecheck, test, docs build on PRs)
+- Docker E2E testing with `docker-compose.yml`
+- 162+ tests across 12 test files
+- Documentation site with deep purple + amber Material theme
+
+---
+
 ## v0.3.0-alpha.0 - Deterministic vs Probabilistic Scanning Modes
 
 **Released**: 2026-02-14

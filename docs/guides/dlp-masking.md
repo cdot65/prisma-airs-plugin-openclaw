@@ -1,32 +1,112 @@
 # DLP Masking Guide
 
-How to configure and use Data Loss Prevention (DLP) masking for outbound responses.
+How Data Loss Prevention masking works across the outbound handler and tool-redact handler.
 
 ## Overview
 
-Instead of completely blocking responses that contain sensitive data, the plugin can mask (redact) the sensitive portions while preserving the rest of the response.
+Instead of blocking responses that contain only DLP violations, the plugin can mask (redact) sensitive data while preserving the rest of the content. Two handlers perform masking:
 
-## Enable Masking
+- **Outbound handler** (`prisma-airs-outbound`): masks outbound assistant responses via `message_sending`
+- **Tool-redact handler** (`prisma-airs-tool-redact`): masks tool output content via `tool_result_persist`
 
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      dlp_mask_only: true # default
+Both handlers use the same set of regex patterns.
+
+## Configuration
+
+```json
+{
+  "dlp_mask_only": true,
+  "outbound_mode": "deterministic",
+  "tool_redact_mode": "deterministic"
+}
 ```
 
-When `dlp_mask_only: true`:
+| Setting | Effect |
+|---------|--------|
+| `dlp_mask_only: true` (default) | DLP-only violations are masked in outbound responses |
+| `dlp_mask_only: false` | DLP violations block the response entirely |
+| `tool_redact_mode: "deterministic"` (default) | Tool outputs are always redacted via regex |
+| `tool_redact_mode: "off"` | Tool output redaction disabled |
 
-- DLP violations in responses are masked, not blocked
-- Other violations (malicious code, toxicity) still block
+!!! info "Tool redaction is independent"
+    `tool_redact_mode` applies regex masking to ALL tool outputs regardless of `dlp_mask_only`. It does not require an AIRS scan -- it is a synchronous regex pass.
 
-When `dlp_mask_only: false`:
+## Regex Patterns
 
-- All violations result in blocked responses
+Both handlers apply these patterns in order:
 
-## Masking Behavior
+### Social Security Numbers
 
-### Before Masking
+```
+Pattern: \b\d{3}-\d{2}-\d{4}\b
+Replace: [SSN REDACTED]
+Example: 123-45-6789 -> [SSN REDACTED]
+```
+
+### Credit Card Numbers
+
+```
+Pattern: \b(?:\d{4}[-\s]?){3}\d{4}\b
+Replace: [CARD REDACTED]
+Example: 4111-1111-1111-1111 -> [CARD REDACTED]
+Example: 4111111111111111    -> [CARD REDACTED]
+Example: 4111 1111 1111 1111 -> [CARD REDACTED]
+```
+
+### Email Addresses
+
+```
+Pattern: \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b
+Replace: [EMAIL REDACTED]
+Example: user@example.com -> [EMAIL REDACTED]
+```
+
+### API Keys and Tokens
+
+```
+Pattern: \b(?:sk-|pk-|api[_-]?key[_-]?|token[_-]?|secret[_-]?|password[_-]?)[a-zA-Z0-9_-]{16,}\b
+Replace: [API KEY REDACTED]
+Example: sk-abc123def456ghi789jkl -> [API KEY REDACTED]
+Example: api_key_xyz123abc456def -> [API KEY REDACTED]
+```
+
+### AWS Keys
+
+```
+Pattern: \b(?:AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}\b
+Replace: [AWS KEY REDACTED]
+Example: AKIAIOSFODNN7EXAMPLE -> [AWS KEY REDACTED]
+```
+
+### Generic Long Secrets
+
+```
+Pattern: \b[a-zA-Z0-9_-]{40,}\b (only if mixed case AND numbers)
+Replace: [SECRET REDACTED]
+```
+
+### US Phone Numbers
+
+```
+Pattern: \b(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b
+Replace: [PHONE REDACTED]
+Example: (555) 123-4567   -> [PHONE REDACTED]
+Example: +1 555-123-4567  -> [PHONE REDACTED]
+```
+
+### Private IP Addresses
+
+```
+Pattern: \b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b
+Replace: [IP REDACTED]
+Example: 192.168.1.1  -> [IP REDACTED]
+Example: 10.0.0.1     -> [IP REDACTED]
+Example: 172.16.0.1   -> [IP REDACTED]
+```
+
+## Before/After Example
+
+**Before masking:**
 
 ```
 Your account details:
@@ -34,9 +114,11 @@ Your account details:
 - Card: 4111-1111-1111-1111
 - Email: user@example.com
 - API Key: sk-abc123def456ghi789jkl
+- Server: 192.168.1.100
+- Phone: (555) 123-4567
 ```
 
-### After Masking
+**After masking:**
 
 ```
 Your account details:
@@ -44,191 +126,84 @@ Your account details:
 - Card: [CARD REDACTED]
 - Email: [EMAIL REDACTED]
 - API Key: [API KEY REDACTED]
+- Server: [IP REDACTED]
+- Phone: [PHONE REDACTED]
 ```
-
-## Masked Patterns
-
-| Data Type              | Pattern                     | Masked As            |
-| ---------------------- | --------------------------- | -------------------- |
-| Social Security Number | `XXX-XX-XXXX`               | `[SSN REDACTED]`     |
-| Credit Card            | `XXXX-XXXX-XXXX-XXXX`       | `[CARD REDACTED]`    |
-| Email                  | `*@*.*`                     | `[EMAIL REDACTED]`   |
-| API Key                | `sk-*`, `pk-*`, `api_key_*` | `[API KEY REDACTED]` |
-| AWS Key                | `AKIA*`, `ABIA*`, `ASIA*`   | `[AWS KEY REDACTED]` |
-| Phone Number           | `(XXX) XXX-XXXX`            | `[PHONE REDACTED]`   |
-| Private IP             | `192.168.*.*`, `10.*.*.*`   | `[IP REDACTED]`      |
-| Long Secrets           | 40+ char mixed alphanumeric | `[SECRET REDACTED]`  |
-
-## Pattern Details
-
-### Social Security Numbers
-
-```regex
-\b\d{3}-\d{2}-\d{4}\b
-```
-
-Matches: `123-45-6789`
-
-### Credit Cards
-
-```regex
-\b(?:\d{4}[-\s]?){3}\d{4}\b
-```
-
-Matches:
-
-- `4111-1111-1111-1111`
-- `4111 1111 1111 1111`
-- `4111111111111111`
-
-### Email Addresses
-
-```regex
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b
-```
-
-Matches: `user@example.com`
-
-### API Keys and Tokens
-
-```regex
-\b(?:sk-|pk-|api[_-]?key[_-]?|token[_-]?|secret[_-]?|password[_-]?)[a-zA-Z0-9_-]{16,}\b
-```
-
-Matches:
-
-- `sk-abc123def456ghi789jkl`
-- `api_key_xyz123abc456`
-- `secret-myverylongsecretvalue`
-
-### AWS Keys
-
-```regex
-\b(?:AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}\b
-```
-
-Matches: `AKIAIOSFODNN7EXAMPLE`
-
-### Phone Numbers
-
-```regex
-\b(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b
-```
-
-Matches:
-
-- `(555) 123-4567`
-- `555-123-4567`
-- `+1 555 123 4567`
-
-### Private IP Addresses
-
-```regex
-\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b
-```
-
-Matches:
-
-- `192.168.1.1`
-- `10.0.0.1`
-- `172.16.0.1`
-
-### Long Secrets
-
-```regex
-\b[a-zA-Z0-9_-]{40,}\b
-```
-
-Only matches if string has mixed case AND numbers.
 
 ## Always-Block Categories
 
-These categories always block, regardless of `dlp_mask_only`:
+These categories override `dlp_mask_only` and always trigger a full block in the outbound handler. If any of these are present alongside DLP, the response is blocked rather than masked:
 
-- `malicious_code`, `malicious_code_prompt`, `malicious_code_response`
-- `malicious_url`
-- `toxicity`, `toxic_content`, `toxic_content_prompt`, `toxic_content_response`
-- `agent_threat`, `agent_threat_prompt`, `agent_threat_response`
-- `prompt_injection`
-- `db_security`, `db_security_response`
-- `scan-failure`
+```typescript
+const ALWAYS_BLOCK_CATEGORIES = [
+  "malicious_code",       "malicious_code_prompt",  "malicious_code_response",
+  "malicious_url",
+  "toxicity",             "toxic_content",
+  "toxic_content_prompt", "toxic_content_response",
+  "agent_threat",         "agent_threat_prompt",     "agent_threat_response",
+  "prompt_injection",
+  "db_security",          "db_security_response",
+  "scan-failure",
+];
+```
+
+## Masking Decision Flow
+
+The `shouldMaskOnly()` function in the outbound handler:
+
+1. If `dlp_mask_only` is `false` -- never mask, always block
+2. If any `ALWAYS_BLOCK_CATEGORIES` are present -- block
+3. If all categories are maskable (`dlp_response`, `dlp_prompt`, `dlp`, `safe`, `benign`) -- mask
+4. Otherwise -- block
+
+After deciding to mask, if regex masking produces no changes (unusual format the patterns miss), the response is blocked as a safety fallback.
+
+## Outbound Handler vs Tool-Redact Handler
+
+| Aspect | Outbound (`message_sending`) | Tool-Redact (`tool_result_persist`) |
+|--------|------------------------------|-------------------------------------|
+| Trigger | AIRS scan returns non-allow action with DLP-only categories | Every tool result (always, when mode is `deterministic`) |
+| Async | Yes | No (synchronous) |
+| AIRS scan | Yes, scans response content | No, regex-only (optionally checks scan cache for DLP signal) |
+| Scope | Full assistant message | Individual tool result content items of type `text` |
+| Skips | Empty content | Synthetic results (`isSynthetic: true`) |
+| Config | `outbound_mode` + `dlp_mask_only` | `tool_redact_mode` |
 
 ## Logging
 
-### Mask Event
-
-When masking occurs:
+### Outbound Mask Event
 
 ```json
 {
   "event": "prisma_airs_outbound_mask",
-  "timestamp": "2024-01-15T10:30:00.000Z",
   "sessionKey": "session_abc123",
+  "action": "warn",
   "categories": ["dlp_response"],
   "scanId": "scan_xyz789"
 }
 ```
 
-### Block Event
-
-When blocking occurs (DLP + other violations):
+### Tool Redact Event
 
 ```json
 {
-  "event": "prisma_airs_outbound_block",
-  "timestamp": "2024-01-15T10:30:00.000Z",
+  "event": "prisma_airs_tool_redact",
   "sessionKey": "session_abc123",
-  "categories": ["dlp_response", "malicious_code"],
-  "scanId": "scan_xyz789"
+  "toolName": "Read",
+  "action": "regex",
+  "cachedDlp": false
 }
 ```
 
+The `action` field is `"cache_dlp"` when the scan cache had a DLP signal, `"regex"` otherwise.
+
 ## Limitations
 
-### Regex-Based Masking
+- Regex-based masking may miss unusual formats or produce false positives
+- If AIRS flags DLP but the regex patterns do not match, the outbound handler falls back to blocking
+- Public IP addresses are not masked (only RFC 1918 private ranges)
 
-Current masking uses regex patterns, which may:
+## Source Files
 
-- Miss unusual formats
-- Have false positives
-- Not catch all sensitive data
-
-!!! tip "Future Enhancement"
-Future versions will use AIRS API match offsets for precision masking when available.
-
-### Content After Masking
-
-If regex masking doesn't change the content (false positive from AIRS or unusual format), the response will be blocked instead of sent with potentially sensitive data.
-
-## Configuration Examples
-
-### Maximum Privacy (Mask Everything)
-
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      dlp_mask_only: true
-      outbound_mode: "deterministic"
-```
-
-### Maximum Security (Block DLP)
-
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      dlp_mask_only: false
-      outbound_mode: "deterministic"
-```
-
-### Disable DLP Scanning
-
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      outbound_mode: "off"
-```
-
-Configure DLP detection in Strata Cloud Manager to reduce false positives.
+- Outbound masking: `prisma-airs-plugin/hooks/prisma-airs-outbound/handler.ts`
+- Tool redaction: `prisma-airs-plugin/hooks/prisma-airs-tool-redact/handler.ts`

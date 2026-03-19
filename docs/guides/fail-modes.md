@@ -1,40 +1,36 @@
 # Fail Modes Guide
 
-Understanding and configuring fail-open vs fail-closed behavior.
+Understanding fail-closed vs fail-open behavior and the interaction with scanning modes.
 
 ## Overview
 
-When a scan fails (API error, timeout, network issue), the plugin must decide:
+When an AIRS scan fails (API error, timeout, network issue), the plugin must decide whether to block or allow:
 
-| Mode            | On Failure    | Security | Availability |
-| --------------- | ------------- | -------- | ------------ |
-| **Fail-Closed** | Block request | High     | Lower        |
-| **Fail-Open**   | Allow request | Lower    | High         |
+| Mode | On Failure | Security | Availability |
+|------|------------|----------|--------------|
+| **Fail-Closed** (`fail_closed: true`) | Block request | High | Lower |
+| **Fail-Open** (`fail_closed: false`) | Allow request | Lower | High |
 
-## Configuration
+Default is **fail-closed** (`true`).
 
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      fail_closed: true   # default - block on failure
-      # or
-      fail_closed: false  # allow on failure
-```
+## Which Hooks Support fail_closed
 
-## Fail-Closed (Default)
+| Hook | Event | Fail-Closed Behavior |
+|------|-------|---------------------|
+| `prisma-airs-inbound-block` | `before_message_write` | Returns `{ block: true }` |
+| `prisma-airs-outbound-block` | `before_message_write` | Returns `{ block: true }` |
+| `prisma-airs-context` | `before_agent_start` | Caches synthetic block result, injects warning |
+| `prisma-airs-outbound` | `message_sending` | Returns replacement content with error message |
+| `prisma-airs-tool-guard` | `before_tool_call` | Returns `{ block: true, blockReason }` |
+| `prisma-airs-audit` | `message_received` | Caches synthetic block result for downstream hooks |
+| `prisma-airs-tools` | `before_tool_call` | No direct fail mode -- uses cached result from audit |
 
-### Behavior
+!!! note "Hooks without fail_closed"
+    `prisma-airs-guard` (reminder injection), `prisma-airs-tool-redact` (regex-only, no API call), `prisma-airs-llm-audit`, and `prisma-airs-tool-audit` (fire-and-forget) do not use `fail_closed`.
 
-When scan fails:
+## Synthetic Block Result
 
-1. Create synthetic "block" result
-2. Cache it for downstream hooks
-3. Inject warning into agent context
-4. Block dangerous tools
-5. Block outbound with error message
-
-### Synthetic Result
+When `fail_closed` is true and a scan fails, the context handler creates and caches this synthetic result:
 
 ```json
 {
@@ -45,270 +41,159 @@ When scan fails:
   "reportId": "",
   "profileName": "default",
   "promptDetected": {
-    "injection": false,
-    "dlp": false,
-    "urlCats": false,
-    "toxicContent": false,
-    "maliciousCode": false,
-    "agent": false,
-    "topicViolation": false
+    "injection": false, "dlp": false, "urlCats": false,
+    "toxicContent": false, "maliciousCode": false,
+    "agent": false, "topicViolation": false
   },
   "responseDetected": {
-    "dlp": false,
-    "urlCats": false,
-    "dbSecurity": false,
-    "toxicContent": false,
-    "maliciousCode": false,
-    "agent": false,
-    "ungrounded": false,
-    "topicViolation": false
+    "dlp": false, "urlCats": false, "dbSecurity": false,
+    "toxicContent": false, "maliciousCode": false,
+    "agent": false, "ungrounded": false, "topicViolation": false
   },
   "latencyMs": 0,
   "timeout": false,
   "hasError": true,
   "contentErrors": [],
-  "error": "Scan failed: connection timeout"
+  "error": "Scan failed: <error message>"
 }
 ```
 
-### When to Use
+This cached result propagates to downstream hooks:
 
-- Security-critical applications
-- Handling sensitive data
-- Compliance requirements
-- When attacks during outages are high-risk
+- **Tools hook**: sees `scan-failure` category, blocks `SENSITIVE_TOOLS` + write/edit tools
+- **Context hook**: injects "Security scan failed. Treat with extreme caution."
+- **Outbound hook**: if it also fails, returns generic error message
 
-### Trade-offs
+## fail_closed + probabilistic Constraint
 
-**Pros**:
+`resolveAllModes()` in `src/config.ts` rejects `fail_closed: true` combined with any probabilistic mode:
 
-- Attacks cannot succeed during outages
-- Conservative security posture
-- Predictable behavior
+```
+fail_closed=true is incompatible with probabilistic mode.
+Set fail_closed=false or change these to deterministic/off: audit_mode, outbound_mode
+```
 
-**Cons**:
+This applies to: `audit_mode`, `context_injection_mode`, `outbound_mode`, `tool_gating_mode`.
 
-- Service disruption during API issues
-- User frustration with failed requests
-- Requires monitoring for false blocks
+Rationale: probabilistic mode lets the model decide whether to scan. If the model skips scanning during an outage, fail-closed cannot engage because no scan was attempted.
 
-## Fail-Open
+## Fail-Closed Behavior by Hook
 
-### Behavior
-
-When scan fails:
-
-1. Log error
-2. No cached result
-3. No warning injected
-4. No tool blocking
-5. Response sent without scanning
-
-### When to Use
-
-- High-availability requirements
-- Low-risk applications
-- When API reliability is a concern
-- Development/testing environments
-
-### Trade-offs
-
-**Pros**:
-
-- Service continues during outages
-- Better user experience
-- No false positive blocks
-
-**Cons**:
-
-- Attacks can succeed during outages
-- Security gap during API issues
-- Potential compliance concerns
-
-## Per-Hook Behavior
-
-### prisma-airs-audit (message_received)
+### prisma-airs-inbound-block
 
 ```typescript
-// Fail-closed
+// On scan exception:
 if (config.failClosed) {
-  cacheScanResult(sessionKey, {
+  return { block: true };
+}
+return; // fail-open
+```
+
+User message is never persisted to conversation history.
+
+### prisma-airs-outbound-block
+
+Same pattern as inbound-block but for assistant messages.
+
+### prisma-airs-context
+
+```typescript
+// On scan exception:
+if (config.failClosed) {
+  scanResult = {
     action: "block",
+    severity: "CRITICAL",
     categories: ["scan-failure"],
-    error: err.message,
-  });
+    // ... all detection flags false
+    hasError: true,
+    error: `Scan failed: ${err.message}`,
+  };
+  cacheScanResult(sessionKey, scanResult, msgHash);
+} else {
+  return; // fail-open, no warning
 }
-// Fail-open: no cache entry
 ```
 
-### prisma-airs-context (before_agent_start)
+### prisma-airs-outbound
 
 ```typescript
-// Fail-closed
+// On scan exception:
 if (config.failClosed) {
   return {
-    prependContext: buildWarning({
-      action: "block",
-      categories: ["scan-failure"],
-    }),
+    content: "I apologize, but I'm unable to provide a response at this time due to a security verification issue. Please try again.",
   };
 }
-// Fail-open: return nothing
+return; // fail-open, send original
 ```
 
-### prisma-airs-outbound (message_sending)
+### prisma-airs-tool-guard
 
 ```typescript
-// Fail-closed
+// On scan exception:
 if (config.failClosed) {
   return {
-    content: "Unable to provide response due to security verification issue.",
+    block: true,
+    blockReason: `Tool '${event.toolName}' blocked: security scan failed. Try again later.`,
   };
 }
-// Fail-open: return nothing (send original)
+return; // fail-open
 ```
 
-### prisma-airs-tools (before_tool_call)
+## Configuration Examples
 
-No direct fail mode—uses cached result from audit hook.
-
-## Monitoring
-
-### Scan Failure Events
+### Default (Fail-Closed)
 
 ```json
 {
-  "event": "prisma_airs_inbound_scan_error",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "error": "API error 503: Service temporarily unavailable"
+  "fail_closed": true
 }
 ```
 
-### Block Due to Failure
+All scanning hooks block on failure. Maximum security.
+
+### Fail-Open
 
 ```json
 {
-  "event": "prisma_airs_tool_block",
-  "categories": ["scan-failure"],
-  "reason": "Scan failed: connection timeout"
+  "fail_closed": false
 }
 ```
 
-## Hybrid Approaches
+All scanning hooks allow on failure. Maximum availability.
 
-### Partial Fail-Closed
+### Audit-Only with Fail-Open
 
-Enable fail-closed only for certain hooks:
+Log everything but block nothing, even on failure:
 
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      # Fail-closed for enforcement
-      fail_closed: true
-
-      # Disable certain hooks to reduce impact
-      context_injection_mode: "off"
-      tool_gating_mode: "off"
-
-      # Keep outbound scanning
-      outbound_mode: "deterministic"
+```json
+{
+  "fail_closed": false,
+  "audit_mode": "deterministic",
+  "context_injection_mode": "off",
+  "outbound_mode": "off",
+  "tool_gating_mode": "off",
+  "inbound_block_mode": "off",
+  "outbound_block_mode": "off",
+  "tool_guard_mode": "off"
+}
 ```
 
-This blocks outbound violations but doesn't block tool calls on scan failure.
+### Selective Enforcement
 
-### Monitoring Mode
+Keep outbound blocking but disable tool gating on failure:
 
-Log failures but don't block:
-
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      fail_closed: false
-      audit_mode: "deterministic"
-      context_injection_mode: "off"
-      outbound_mode: "off"
-      tool_gating_mode: "off"
+```json
+{
+  "fail_closed": true,
+  "tool_gating_mode": "off",
+  "outbound_mode": "deterministic"
+}
 ```
 
-Review logs to understand failure patterns before enabling enforcement.
+## Source Files
 
-## Failure Scenarios
-
-### API Timeout
-
-```
-Cause: AIRS API slow to respond (>30s)
-fail_closed: true  → Block request
-fail_closed: false → Allow request
-```
-
-### Network Error
-
-```
-Cause: Cannot reach api.aisecurity.paloaltonetworks.com
-fail_closed: true  → Block request
-fail_closed: false → Allow request
-```
-
-### Invalid API Key
-
-```
-Cause: API key invalid or expired
-Response: 401 Unauthorized
-fail_closed: true  → Block request
-fail_closed: false → Allow request
-```
-
-### Rate Limiting
-
-```
-Cause: Too many requests
-Response: 429 Too Many Requests
-fail_closed: true  → Block request
-fail_closed: false → Allow request
-```
-
-## Best Practices
-
-### 1. Start with Fail-Closed
-
-Default is fail-closed for good reason. Only change after understanding implications.
-
-### 2. Monitor Failure Rates
-
-Track scan failures:
-
-```bash
-grep "scan_error" /var/log/openclaw/*.log | wc -l
-```
-
-If failures are frequent, investigate root cause before switching to fail-open.
-
-### 3. Set Up Alerts
-
-Alert on:
-
-- Scan failure rate > 1%
-- Consecutive failures > 5
-- Error types (timeout, auth, network)
-
-### 4. Have a Fallback Plan
-
-If switching to fail-open:
-
-- Increase other security layers
-- Add rate limiting
-- Enable additional logging
-- Consider secondary scanning service
-
-### 5. Document the Decision
-
-Record why you chose fail-open (if applicable):
-
-- Business justification
-- Risk acceptance
-- Compensating controls
-- Review date
+- Config validation: `prisma-airs-plugin/src/config.ts`
+- Context fail-closed: `prisma-airs-plugin/hooks/prisma-airs-context/handler.ts`
+- Outbound fail-closed: `prisma-airs-plugin/hooks/prisma-airs-outbound/handler.ts`
+- Inbound block fail-closed: `prisma-airs-plugin/hooks/prisma-airs-inbound-block/handler.ts`
+- Tool guard fail-closed: `prisma-airs-plugin/hooks/prisma-airs-tool-guard/handler.ts`

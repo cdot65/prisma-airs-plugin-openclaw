@@ -1,74 +1,73 @@
 # prisma-airs-tool-guard
 
-Active tool input scanning — scans tool call inputs through AIRS before execution.
+Active AIRS scanning of tool call inputs via the `toolEvent` content type.
 
 ## Overview
 
-| Property      | Value                                                |
-| ------------- | ---------------------------------------------------- |
-| **Event**     | `before_tool_call`                                   |
-| **Emoji**     | :lock:                                               |
-| **Can Block** | Yes (`{ block: true, blockReason }`)                 |
-| **Config**    | `tool_guard_mode`, `fail_closed`                     |
+| Field | Value |
+|-------|-------|
+| Event | `before_tool_call` |
+| Config field | `tool_guard_mode` |
+| Can Block | Yes (`{ block: true, blockReason }`) |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Scans tool inputs through AIRS in real time before execution. Unlike `prisma-airs-tools` (which uses cached inbound scan results), this hook sends the actual tool call parameters to AIRS using the `toolEvent` content type for targeted analysis.
 
-1. Fires **before** each tool call
-2. Builds a `toolEvent` with the tool's metadata and serialized arguments
-3. Scans the tool event through Prisma AIRS
-4. Blocks execution unless AIRS returns `action: "allow"`
+## How It Works
 
-## How It Differs from prisma-airs-tools
+1. Reads `tool_guard_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Validates `event.toolName` exists.
+3. Serializes `event.params` to JSON string (if present).
+4. Calls `scan()` with a `toolEvents` array containing a single tool event:
+   ```json
+   {
+     "metadata": {
+       "ecosystem": "mcp",
+       "method": "tool_call",
+       "serverName": "<event.serverName or 'unknown'>",
+       "toolInvoked": "<event.toolName>"
+     },
+     "input": "<JSON.stringify(event.params)>"
+   }
+   ```
+5. If AIRS returns `action: "allow"`, returns void (tool proceeds).
+6. Otherwise, returns `{ block: true, blockReason: "Tool '<name>' blocked by security scan: <categories>. Scan ID: <id>" }`.
 
-| Feature | prisma-airs-tools | prisma-airs-tool-guard |
-| ------- | ----------------- | ---------------------- |
-| Data source | Cached scan result | Active AIRS scan |
-| Scans | Cached inbound result | Tool input via toolEvent |
-| Latency | ~0ms (cache lookup) | AIRS API round-trip |
-| Coverage | Threats in original message | Threats in tool arguments |
+### Error Handling
 
-Use **both** for defense-in-depth: `prisma-airs-tools` catches threats from the conversation, `prisma-airs-tool-guard` catches threats in tool arguments.
+On scan failure:
+
+- If `fail_closed=true` (default): Returns `{ block: true, blockReason: "Tool '<name>' blocked: security scan failed. Try again later." }`.
+- If `fail_closed=false`: Returns void (tool proceeds).
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      tool_guard_mode: "deterministic" # default
-      fail_closed: true # Block on scan failure (default)
+  entries:
+    prisma-airs:
+      config:
+        tool_guard_mode: "deterministic"  # "deterministic" | "probabilistic" | "off"
+        profile_name: "default"
+        app_name: "openclaw"
+        fail_closed: true
 ```
 
-## Tool Event Structure
+## Behavior
 
-The hook constructs a `toolEvent` for the AIRS scan:
-
-```json
-{
-  "toolEvents": [{
-    "metadata": {
-      "ecosystem": "mcp",
-      "method": "tool_call",
-      "serverName": "filesystem",
-      "toolInvoked": "read_file"
-    },
-    "input": "{\"path\":\"/etc/passwd\"}"
-  }]
-}
-```
-
-## Actions
-
-| AIRS Action | Result                              |
-| ----------- | ----------------------------------- |
-| `allow`     | Tool execution proceeds             |
-| `warn`      | **Blocked** — tool call rejected    |
-| `block`     | **Blocked** — tool call rejected    |
-| (error)     | Blocked if `fail_closed: true`      |
+| Condition | Result |
+|-----------|--------|
+| `tool_guard_mode` = `off` | No-op |
+| No `toolName` in event | No-op |
+| AIRS action = `allow` | Allow tool execution |
+| AIRS action = `block` or `warn` | `{ block: true, blockReason }` |
+| Scan fails + `fail_closed=true` | `{ block: true, blockReason }` |
+| Scan fails + `fail_closed=false` | Allow tool execution |
 
 ## Related Hooks
 
-- [prisma-airs-tools](prisma-airs-tools.md) — Cache-based tool gating
-- [prisma-airs-inbound-block](prisma-airs-inbound-block.md) — User message blocking
+- [prisma-airs-tools](prisma-airs-tools.md) -- Complementary cache-based tool gating (no API call). Both hooks fire on `before_tool_call`.
+- [prisma-airs-tool-audit](prisma-airs-tool-audit.md) -- Scans tool outputs after execution (post-hoc audit).

@@ -1,70 +1,79 @@
 # prisma-airs-tool-redact
 
-DLP redaction of tool outputs before session persistence.
+Synchronous regex-based DLP redaction of tool outputs before persistence.
 
 ## Overview
 
-| Property      | Value                                                        |
-| ------------- | ------------------------------------------------------------ |
-| **Event**     | `tool_result_persist`                                        |
-| **Emoji**     | :lock:                                                       |
-| **Can Block** | No (modifies persisted message content)                      |
-| **Config**    | `tool_redact_mode`                                           |
+| Field | Value |
+|-------|-------|
+| Event | `tool_result_persist` |
+| Config field | `tool_redact_mode` |
+| Can Block | No |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Redacts sensitive data (PII, credentials) from tool outputs before they are written to session history. This is a synchronous hook -- it cannot make async API calls. It uses regex-based pattern matching identical to the outbound hook's `maskSensitiveData()`.
 
-1. Fires **synchronously** before tool results are written to session JSONL
-2. Applies regex-based pattern matching to detect PII and credentials
-3. Redacts sensitive data (SSNs, credit cards, emails, API keys, etc.)
-4. Optionally checks scan cache for AIRS DLP signals from tool-guard hook
-5. Prevents sensitive data from being persisted in conversation history
+## How It Works
 
-## Why Tool Output Redaction Matters
+1. Reads `tool_redact_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Skips synthetic results (`event.isSynthetic === true`).
+3. Validates `event.message.content` is a non-empty array.
+4. Optionally checks scan cache for AIRS DLP signal (`cached.responseDetected.dlp === true`) for audit logging purposes.
+5. Iterates over each content item in `event.message.content`:
+   - Only processes items where `type === "text"` and `text` is a string.
+   - Applies `maskSensitiveData()` to each text item.
+6. If any content was modified, returns `{ message: { ...message, content: newContent } }`.
+7. If nothing changed, returns void.
 
-When tools read files or query databases, the results may contain PII, credentials, or secrets. Without redaction, this sensitive data gets persisted in the session transcript and remains accessible in conversation history. This hook acts as a last line of defense at the persistence layer.
+### DLP Masking Patterns
+
+Identical to `prisma-airs-outbound`:
+
+| Pattern | Replacement |
+|---------|-------------|
+| SSN (`XXX-XX-XXXX`) | `[SSN REDACTED]` |
+| Credit card (4 groups of 4 digits) | `[CARD REDACTED]` |
+| Email addresses | `[EMAIL REDACTED]` |
+| API keys/tokens (`sk-`, `pk-`, `api_key`, `token`, `secret`, `password` + 16+ chars) | `[API KEY REDACTED]` |
+| AWS keys (`AKIA`, `ABIA`, `ACCA`, `ASIA` + 16 chars) | `[AWS KEY REDACTED]` |
+| Long mixed-case alphanumeric strings (40+ chars with lowercase + uppercase + digits) | `[SECRET REDACTED]` |
+| US phone numbers | `[PHONE REDACTED]` |
+| Private IP addresses (10.x, 172.16-31.x, 192.168.x) | `[IP REDACTED]` |
+
+### Audit Logging
+
+When content is modified, logs a JSON entry with:
+
+- `action`: `"cache_dlp"` if AIRS DLP signal was cached, `"regex"` otherwise.
+- `cachedDlp`: boolean indicating whether the cached scan had a DLP detection.
+- `toolName`: from event or message.
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      tool_redact_mode: "deterministic" # default
+  entries:
+    prisma-airs:
+      config:
+        tool_redact_mode: "deterministic"  # "deterministic" | "probabilistic" | "off"
 ```
-
-## Synchronous Requirement
-
-This hook **must** be synchronous — the `tool_result_persist` event does not support async handlers. Therefore, this hook cannot call the AIRS API directly. Instead, it:
-
-- Uses regex patterns for common PII types (SSNs, credit cards, emails, API keys, AWS keys, phone numbers, private IPs)
-- Checks the scan cache for DLP signals from the `prisma-airs-tool-guard` hook (which fires before the tool call and can scan asynchronously)
-
-## Redacted Patterns
-
-| Pattern            | Replacement          |
-| ------------------ | -------------------- |
-| SSN (XXX-XX-XXXX)  | `[SSN REDACTED]`     |
-| Credit card        | `[CARD REDACTED]`    |
-| Email address      | `[EMAIL REDACTED]`   |
-| API key / token    | `[API KEY REDACTED]` |
-| AWS access key     | `[AWS KEY REDACTED]` |
-| Long mixed secrets | `[SECRET REDACTED]`  |
-| US phone number    | `[PHONE REDACTED]`   |
-| Private IP address | `[IP REDACTED]`      |
 
 ## Behavior
 
-| Condition         | Result                                        |
-| ----------------- | --------------------------------------------- |
-| PII detected      | Content redacted, modified message returned    |
-| No PII            | No modification — original message persisted   |
-| Synthetic result  | Skipped (guard/repair-generated results)       |
-| Mode = off        | Skipped                                        |
+| Condition | Result |
+|-----------|--------|
+| `tool_redact_mode` = `off` | No-op |
+| `event.isSynthetic` = `true` | No-op |
+| No content items | No-op |
+| Content items with no text type | No-op |
+| Regex matches found | Return modified message with redacted text |
+| No regex matches | No-op |
 
 ## Related Hooks
 
-- [prisma-airs-tool-guard](prisma-airs-tool-guard.md) — Scans tool inputs via AIRS (provides cached DLP signals)
-- [prisma-airs-tools](prisma-airs-tools.md) — Cache-based tool gating
-- [prisma-airs-outbound](prisma-airs-outbound.md) — DLP masking on outbound responses
+- [prisma-airs-outbound](prisma-airs-outbound.md) -- Uses identical DLP regex patterns for outbound response masking.
+- [prisma-airs-audit](prisma-airs-audit.md) -- Populates scan cache that this hook optionally reads for DLP signals.
+- [prisma-airs-tool-guard](prisma-airs-tool-guard.md) -- Pre-execution tool scanning; this hook handles post-execution output redaction.
