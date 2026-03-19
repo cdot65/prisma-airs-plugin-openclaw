@@ -12,13 +12,13 @@ import {
   defaultPromptDetected,
   defaultResponseDetected,
   type ScanResult,
-} from "../../src/scanner";
+} from "../../src/scanner.ts";
 import {
   getCachedScanResultIfMatch,
   cacheScanResult,
   hashMessage,
   clearScanResult,
-} from "../../src/scan-cache";
+} from "../../src/scan-cache.ts";
 
 // Event shape from OpenClaw before_agent_start hook
 interface BeforeAgentStartEvent {

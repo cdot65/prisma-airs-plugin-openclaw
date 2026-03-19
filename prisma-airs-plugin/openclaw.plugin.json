@@ -4,20 +4,7 @@
   "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
   "version": "1.0.0",
   "entrypoint": "index.ts",
-  "hooks": [
-    "hooks/prisma-airs-guard",
-    "hooks/prisma-airs-audit",
-    "hooks/prisma-airs-context",
-    "hooks/prisma-airs-outbound",
-    "hooks/prisma-airs-tools",
-    "hooks/prisma-airs-inbound-block",
-    "hooks/prisma-airs-outbound-block",
-    "hooks/prisma-airs-tool-guard",
-    "hooks/prisma-airs-prompt-scan",
-    "hooks/prisma-airs-tool-redact",
-    "hooks/prisma-airs-llm-audit",
-    "hooks/prisma-airs-tool-audit"
-  ],
+  "hooks": ["hooks"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -142,135 +129,80 @@
       "label": "API Key",
       "help": "Prisma AIRS API key from Strata Cloud Manager",
       "sensitive": true,
-      "placeholder": "Enter your PANW AI Security API key",
-      "group": "Connection",
-      "order": 1,
-      "tags": ["connection", "required"]
+      "placeholder": "Enter your PANW AI Security API key"
     },
     "profile_name": {
       "label": "Profile Name",
       "help": "AIRS security profile from Strata Cloud Manager",
-      "placeholder": "default",
-      "group": "Connection",
-      "order": 2,
-      "tags": ["connection"]
+      "placeholder": "default"
     },
     "app_name": {
       "label": "Application Name",
       "help": "Identifies this application in AIRS scan metadata and audit logs",
-      "placeholder": "openclaw",
-      "group": "Connection",
-      "order": 3,
-      "tags": ["connection"]
+      "placeholder": "openclaw"
     },
-
     "inbound_block_mode": {
       "label": "Inbound Blocking",
-      "help": "Block user messages unless AIRS returns allow. Hard guardrail at the persistence layer.",
-      "group": "Blocking Hooks",
-      "order": 10,
-      "tags": ["blocking", "hook"]
+      "help": "Block user messages unless AIRS returns allow. Hard guardrail at the persistence layer."
     },
     "outbound_block_mode": {
       "label": "Outbound Blocking",
-      "help": "Block assistant messages unless AIRS returns allow. Hard guardrail at the persistence layer.",
-      "group": "Blocking Hooks",
-      "order": 11,
-      "tags": ["blocking", "hook"]
+      "help": "Block assistant messages unless AIRS returns allow. Hard guardrail at the persistence layer."
     },
     "outbound_mode": {
       "label": "Outbound Response Scanning",
-      "help": "Scan outbound responses — blocks or masks content based on AIRS verdict. Supports DLP masking.",
-      "group": "Blocking Hooks",
-      "order": 12,
-      "tags": ["blocking", "hook", "dlp"]
+      "help": "Scan outbound responses — blocks or masks content based on AIRS verdict. Supports DLP masking."
     },
     "tool_guard_mode": {
       "label": "Tool Input Scanning",
-      "help": "Scan tool inputs through AIRS before execution. Blocks tools when threats detected.",
-      "group": "Blocking Hooks",
-      "order": 13,
-      "tags": ["blocking", "hook", "tools"]
+      "help": "Scan tool inputs through AIRS before execution. Blocks tools when threats detected."
     },
     "tool_gating_mode": {
       "label": "Tool Gating (Cache-Based)",
-      "help": "Gate tool calls using cached scan results. Blocks high-risk tools when threats detected.",
-      "group": "Blocking Hooks",
-      "order": 14,
-      "tags": ["blocking", "hook", "tools"]
+      "help": "Gate tool calls using cached scan results. Blocks high-risk tools when threats detected."
     },
-
     "prompt_scan_mode": {
       "label": "Full Context Scanning",
-      "help": "Scan assembled conversation context before prompt build. Catches multi-message injection attacks.",
-      "group": "Scanning Hooks",
-      "order": 20,
-      "tags": ["scanning", "hook"]
+      "help": "Scan assembled conversation context before prompt build. Catches multi-message injection attacks."
     },
     "tool_redact_mode": {
       "label": "Tool Output Redaction",
-      "help": "Redact PII and credentials from tool outputs before session persistence (regex-based).",
-      "group": "Scanning Hooks",
-      "order": 21,
-      "tags": ["scanning", "hook", "dlp", "tools"]
+      "help": "Redact PII and credentials from tool outputs before session persistence (regex-based)."
     },
     "context_injection_mode": {
       "label": "Context Injection",
-      "help": "Inject security threat warnings into agent context on startup.",
-      "group": "Scanning Hooks",
-      "order": 22,
-      "tags": ["scanning", "hook"]
+      "help": "Inject security threat warnings into agent context on startup."
     },
     "reminder_mode": {
       "label": "Security Reminder",
-      "help": "Inject a security scanning reminder when the agent starts.",
-      "group": "Scanning Hooks",
-      "order": 23,
-      "tags": ["scanning", "hook"]
+      "help": "Inject a security scanning reminder when the agent starts."
     },
-
     "audit_mode": {
       "label": "Message Audit Logging",
-      "help": "Scan every inbound message through AIRS and log results. Populates scan cache for other hooks.",
-      "group": "Audit Hooks",
-      "order": 30,
-      "tags": ["audit", "hook"]
+      "help": "Scan every inbound message through AIRS and log results. Populates scan cache for other hooks."
     },
     "llm_audit_mode": {
       "label": "LLM I/O Audit Logging",
-      "help": "Scan exact LLM prompts and responses through AIRS. Definitive audit trail at the model boundary.",
-      "group": "Audit Hooks",
-      "order": 31,
-      "tags": ["audit", "hook"]
+      "help": "Scan exact LLM prompts and responses through AIRS. Definitive audit trail at the model boundary."
     },
     "tool_audit_mode": {
       "label": "Tool Output Audit Logging",
-      "help": "Scan tool execution results through AIRS after completion. Complements tool input scanning.",
-      "group": "Audit Hooks",
-      "order": 32,
-      "tags": ["audit", "hook", "tools"]
+      "help": "Scan tool execution results through AIRS after completion. Complements tool input scanning."
     },
-
     "fail_closed": {
       "label": "Fail Closed",
       "help": "Block messages when AIRS scan fails. Recommended for production security.",
-      "group": "Advanced Settings",
-      "order": 40,
-      "tags": ["advanced", "security"]
+      "advanced": true
     },
     "dlp_mask_only": {
       "label": "DLP Mask Only",
       "help": "Mask sensitive data instead of blocking when DLP is the only violation.",
-      "group": "Advanced Settings",
-      "order": 41,
-      "tags": ["advanced", "dlp"]
+      "advanced": true
     },
     "high_risk_tools": {
       "label": "High Risk Tools",
       "help": "Tools that are blocked on any detected threat. Add tool names to expand the list.",
-      "group": "Advanced Settings",
-      "order": 42,
-      "tags": ["advanced", "tools"]
+      "advanced": true
     }
   },
   "requires": {}

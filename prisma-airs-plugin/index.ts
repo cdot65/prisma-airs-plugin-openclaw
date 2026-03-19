@@ -4,11 +4,12 @@
  * AI Runtime Security scanning via Palo Alto Networks.
  * Uses @cdot65/prisma-airs-sdk for AIRS API communication.
  *
- * Hooks are auto-discovered by OpenClaw from HOOK.md files in the hooks/ directory.
- * Each hook handler self-checks its mode and accesses config via ctx.cfg.
+ * All 12 hooks are registered programmatically via api.on() in register().
+ * HOOK.md files in hooks/ are retained as documentation only.
  *
  * This file provides:
  * - SDK initialization (api_key)
+ * - Hook registration via api.on() (12 hooks, gated by mode config)
  * - Gateway RPC methods: prisma-airs.status, prisma-airs.scan
  * - Agent tool: prisma_airs_scan (always registered)
  * - Probabilistic tools: prisma_airs_scan_prompt, prisma_airs_scan_response, prisma_airs_check_tool_safety
@@ -25,6 +26,20 @@ import {
 } from "./hooks/prisma-airs-outbound/handler";
 import { shouldBlockTool, DEFAULT_HIGH_RISK_TOOLS } from "./hooks/prisma-airs-tools/handler";
 import { getCachedScanResult, cacheScanResult, hashMessage } from "./src/scan-cache";
+
+// Hook handlers
+import guardHandler from "./hooks/prisma-airs-guard/handler";
+import auditHandler from "./hooks/prisma-airs-audit/handler";
+import contextHandler from "./hooks/prisma-airs-context/handler";
+import outboundHandler from "./hooks/prisma-airs-outbound/handler";
+import toolsHandler from "./hooks/prisma-airs-tools/handler";
+import inboundBlockHandler from "./hooks/prisma-airs-inbound-block/handler";
+import outboundBlockHandler from "./hooks/prisma-airs-outbound-block/handler";
+import toolGuardHandler from "./hooks/prisma-airs-tool-guard/handler";
+import promptScanHandler from "./hooks/prisma-airs-prompt-scan/handler";
+import toolRedactHandler from "./hooks/prisma-airs-tool-redact/handler";
+import llmAuditHandler from "./hooks/prisma-airs-llm-audit/handler";
+import toolAuditHandler from "./hooks/prisma-airs-tool-audit/handler";
 
 // Plugin config interface
 interface PrismaAirsConfig extends RawPluginConfig {
@@ -73,6 +88,12 @@ interface PluginApi {
       };
     };
   };
+  on: (
+    event: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handler: (...args: any[]) => any,
+    opts?: { priority?: number }
+  ) => void;
   registerGatewayMethod: (
     name: string,
     handler: (
@@ -143,10 +164,112 @@ export default function register(api: PluginApi): void {
     `Prisma AIRS plugin loaded (audit=${modes.audit}, context=${modes.context}, outbound=${modes.outbound}, toolGating=${modes.toolGating}, reminder=${modes.reminder})`
   );
 
-  // ── HOOKS ────────────────────────────────────────────────────────────
-  // All 12 hooks are auto-discovered by OpenClaw from HOOK.md files.
-  // Each handler checks its own mode and accesses config via ctx.cfg.
-  // No api.on() registrations needed.
+  // ── HOOKS (registered via api.on()) ──────────────────────────────────
+  // Each handler is imported from hooks/*/handler.ts and wired up here.
+  // Handlers receive (event, ctx) where ctx includes cfg: api.config.
+  // HOOK.md files retained as documentation only.
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hookCtx = (ctx: any) => ({ ...ctx, cfg: api.config });
+  let hookCount = 0;
+
+  // 1. Guard — security reminder injection (before_agent_start)
+  if (config.reminder_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_agent_start", (event: any, ctx: any) => guardHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 2. Audit — inbound message scanning + cache (message_received)
+  if (modes.audit !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("message_received", (event: any, ctx: any) => auditHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 3. Context — threat warning injection (before_agent_start)
+  if (modes.context !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_agent_start", (event: any, ctx: any) => contextHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 4. Outbound — response scanning + DLP masking (message_sending)
+  if (modes.outbound !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("message_sending", (event: any, ctx: any) => outboundHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 5. Tools — cache-based tool gating (before_tool_call)
+  if (modes.toolGating !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_tool_call", (event: any, ctx: any) => toolsHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 6. Inbound Block — hard guardrail for user messages (before_message_write)
+  if (config.inbound_block_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_message_write", (event: any, ctx: any) =>
+      inboundBlockHandler(event, hookCtx(ctx))
+    );
+    hookCount++;
+  }
+
+  // 7. Outbound Block — hard guardrail for assistant messages (before_message_write)
+  if (config.outbound_block_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_message_write", (event: any, ctx: any) =>
+      outboundBlockHandler(event, hookCtx(ctx))
+    );
+    hookCount++;
+  }
+
+  // 8. Tool Guard — active AIRS scanning of tool inputs (before_tool_call)
+  if (config.tool_guard_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_tool_call", (event: any, ctx: any) => toolGuardHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 9. Prompt Scan — full context scanning (before_prompt_build)
+  if (config.prompt_scan_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("before_prompt_build", (event: any, ctx: any) => promptScanHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 10. Tool Redact — sync regex DLP on tool outputs (tool_result_persist)
+  if (config.tool_redact_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("tool_result_persist", (event: any, ctx: any) => toolRedactHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  // 11. LLM Audit — scan LLM I/O (llm_input + llm_output)
+  if (config.llm_audit_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("llm_input", (event: any, ctx: any) =>
+      llmAuditHandler({ ...event, hookEvent: "llm_input" }, hookCtx(ctx))
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("llm_output", (event: any, ctx: any) =>
+      llmAuditHandler({ ...event, hookEvent: "llm_output" }, hookCtx(ctx))
+    );
+    hookCount += 2;
+  }
+
+  // 12. Tool Audit — scan tool outputs (after_tool_call)
+  if (config.tool_audit_mode !== "off") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api.on("after_tool_call", (event: any, ctx: any) => toolAuditHandler(event, hookCtx(ctx)));
+    hookCount++;
+  }
+
+  if (hookCount > 0) {
+    api.logger.info(`Registered ${hookCount} hook(s) via api.on()`);
+  }
 
   // ── PROBABILISTIC TOOLS ──────────────────────────────────────────────
 

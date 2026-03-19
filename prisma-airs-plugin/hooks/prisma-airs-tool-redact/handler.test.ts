@@ -36,8 +36,8 @@ vi.mock("../../src/scanner", () => ({
   }),
 }));
 
-import { getCachedScanResult } from "../../src/scan-cache";
-import { defaultPromptDetected, defaultResponseDetected } from "../../src/scanner";
+import { getCachedScanResult } from "../../src/scan-cache.ts";
+import { defaultPromptDetected, defaultResponseDetected } from "../../src/scanner.ts";
 const mockGetCached = vi.mocked(getCachedScanResult);
 
 describe("prisma-airs-tool-redact handler", () => {

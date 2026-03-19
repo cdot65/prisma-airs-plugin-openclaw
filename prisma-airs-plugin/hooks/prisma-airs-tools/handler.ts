@@ -5,8 +5,8 @@
  * CAN BLOCK via { block: true, blockReason: "..." }
  */
 
-import { getCachedScanResult } from "../../src/scan-cache";
-import type { ScanResult } from "../../src/scanner";
+import { getCachedScanResult } from "../../src/scan-cache.ts";
+import type { ScanResult } from "../../src/scanner.ts";
 
 // Event shape from OpenClaw before_tool_call hook
 interface BeforeToolCallEvent {

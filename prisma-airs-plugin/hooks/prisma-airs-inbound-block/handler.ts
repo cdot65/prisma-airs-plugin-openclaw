@@ -5,7 +5,7 @@
  * Blocked messages are never persisted to conversation history.
  */
 
-import { scan } from "../../src/scanner";
+import { scan } from "../../src/scanner.ts";
 
 // Event shape from OpenClaw before_message_write hook
 interface MessageWriteEvent {

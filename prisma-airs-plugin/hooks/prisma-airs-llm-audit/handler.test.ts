@@ -31,7 +31,7 @@ vi.mock("../../src/scanner", () => ({
   }),
 }));
 
-import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner";
+import { scan, defaultPromptDetected, defaultResponseDetected } from "../../src/scanner.ts";
 const mockScan = vi.mocked(scan);
 
 describe("prisma-airs-llm-audit handler", () => {

@@ -13,7 +13,7 @@
  * BLOCKS unless AIRS action is "allow". DLP-only results masked when dlp_mask_only is true.
  */
 
-import { scan, type ScanResult } from "../../src/scanner";
+import { scan, type ScanResult } from "../../src/scanner.ts";
 
 // Event shape from OpenClaw message_sending hook
 interface MessageSendingEvent {

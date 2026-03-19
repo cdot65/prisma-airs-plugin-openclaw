@@ -2,6 +2,10 @@
 
 All 12 hooks that secure the OpenClaw agent lifecycle.
 
+## Registration
+
+All hooks are registered **automatically** via `api.on()` when the plugin loads — no extra configuration needed. Each hook is gated by its mode config field: set a mode to `"off"` to disable that hook entirely. The `HOOK.md` files in the plugin's `hooks/` directory serve as documentation only.
+
 ## Hook Summary
 
 | Hook | Event | Config Field | Can Block | Default Mode |

@@ -6,8 +6,8 @@
  * Self-contained: resolves modes from plugin config, no external registration needed.
  */
 
-import type { FeatureMode, ResolvedModes } from "../../src/config";
-import { resolveAllModes, type RawPluginConfig } from "../../src/config";
+import type { FeatureMode, ResolvedModes } from "../../src/config.ts";
+import { resolveAllModes, type RawPluginConfig } from "../../src/config.ts";
 
 // Hook context from OpenClaw
 interface HookContext {

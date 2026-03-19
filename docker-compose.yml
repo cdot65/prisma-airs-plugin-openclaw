@@ -8,6 +8,8 @@ services:
     environment:
       - PANW_AI_SEC_API_KEY=${PANW_AI_SEC_API_KEY:-}
       - PANW_AI_SEC_PROFILE=${PANW_AI_SEC_PROFILE:-}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - LIVE_CONFIG=/home/node/.openclaw/openclaw.json
     volumes:
       - openclaw-data:/home/node/.openclaw
