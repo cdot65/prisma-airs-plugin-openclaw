@@ -1,157 +1,63 @@
 # prisma-airs-audit
 
-Audit logging hook for all inbound messages with scan caching.
+Fire-and-forget audit logging of inbound messages with scan cache population.
 
 ## Overview
 
-| Property      | Value                          |
-| ------------- | ------------------------------ |
-| **Event**     | `message_received`             |
-| **Emoji**     | :clipboard:                    |
-| **Can Block** | No                             |
-| **Config**    | `audit_mode`, `fail_closed` |
+| Field | Value |
+|-------|-------|
+| Event | `message_received` |
+| Config field | `audit_mode` |
+| Can Block | No |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Scans every inbound user message through AIRS and logs the result. Caches the scan result (keyed by session + message hash) so downstream hooks (`prisma-airs-context`, `prisma-airs-tools`, `prisma-airs-tool-redact`) can reuse it without redundant API calls.
 
-1. Scans every inbound message using Prisma AIRS
-2. Caches results for downstream hooks (`before_agent_start`, `before_tool_call`)
-3. Logs scan results for audit compliance
+## How It Works
+
+1. Reads `audit_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Validates `event.content` is a non-empty string.
+3. Builds session key: `ctx.conversationId` or fallback `{event.from}_{ctx.channelId}`.
+4. Calls `scan({ prompt: content, profileName, appName, appUser })` where `appUser` is `event.metadata.senderId` or `event.from`.
+5. Hashes the message content and caches the result via `cacheScanResult(sessionKey, result, msgHash)`.
+6. Logs a structured JSON audit entry to stdout with: action, severity, categories, scanId, reportId, latencyMs, promptDetected.
+
+### Error Handling
+
+On scan failure:
+
+- Logs error to stderr.
+- If `fail_closed` is `true` (default), caches a synthetic block result with `action: "block"`, `severity: "CRITICAL"`, `categories: ["scan-failure"]`, `hasError: true`.
+- If `fail_closed` is `false`, does nothing (no cache entry).
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      audit_mode: "deterministic" # default
-      fail_closed: true # Block on scan failure (default)
-      profile_name: "default"
-      app_name: "openclaw"
+  entries:
+    prisma-airs:
+      config:
+        audit_mode: "deterministic"   # "deterministic" | "probabilistic" | "off"
+        profile_name: "default"
+        app_name: "openclaw"
+        fail_closed: true
 ```
 
-## Audit Log Format
+## Behavior
 
-```json
-{
-  "event": "prisma_airs_inbound_scan",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "senderId": "user@example.com",
-  "senderName": "John Doe",
-  "channel": "slack",
-  "provider": "slack",
-  "messageId": "msg_xyz789",
-  "action": "block",
-  "severity": "HIGH",
-  "categories": ["prompt_injection"],
-  "scanId": "scan_abc123",
-  "reportId": "report_xyz789",
-  "latencyMs": 145,
-  "promptDetected": {
-    "injection": true,
-    "dlp": false,
-    "urlCats": false,
-    "toxicContent": false,
-    "maliciousCode": false,
-    "agent": false,
-    "topicViolation": false
-  }
-}
-```
-
-## Event Shape
-
-```typescript
-interface MessageReceivedEvent {
-  from: string;
-  content: string;
-  timestamp?: number;
-  metadata?: {
-    to?: string;
-    provider?: string;
-    surface?: string;
-    threadId?: string;
-    originatingChannel?: string;
-    originatingTo?: string;
-    messageId?: string;
-    senderId?: string;
-    senderName?: string;
-    senderUsername?: string;
-    senderE164?: string;
-  };
-}
-```
-
-## Handler Logic
-
-```typescript
-const handler = async (event, ctx) => {
-  const config = getPluginConfig(ctx);
-  if (!config.enabled) return;
-
-  const sessionKey = ctx.conversationId || `${event.from}_${ctx.channelId}`;
-
-  try {
-    const result = await scan({
-      prompt: event.content,
-      profileName: config.profileName,
-      appName: config.appName,
-      appUser: event.metadata?.senderId,
-    });
-
-    // Cache for downstream hooks
-    const msgHash = hashMessage(event.content);
-    cacheScanResult(sessionKey, result, msgHash);
-
-    // Audit log
-    console.log(JSON.stringify({ event: "prisma_airs_inbound_scan", ... }));
-
-  } catch (err) {
-    // If fail-closed, cache synthetic "block" result
-    if (config.failClosed) {
-      cacheScanResult(sessionKey, {
-        action: "block",
-        severity: "CRITICAL",
-        categories: ["scan-failure"],
-        error: err.message,
-      });
-    }
-  }
-};
-```
-
-## Limitations
-
-!!! warning "Fire-and-Forget"
-`message_received` is async and cannot block messages. This hook only logs and caches—it relies on downstream hooks for enforcement.
-
-## Cache Details
-
-| Property | Value                                    |
-| -------- | ---------------------------------------- |
-| **TTL**  | 30 seconds                               |
-| **Key**  | Session ID or `${sender}_${channel}`     |
-| **Hash** | Message content hash for stale detection |
-
-## Fail-Closed Behavior
-
-When `fail_closed: true` (default) and scan fails:
-
-1. Error is logged
-2. Synthetic "block" result cached:
-   ```json
-   {
-     "action": "block",
-     "severity": "CRITICAL",
-     "categories": ["scan-failure"],
-     "error": "Scan failed: connection timeout"
-   }
-   ```
-3. Downstream hooks will see this as a threat
+| Condition | Result |
+|-----------|--------|
+| `audit_mode` = `off` | No-op |
+| Empty or non-string content | No-op |
+| AIRS returns result | Cache result, log audit entry |
+| AIRS scan fails + `fail_closed=true` | Cache synthetic block result |
+| AIRS scan fails + `fail_closed=false` | Log error only |
 
 ## Related Hooks
 
-- [prisma-airs-context](prisma-airs-context.md) - Uses cached results for warning injection
-- [prisma-airs-tools](prisma-airs-tools.md) - Uses cached results for tool blocking
+- [prisma-airs-context](prisma-airs-context.md) -- Reads cached scan result; falls back to fresh scan on cache miss.
+- [prisma-airs-tools](prisma-airs-tools.md) -- Reads cached scan result for tool gating decisions.
+- [prisma-airs-tool-redact](prisma-airs-tool-redact.md) -- Reads cached scan result for DLP signal detection.

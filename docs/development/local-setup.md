@@ -6,247 +6,150 @@ Set up the plugin for local development and testing.
 
 - Node.js 18+
 - npm
-- OpenClaw CLI installed
-- Prisma AIRS API key (for live testing)
+- Git
+- Docker (for E2E testing)
+- Prisma AIRS API key from Strata Cloud Manager (for live/E2E testing)
 
 ## Clone and Install
 
 ```bash
-# Clone repository
 git clone https://github.com/cdot65/prisma-airs-plugin-openclaw.git
 cd prisma-airs-plugin-openclaw/prisma-airs-plugin
-
-# Install dependencies
-npm install
+npm ci
 ```
 
-## Development Commands
+## Verify Setup
 
 ```bash
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
-npm run lint:fix
-
-# Formatting
-npm run format
-npm run format:check
-
-# Tests
-npm test
-npm run test:watch
-npm run test:coverage
-
-# Full check suite
 npm run check
 ```
 
-## Install to OpenClaw
+This runs typecheck, lint, format check, and all tests. If everything passes, the environment is ready.
 
-### From Local Directory
+## Available Scripts
 
-```bash
-# Build and install
-openclaw plugins install .
+All scripts run from `prisma-airs-plugin/`:
 
-# Restart gateway
-openclaw gateway restart
-```
-
-### Verify Installation
-
-```bash
-# Check plugin loaded
-openclaw plugins list | grep prisma
-
-# Check status (will show missing API key)
-openclaw prisma-airs
-```
-
-## Configure API Key
-
-Set the API key in plugin config (via gateway web UI or config file):
-
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      api_key: "your-api-key"
-```
-
-## Test the Plugin
-
-### CLI Scan
-
-```bash
-openclaw prisma-airs-scan "test message"
-```
-
-### RPC Call
-
-```bash
-openclaw gateway call prisma-airs.scan --params '{"prompt":"test"}'
-```
-
-### Check Status
-
-```bash
-openclaw prisma-airs
-```
-
-Expected output:
-
-```
-Prisma AIRS Plugin Status
--------------------------
-Version: 0.2.5
-Profile: default
-App Name: openclaw
-Reminder: true
-API Key: configured
-```
-
-## Development Workflow
-
-### 1. Make Changes
-
-Edit files in `prisma-airs-plugin/`.
-
-### 2. Run Tests
-
-```bash
-npm test
-```
-
-### 3. Reinstall Plugin
-
-```bash
-openclaw plugins uninstall prisma-airs
-openclaw plugins install .
-openclaw gateway restart
-```
-
-### 4. Test Changes
-
-```bash
-openclaw prisma-airs-scan "test your changes"
-```
-
-## Debugging
-
-### View Gateway Logs
-
-```bash
-# macOS/Linux
-tail -f ~/.openclaw/logs/gateway.log
-
-# Or use OpenClaw CLI
-openclaw gateway logs
-```
-
-### Enable Debug Logging
-
-Set log level in OpenClaw config:
-
-```yaml
-logging:
-  level: debug
-```
-
-### Test Hook Output
-
-Hooks log to console:
-
-```bash
-# View hook audit logs
-grep "prisma_airs" ~/.openclaw/logs/gateway.log
-```
-
-## Testing Without API Key
-
-For unit tests, the API is mocked. For manual testing without an API key:
-
-```bash
-# Will return error response
-openclaw prisma-airs-scan "test"
-
-# Expected output
-[--] LOW
-Action: warn
-Categories: api_error
-Error: API key not configured. Set it in plugin config.
-```
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run tests once (`vitest run`) |
+| `npm run test:watch` | Watch mode |
+| `npm run test:coverage` | Tests with coverage report |
+| `npm run typecheck` | TypeScript type check (`tsc --noEmit`) |
+| `npm run lint` | ESLint |
+| `npm run lint:fix` | ESLint with auto-fix |
+| `npm run format` | Prettier write |
+| `npm run format:check` | Prettier check |
+| `npm run check` | All of the above in sequence |
 
 ## Project Structure
 
 ```
 prisma-airs-plugin-openclaw/
-├── prisma-airs-plugin/      # Plugin source
-│   ├── index.ts             # Plugin entrypoint
-│   ├── package.json
+├── prisma-airs-plugin/           # Plugin source
+│   ├── index.ts                  # Plugin entrypoint (register, commands, RPC)
+│   ├── package.json              # v1.0.0, depends on @cdot65/prisma-airs-sdk
+│   ├── openclaw.plugin.json      # Plugin manifest + config schema (16 fields)
 │   ├── tsconfig.json
 │   ├── vitest.config.ts
-│   ├── src/                 # Core modules
-│   │   ├── scanner.ts
-│   │   └── scan-cache.ts
-│   └── hooks/               # Hook handlers
+│   ├── src/
+│   │   ├── scanner.ts            # SDK adapter: ScanResult, scan(), mapScanResponse()
+│   │   ├── scanner.test.ts
+│   │   ├── scan-cache.ts         # Result caching (30s TTL)
+│   │   ├── scan-cache.test.ts
+│   │   ├── config.ts             # FeatureMode, resolveMode(), resolveAllModes()
+│   │   └── config.test.ts
+│   └── hooks/                    # 12 hook handlers, each with handler.ts + handler.test.ts
 │       ├── prisma-airs-guard/
 │       ├── prisma-airs-audit/
 │       ├── prisma-airs-context/
 │       ├── prisma-airs-outbound/
-│       └── prisma-airs-tools/
-├── docs/                    # Documentation (MkDocs)
-├── docker/                  # Dockerfile for base image
-├── Makefile                 # 25 dev/build/publish targets
-├── mkdocs.yml               # MkDocs configuration
-├── README.md
-├── RELEASE_NOTES.md
-└── .github/workflows/       # CI/CD
+│       ├── prisma-airs-tools/
+│       ├── prisma-airs-inbound-block/
+│       ├── prisma-airs-outbound-block/
+│       ├── prisma-airs-tool-guard/
+│       ├── prisma-airs-prompt-scan/
+│       ├── prisma-airs-tool-redact/
+│       ├── prisma-airs-llm-audit/
+│       └── prisma-airs-tool-audit/
+├── docs/                         # MkDocs documentation
+├── docker/                       # Docker E2E infrastructure
+│   ├── Dockerfile.e2e
+│   ├── entrypoint.sh
+│   └── openclaw-e2e.json
+├── e2e/
+│   └── smoke-test.sh
+├── docker-compose.yml
+└── mkdocs.yml
+```
+
+## Dependencies
+
+Runtime:
+
+- `@cdot65/prisma-airs-sdk` ^0.6.7 -- AIRS API client (HTTP, auth, retries, content validation)
+
+Dev:
+
+- `typescript` ^5.0.0
+- `vitest` ^2.0.0
+- `eslint` ^9.0.0 with `@typescript-eslint`
+- `prettier` ^3.0.0
+- `husky` ^9.0.0 + `lint-staged` ^15.0.0
+
+## Docker E2E Testing
+
+For live API testing with Docker:
+
+```bash
+# Set API key
+export PANW_AI_SEC_API_KEY="your-api-key"
+
+# Build and start gateway
+docker compose up -d --build
+
+# Run smoke tests
+docker compose exec gateway bash /home/node/e2e/smoke-test.sh
+
+# Stop
+docker compose down
+```
+
+See the [Docker Guide](../guides/docker.md) for details.
+
+## Testing Without an API Key
+
+Unit tests mock the SDK and do not require an API key. Only E2E smoke tests need a live key.
+
+```bash
+# Unit tests work without any API key
+npm test
 ```
 
 ## Common Issues
 
-### Plugin Not Loading
+### npm ci fails
+
+Ensure Node.js 18+:
 
 ```bash
-# Check for errors
-openclaw plugins list
-
-# Reinstall
-openclaw plugins uninstall prisma-airs
-openclaw plugins install .
-openclaw gateway restart
+node --version
 ```
 
-### TypeScript Errors
+### TypeScript errors
 
 ```bash
-# Run type check
 npm run typecheck
-
-# Fix common issues
-npm run lint:fix
 ```
 
-### Tests Failing
+Fix reported issues, then re-run.
+
+### Tests failing
 
 ```bash
-# Run with verbose output
 npm test -- --reporter=verbose
-
-# Run specific test
-npm test -- --filter "test name"
 ```
 
-### API Key Not Working
+### Pre-commit hook fails
 
-```bash
-# Check gateway has key
-openclaw prisma-airs
-# Should show: API Key: configured
-
-# If showing MISSING, set it in plugin config:
-# plugins.entries.prisma-airs.config.api_key
-```
+The hook runs typecheck + lint-staged + tests. Fix the reported issue and commit again. Do not skip hooks.

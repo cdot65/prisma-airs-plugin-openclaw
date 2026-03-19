@@ -1,18 +1,22 @@
 # Installation
 
-## Prerequisites
+## Requirements
 
-- **Node.js 18+** - Required for the plugin runtime
-- **OpenClaw v2026.2.1+** - Compatible gateway version
-- **Prisma AIRS API Key** - Obtained from Strata Cloud Manager
+- **Node.js 18+** (`engines.node >= 18.0.0`)
+- **OpenClaw v2026.2.1+** — compatible gateway version
+- **Prisma AIRS API Key** — obtained from [Strata Cloud Manager](https://stratacloudmanager.paloaltonetworks.com)
 
 ## Install from npm
-
-The recommended installation method:
 
 ```bash
 openclaw plugins install @cdot65/prisma-airs
 ```
+
+The plugin ships as ESM (`"type": "module"`) with a single runtime dependency:
+
+| Dependency                | Purpose                        |
+| ------------------------- | ------------------------------ |
+| `@cdot65/prisma-airs-sdk` | AIRS API communication (HTTP, auth, retries) |
 
 ## Install from Source
 
@@ -33,9 +37,9 @@ openclaw plugins install .
 ## API Key Setup
 
 1. Log in to [Strata Cloud Manager](https://stratacloudmanager.paloaltonetworks.com)
-2. Navigate to **Settings** → **Access Keys**
+2. Navigate to **Settings** > **Access Keys**
 3. Create a new access key with AI Security permissions
-4. Set the API key in plugin config (via gateway web UI or config file):
+4. Set the API key in plugin config (via gateway web UI or YAML config file):
 
 ```yaml
 plugins:
@@ -43,6 +47,9 @@ plugins:
     config:
       api_key: "your-api-key"
 ```
+
+!!! tip "Web UI"
+    The API key field is marked as sensitive in the gateway web UI — it will be hidden after entry.
 
 ## Restart Gateway
 
@@ -54,15 +61,10 @@ openclaw gateway restart
 
 ## Verify Installation
 
+Run the `prisma-airs` CLI command to check plugin status:
+
 ```bash
-# Check plugin loaded
-openclaw plugins list | grep prisma
-
-# Check status
 openclaw prisma-airs
-
-# Test scan
-openclaw prisma-airs-scan "hello world"
 ```
 
 Expected output:
@@ -70,37 +72,53 @@ Expected output:
 ```
 Prisma AIRS Plugin Status
 -------------------------
-Version: 0.2.5
+Version: 1.0.0
 Profile: default
 App Name: openclaw
-Reminder: true
+Modes:
+  Reminder: on
+  Audit: deterministic
+  Context: deterministic
+  Outbound: deterministic
+  Tool Gating: deterministic
 API Key: configured
+```
+
+!!! note "Version"
+    The current plugin version is **1.0.0**. If you see an older version, reinstall from npm.
+
+You can also list installed plugins:
+
+```bash
+openclaw plugins list | grep prisma
 ```
 
 ## Troubleshooting
 
-### Plugin not found
+### Plugin Not Found
 
 ```bash
-# Reinstall
 openclaw plugins uninstall prisma-airs
 openclaw plugins install @cdot65/prisma-airs
 openclaw gateway restart
 ```
 
-### API Key not configured
+### API Key Not Configured
 
 ```bash
-# Check status
 openclaw prisma-airs
 # Should show: API Key: MISSING
-# Set it in plugin config via gateway web UI or config file
 ```
 
-### Connection errors
+If missing, set `api_key` in plugin config via the gateway web UI or YAML config file.
 
-Verify network access to the AIRS API:
+### Connection Errors
+
+Verify network access to the AIRS API endpoint:
 
 ```bash
 curl -I https://service.api.aisecurity.paloaltonetworks.com/v1/scan/sync/request
 ```
+
+!!! warning "Fail Closed"
+    By default `fail_closed: true` — if the AIRS API is unreachable, all blocking hooks will reject messages. Set `fail_closed: false` to allow messages through on API failure (not recommended for production).

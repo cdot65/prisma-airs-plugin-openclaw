@@ -1,334 +1,254 @@
 # Testing
 
-Guide to testing the Prisma AIRS plugin.
+Testing strategy, commands, and patterns for the Prisma AIRS plugin.
 
-## Running Tests
-
-### Basic Commands
+## Quick Reference
 
 ```bash
 cd prisma-airs-plugin
 
-# Run tests once
-npm test
-
-# Watch mode (re-run on changes)
-npm run test:watch
-
-# With coverage report
-npm run test:coverage
+npm test                # run tests once (vitest run)
+npm run test:watch      # re-run on changes
+npm run test:coverage   # with coverage report
+npm run check           # typecheck + lint + format + tests
 ```
 
-### Full Check Suite
+`npm run check` runs in order:
 
-```bash
-npm run check
-```
+1. `npm run typecheck` -- `tsc --noEmit`
+2. `npm run lint` -- ESLint
+3. `npm run format:check` -- Prettier
+4. `npm run test` -- `vitest run`
 
-Runs in order:
+## Test File Locations
 
-1. TypeScript type checking (`npm run typecheck`)
-2. ESLint (`npm run lint`)
-3. Prettier (`npm run format:check`)
-4. Tests (`npm test`)
-
-## Test Structure
-
-### Directory Layout
+Tests live next to their source files:
 
 ```
 prisma-airs-plugin/
 ├── src/
 │   ├── scanner.ts
-│   ├── scanner.test.ts        # Scanner unit tests
+│   ├── scanner.test.ts
 │   ├── scan-cache.ts
-│   └── scan-cache.test.ts     # Cache unit tests
+│   ├── scan-cache.test.ts
+│   ├── config.ts
+│   └── config.test.ts
 └── hooks/
     ├── prisma-airs-guard/
     │   ├── handler.ts
-    │   └── handler.test.ts    # Hook unit tests
-    └── ... other hooks
+    │   └── handler.test.ts
+    ├── prisma-airs-audit/
+    │   ├── handler.ts
+    │   └── handler.test.ts
+    ├── prisma-airs-context/
+    │   └── handler.test.ts
+    ├── prisma-airs-outbound/
+    │   └── handler.test.ts
+    ├── prisma-airs-tools/
+    │   └── handler.test.ts
+    ├── prisma-airs-inbound-block/
+    │   └── handler.test.ts
+    ├── prisma-airs-outbound-block/
+    │   └── handler.test.ts
+    ├── prisma-airs-tool-guard/
+    │   └── handler.test.ts
+    ├── prisma-airs-prompt-scan/
+    │   └── handler.test.ts
+    ├── prisma-airs-tool-redact/
+    │   └── handler.test.ts
+    ├── prisma-airs-llm-audit/
+    │   └── handler.test.ts
+    └── prisma-airs-tool-audit/
+        └── handler.test.ts
 ```
 
-### Test File Naming
+Total: 15 test files, 164+ tests.
 
-- Place tests next to source files
-- Name: `{source}.test.ts`
+## Framework
 
-## Writing Tests
-
-### Basic Test
+[Vitest](https://vitest.dev/) with the following imports:
 
 ```typescript
-import { describe, it, expect } from "vitest";
-import { scan } from "./scanner";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+```
 
-describe("scan", () => {
-  it("should return result for valid input", async () => {
-    const result = await scan({ prompt: "hello" });
-    expect(result).toBeDefined();
-    expect(result.action).toBeDefined();
-  });
+## Mocking Patterns
+
+### Scanner Tests: Mock the SDK
+
+Scanner tests mock `@cdot65/prisma-airs-sdk` at the module level:
+
+```typescript
+vi.mock("@cdot65/prisma-airs-sdk", () => ({
+  globalConfiguration: { initialized: true },
+  Scanner: vi.fn().mockImplementation(() => ({
+    syncScan: vi.fn().mockResolvedValue({
+      scan_id: "scan_123",
+      action: "allow",
+      category: "benign",
+    }),
+  })),
+  Content: vi.fn(),
+  AISecSDKException: class extends Error {},
+}));
+```
+
+### Hook Tests: Mock the Scanner Module
+
+Hook tests mock `../../src/scanner`:
+
+```typescript
+vi.mock("../../src/scanner", () => ({
+  scan: vi.fn().mockResolvedValue({
+    action: "allow",
+    severity: "SAFE",
+    categories: ["safe"],
+    scanId: "scan_123",
+    reportId: "report_456",
+    profileName: "default",
+    promptDetected: {
+      injection: false, dlp: false, urlCats: false,
+      toxicContent: false, maliciousCode: false,
+      agent: false, topicViolation: false,
+    },
+    responseDetected: {
+      dlp: false, urlCats: false, dbSecurity: false,
+      toxicContent: false, maliciousCode: false,
+      agent: false, ungrounded: false, topicViolation: false,
+    },
+    latencyMs: 100,
+    timeout: false,
+    hasError: false,
+    contentErrors: [],
+  }),
+}));
+```
+
+### Cache-Based Hook Tests: Mock the Scan Cache
+
+Hooks that read from cache (tools, tool-redact) mock `../../src/scan-cache`:
+
+```typescript
+vi.mock("../../src/scan-cache", () => ({
+  getCachedScanResult: vi.fn(),
+  getCachedScanResultIfMatch: vi.fn(),
+  cacheScanResult: vi.fn(),
+  hashMessage: vi.fn().mockReturnValue("hash123"),
+  clearScanResult: vi.fn(),
+}));
+```
+
+### Outbound Test: Mock Factory for Helpers
+
+Outbound handler tests need explicit mock factories for exported helper functions:
+
+```typescript
+vi.mock("../../src/scanner", () => {
+  return {
+    scan: vi.fn(),
+    // Must include helpers used by the handler
+  };
 });
 ```
 
-### Mocking fetch
+### Time Mocking for Cache TTL
+
+```typescript
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+it("should expire after TTL", () => {
+  cacheScanResult("session", result, "hash");
+  vi.advanceTimersByTime(31_000); // past 30s TTL
+  expect(getCachedScanResult("session")).toBeUndefined();
+});
+```
+
+## Writing a Hook Test
+
+Standard pattern:
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// Mock fetch globally
-global.fetch = vi.fn();
-
-describe("scan", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it("should handle successful API response", async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        scan_id: "scan_123",
-        action: "allow",
-        category: "benign",
-      }),
-    } as Response);
-
-    const result = await scan({ prompt: "test" });
-
-    expect(result.action).toBe("allow");
-    expect(result.scanId).toBe("scan_123");
-  });
-
-  it("should handle API error", async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: async () => "Internal Server Error",
-    } as Response);
-
-    const result = await scan({ prompt: "test" });
-
-    expect(result.action).toBe("warn");
-    expect(result.error).toContain("API error 500");
-  });
-});
-```
-
-### Testing SDK Initialization
-
-```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-describe("scan with SDK init", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it("should return error when SDK not initialized", async () => {
-    // Mock globalConfiguration.initialized = false
-    const { scan } = await import("./scanner");
-    const result = await scan({ prompt: "test" });
-
-    expect(result.error).toBe(
-      "SDK not initialized. Call init({ apiKey }) in register() first."
-    );
-  });
-});
-```
-
-### Testing Cache
-
-```typescript
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  cacheScanResult,
-  getCachedScanResult,
-  clearScanResult,
-} from './scan-cache';
-
-describe('scan-cache', () => {
-  beforeEach(() => {
-    clearScanResult('test-session');
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('should cache and retrieve result', () => {
-    const result = { action: 'allow', ... };
-    cacheScanResult('test-session', result);
-
-    const cached = getCachedScanResult('test-session');
-    expect(cached).toEqual(result);
-  });
-
-  it('should expire after TTL', () => {
-    const result = { action: 'allow', ... };
-    cacheScanResult('test-session', result);
-
-    // Advance time past TTL (30 seconds)
-    vi.advanceTimersByTime(31_000);
-
-    const cached = getCachedScanResult('test-session');
-    expect(cached).toBeUndefined();
-  });
-});
-```
-
-### Testing Hooks
-
-```typescript
-import { describe, it, expect, vi } from "vitest";
 import handler from "./handler";
 
-describe("prisma-airs-context", () => {
-  it("should inject warning when threat detected", async () => {
-    // Mock cache to return threat
-    vi.mock("../../src/scan-cache", () => ({
-      getCachedScanResultIfMatch: () => ({
-        action: "block",
-        categories: ["prompt_injection"],
-      }),
-      cacheScanResult: vi.fn(),
-      hashMessage: () => "hash123",
-    }));
+// Mock dependencies
+vi.mock("../../src/scanner", () => ({ scan: vi.fn() }));
 
-    const event = {
-      message: { content: "malicious input" },
-    };
-    const ctx = { conversationId: "conv-123" };
+describe("prisma-airs-<name>", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
+  it("should skip when mode is off", async () => {
+    const result = await handler(event, ctxWithMode("off"));
+    expect(result).toBeUndefined();
+  });
+
+  it("should allow safe content", async () => {
+    mockScanAllow();
     const result = await handler(event, ctx);
-
-    expect(result.prependContext).toContain("CRITICAL SECURITY ALERT");
-    expect(result.prependContext).toContain("prompt_injection");
+    expect(result).toBeUndefined();
   });
 
-  it("should return nothing for safe content", async () => {
-    vi.mock("../../src/scan-cache", () => ({
-      getCachedScanResultIfMatch: () => ({
-        action: "allow",
-        severity: "SAFE",
-        categories: ["safe"],
-      }),
-      clearScanResult: vi.fn(),
-      hashMessage: () => "hash123",
-    }));
-
-    const event = { message: { content: "hello" } };
-    const ctx = { conversationId: "conv-123" };
-
+  it("should block threats", async () => {
+    mockScanBlock();
     const result = await handler(event, ctx);
-
-    expect(result).toBeUndefined();
+    expect(result).toHaveProperty("block", true);
   });
 });
 ```
 
-## Test Categories
+## Running Specific Tests
 
-### Unit Tests
+```bash
+# Filter by test name
+npm test -- --filter "should handle API error"
 
-Test individual functions in isolation.
+# Filter by file
+npm test -- scanner.test.ts
 
-```typescript
-// scanner.test.ts
-describe("parseResponse", () => {
-  it("should map AIRS response to ScanResult", () => {
-    const result = parseResponse(airsResponse, request, 100);
-    expect(result.action).toBe("block");
-  });
-});
-```
-
-### Integration Tests
-
-Test multiple components together.
-
-```typescript
-// Test cache + handler
-describe("context hook with cache", () => {
-  it("should use cached result from audit hook", async () => {
-    // Simulate audit hook caching
-    cacheScanResult("session", scanResult, "hash");
-
-    // Run context hook
-    const result = await contextHandler(event, ctx);
-
-    // Verify it used cached result
-    expect(result.prependContext).toContain("ALERT");
-  });
-});
-```
-
-### Edge Cases
-
-```typescript
-describe("edge cases", () => {
-  it("should handle empty content", async () => {
-    const result = await handler({ content: "" }, ctx);
-    expect(result).toBeUndefined();
-  });
-
-  it("should handle null message", async () => {
-    const result = await handler({ message: null }, ctx);
-    expect(result).toBeUndefined();
-  });
-
-  it("should handle unicode content", async () => {
-    const result = await handler({ content: "你好 🎉" }, ctx);
-    expect(result).toBeDefined();
-  });
-});
+# Verbose output
+npm test -- --reporter=verbose
 ```
 
 ## Coverage
 
-### Run Coverage Report
-
 ```bash
 npm run test:coverage
-```
-
-### Coverage Targets
-
-| Metric     | Target |
-| ---------- | ------ |
-| Statements | 80%    |
-| Branches   | 75%    |
-| Functions  | 80%    |
-| Lines      | 80%    |
-
-### View Coverage
-
-```bash
-# Terminal summary
-npm run test:coverage
-
-# HTML report
 open coverage/index.html
 ```
 
-## Debugging Tests
+## E2E Smoke Tests
 
-### Run Single Test
-
-```bash
-npm test -- --filter "should handle API error"
-```
-
-### Debug Mode
+E2E tests run inside the Docker container against a live AIRS API:
 
 ```bash
-npm test -- --reporter=verbose
+# Start the gateway
+export PANW_AI_SEC_API_KEY="your-key"
+docker compose up -d --build
+
+# Run smoke tests
+docker compose exec gateway bash /home/node/e2e/smoke-test.sh
 ```
 
-### Watch Specific File
+The smoke test (`e2e/smoke-test.sh`) verifies:
 
-```bash
-npm run test:watch -- scanner.test.ts
-```
+1. Plugin status is `ready`
+2. API key is configured
+3. Benign message returns `allow`
+4. Scan returns `scanId` and `latencyMs`
+5. Injection attempt returns `block`/`warn` with `prompt_injection` category
+
+See the [Docker Guide](../guides/docker.md) for full setup details.
+
+## Source Files
+
+- Test framework config: `prisma-airs-plugin/vitest.config.ts`
+- Package scripts: `prisma-airs-plugin/package.json`
+- E2E tests: `e2e/smoke-test.sh`

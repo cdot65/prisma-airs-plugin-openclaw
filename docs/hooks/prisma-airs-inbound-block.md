@@ -1,82 +1,63 @@
 # prisma-airs-inbound-block
 
-Hard inbound blocking — prevents user messages from being persisted unless AIRS allows them.
+Hard guardrail that blocks user messages unless AIRS returns `allow`.
 
 ## Overview
 
-| Property      | Value                                                |
-| ------------- | ---------------------------------------------------- |
-| **Event**     | `before_message_write`                               |
-| **Emoji**     | :no_entry:                                           |
-| **Can Block** | Yes (`{ block: true }`)                              |
-| **Config**    | `inbound_block_mode`, `fail_closed`                  |
+| Field | Value |
+|-------|-------|
+| Event | `before_message_write` |
+| Config field | `inbound_block_mode` |
+| Can Block | Yes (`{ block: true }`) |
+| Default mode | `deterministic` |
+| Valid modes | `deterministic`, `probabilistic`, `off` |
 
 ## Purpose
 
-This hook:
+Prevents unsafe user messages from being persisted to conversation history. Operates at the persistence layer, meaning blocked messages never enter the conversation and the agent never sees them.
 
-1. Fires **before** a message is written to conversation history
-2. Scans user messages through Prisma AIRS
-3. Blocks any message where AIRS does not return `action: "allow"`
-4. Blocked messages are never persisted — they never reach the AI model
+## How It Works
+
+1. Reads `inbound_block_mode` from config (default: `deterministic`). Returns void if `off`.
+2. Checks `event.role` -- only scans `"user"` messages. Skips assistant messages (handled by `prisma-airs-outbound-block`).
+3. Validates `event.content` is a non-empty string.
+4. Calls `scan({ prompt: content, profileName, appName })`.
+5. If AIRS returns `action: "allow"`, returns void (message persists).
+6. Otherwise, returns `{ block: true }` -- message is rejected.
+
+### Error Handling
+
+On scan failure:
+
+- If `fail_closed=true` (default): Returns `{ block: true }`.
+- If `fail_closed=false`: Returns void (message persists).
 
 ## Configuration
 
 ```yaml
 plugins:
-  prisma-airs:
-    config:
-      inbound_block_mode: "deterministic" # default
-      fail_closed: true # Block on scan failure (default)
+  entries:
+    prisma-airs:
+      config:
+        inbound_block_mode: "deterministic"  # "deterministic" | "probabilistic" | "off"
+        profile_name: "default"
+        app_name: "openclaw"
+        fail_closed: true
 ```
 
-## Actions
+## Behavior
 
-| AIRS Action | Result                           |
-| ----------- | -------------------------------- |
-| `allow`     | Message persisted normally       |
-| `warn`      | **Blocked** — message rejected   |
-| `block`     | **Blocked** — message rejected   |
-| (error)     | Blocked if `fail_closed: true`   |
-
-## Role Filtering
-
-Only **user** messages are scanned. Assistant messages are skipped (handled by the [outbound hook](prisma-airs-outbound.md)).
-
-## Audit Logging
-
-### Scan Result
-
-```json
-{
-  "event": "prisma_airs_inbound_block_scan",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "action": "allow",
-  "severity": "SAFE",
-  "categories": ["safe"],
-  "scanId": "scan_xyz789",
-  "latencyMs": 120
-}
-```
-
-### Block Event
-
-```json
-{
-  "event": "prisma_airs_inbound_block_rejected",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "sessionKey": "session_abc123",
-  "action": "block",
-  "severity": "CRITICAL",
-  "categories": ["prompt_injection"],
-  "scanId": "scan_xyz789",
-  "reportId": "report_abc123"
-}
-```
+| Condition | Result |
+|-----------|--------|
+| `inbound_block_mode` = `off` | No-op |
+| `event.role` is not `"user"` | No-op |
+| Empty or non-string content | No-op |
+| AIRS action = `allow` | Pass through |
+| AIRS action = `block` or `warn` | `{ block: true }` |
+| Scan fails + `fail_closed=true` | `{ block: true }` |
+| Scan fails + `fail_closed=false` | Pass through |
 
 ## Related Hooks
 
-- [prisma-airs-outbound](prisma-airs-outbound.md) — Outbound (assistant) message blocking
-- [prisma-airs-audit](prisma-airs-audit.md) — Inbound scanning with audit logging
-- [prisma-airs-guard](prisma-airs-guard.md) — Agent bootstrap security reminder
+- [prisma-airs-outbound-block](prisma-airs-outbound-block.md) -- Companion hook that blocks assistant messages at the same persistence layer.
+- [prisma-airs-audit](prisma-airs-audit.md) -- Also scans inbound messages but cannot block (fire-and-forget).

@@ -1,199 +1,185 @@
 # Configuration Reference
 
-## Configuration Hierarchy
+Complete reference for all configuration fields in the Prisma AIRS plugin. All fields are defined in the `configSchema` of `openclaw.plugin.json`.
 
-```
-1. Strata Cloud Manager (SCM)
-   └── Security profiles, detection rules, actions, DLP patterns
+## Configuration Fields
 
-2. OpenClaw Plugin Config
-   └── api_key (required)
-   └── profile_name, app_name
-   └── Hook toggles, local enforcement behavior
-```
+| Field | Type | Default | Valid Values | Description |
+|-------|------|---------|--------------|-------------|
+| `api_key` | `string` | _(none)_ | Any string | Prisma AIRS API key from Strata Cloud Manager |
+| `profile_name` | `string` | `"default"` | Any string | AIRS security profile name from Strata Cloud Manager |
+| `app_name` | `string` | `"openclaw"` | Any string | Application name sent in scan metadata |
+| `reminder_mode` | `string` | `"on"` | `"on"`, `"off"` | Inject security scanning reminder on agent bootstrap |
+| `audit_mode` | `string` | `"deterministic"` | `"deterministic"`, `"probabilistic"`, `"off"` | Audit logging mode for inbound messages |
+| `context_injection_mode` | `string` | `"deterministic"` | `"deterministic"`, `"probabilistic"`, `"off"` | Context injection of threat warnings on agent start |
+| `outbound_mode` | `string` | `"deterministic"` | `"deterministic"`, `"probabilistic"`, `"off"` | Outbound response scanning, blocking, and DLP masking |
+| `tool_gating_mode` | `string` | `"deterministic"` | `"deterministic"`, `"probabilistic"`, `"off"` | Cache-based tool gating using prior scan results |
+| `inbound_block_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Hard inbound blocking of user messages unless AIRS returns allow |
+| `outbound_block_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Hard outbound blocking of assistant messages at persistence layer |
+| `tool_guard_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Active AIRS scanning of tool inputs before execution |
+| `prompt_scan_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Full conversation context scanning before prompt assembly |
+| `tool_redact_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Regex-based PII/credential redaction from tool outputs |
+| `llm_audit_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Audit logging of LLM inputs and outputs through AIRS |
+| `tool_audit_mode` | `string` | `"deterministic"` | `"deterministic"`, `"off"` | Audit logging of tool outputs through AIRS after execution |
+| `fail_closed` | `boolean` | `true` | `true`, `false` | Block messages when AIRS scan fails |
+| `dlp_mask_only` | `boolean` | `true` | `true`, `false` | Mask DLP violations instead of blocking when no other violations |
+| `high_risk_tools` | `string[]` | See below | Array of tool names | Tools blocked on any detected threat |
 
-!!! warning "Guardrails Are in SCM"
-This plugin does NOT configure AI guardrails. All detection services, sensitivity levels, and actions are configured in **Strata Cloud Manager**. The plugin simply points to your SCM security profile and enforces the actions it returns.
+### Default `high_risk_tools`
 
-## Plugin Configuration
-
-Add to OpenClaw config (via gateway web UI or config file):
-
-```yaml
-plugins:
-  prisma-airs:
-    enabled: true
-    config:
-      # API key (required)
-      api_key: "your-api-key-here"
-
-      # Core settings
-      profile_name: "default"
-      app_name: "openclaw"
-
-      # Scanning modes
-      reminder_mode: "on"
-      audit_mode: "deterministic"
-      context_injection_mode: "deterministic"
-      outbound_mode: "deterministic"
-      tool_gating_mode: "deterministic"
-
-      # Local enforcement
-      fail_closed: true
-      dlp_mask_only: true
-      high_risk_tools:
-        - exec
-        - Bash
-        - bash
-        - write
-        - Write
-        - edit
-        - Edit
-        - gateway
-        - message
-        - cron
+```json
+["exec", "Bash", "bash", "write", "Write", "edit", "Edit", "gateway", "message", "cron"]
 ```
 
-## Core Settings
+## Mode Types
 
-### profile_name
+### Reminder Mode
 
-| Property | Value       |
-| -------- | ----------- |
-| Type     | `string`    |
-| Default  | `"default"` |
+| Value | Behavior |
+|-------|----------|
+| `"on"` | Inject security scanning reminder into agent context at bootstrap |
+| `"off"` | Skip reminder injection |
 
-Security profile name from Strata Cloud Manager.
+### Feature Mode (tri-state)
 
-### app_name
+Used by `audit_mode`, `context_injection_mode`, `outbound_mode`, and `tool_gating_mode`.
 
-| Property | Value        |
-| -------- | ------------ |
-| Type     | `string`     |
-| Default  | `"openclaw"` |
+| Value | Behavior |
+|-------|----------|
+| `"deterministic"` | Hook-based, always executes on every event |
+| `"probabilistic"` | Tool-based, model decides when to invoke |
+| `"off"` | Disabled |
 
-Application identifier included in scan metadata for SCM reporting.
+### Binary Mode
 
-## Scanning Modes
+Used by `inbound_block_mode`, `outbound_block_mode`, `tool_guard_mode`, `prompt_scan_mode`, `tool_redact_mode`, `llm_audit_mode`, and `tool_audit_mode`.
 
-| Option                   | Type     | Default           | Hook                 |
-| ------------------------ | -------- | ----------------- | -------------------- |
-| `reminder_mode`          | `string` | `"on"`            | prisma-airs-guard    |
-| `audit_mode`             | `string` | `"deterministic"` | prisma-airs-audit    |
-| `context_injection_mode` | `string` | `"deterministic"` | prisma-airs-context  |
-| `outbound_mode`          | `string` | `"deterministic"` | prisma-airs-outbound |
-| `tool_gating_mode`       | `string` | `"deterministic"` | prisma-airs-tools    |
+| Value | Behavior |
+|-------|----------|
+| `"deterministic"` | Hook-based, always executes |
+| `"off"` | Disabled |
 
-`reminder_mode` accepts `on` or `off`. All other mode fields accept `deterministic`, `probabilistic`, or `off`.
+## Constraints
 
-## Local Enforcement Settings
+!!! warning "fail_closed + probabilistic"
+    When `fail_closed` is `true`, any feature set to `"probabilistic"` causes a startup error. The `resolveAllModes()` function in `src/config.ts` throws:
 
-These control how the plugin responds locally—NOT what AIRS detects.
+    ```
+    fail_closed=true is incompatible with probabilistic mode.
+    Set fail_closed=false or change these to deterministic/off: <field_names>
+    ```
 
-### fail_closed
+    This validation applies to `audit_mode`, `context_injection_mode`, `outbound_mode`, and `tool_gating_mode`.
 
-| Property | Value     |
-| -------- | --------- |
-| Type     | `boolean` |
-| Default  | `true`    |
+## Example Configuration
 
-When `true`, scan failures (API errors, timeouts) result in blocked requests. When `false`, failures allow requests through.
-
-### dlp_mask_only
-
-| Property | Value     |
-| -------- | --------- |
-| Type     | `boolean` |
-| Default  | `true`    |
-
-When `true`, DLP violations are masked instead of blocked. When `false`, DLP violations block the response entirely.
-
-!!! note "Always-Block Categories"
-Regardless of `dlp_mask_only`, these categories always block:
-`malicious_code*`, `malicious_url`, `toxicity`, `toxic_content*`,
-`agent_threat*`, `prompt_injection`, `db_security*`, `scan-failure`
-(includes suffixed variants like `malicious_code_response`)
-
-### high_risk_tools
-
-| Property | Value      |
-| -------- | ---------- |
-| Type     | `string[]` |
-| Default  | See below  |
-
-Tools to block when ANY threat is detected (not just specific categories).
-
-Default:
-
-```yaml
-high_risk_tools:
-  - exec
-  - Bash
-  - bash
-  - write
-  - Write
-  - edit
-  - Edit
-  - gateway
-  - message
-  - cron
+```json
+{
+  "plugins": {
+    "entries": {
+      "prisma-airs": {
+        "enabled": true,
+        "config": {
+          "api_key": "your-api-key-here",
+          "profile_name": "default",
+          "app_name": "openclaw",
+          "reminder_mode": "on",
+          "audit_mode": "deterministic",
+          "context_injection_mode": "deterministic",
+          "outbound_mode": "deterministic",
+          "tool_gating_mode": "deterministic",
+          "inbound_block_mode": "deterministic",
+          "outbound_block_mode": "deterministic",
+          "tool_guard_mode": "deterministic",
+          "prompt_scan_mode": "deterministic",
+          "tool_redact_mode": "deterministic",
+          "llm_audit_mode": "deterministic",
+          "tool_audit_mode": "deterministic",
+          "fail_closed": true,
+          "dlp_mask_only": true,
+          "high_risk_tools": ["exec", "Bash", "bash", "write", "Write", "edit", "Edit", "gateway", "message", "cron"]
+        }
+      }
+    }
+  }
+}
 ```
 
-## Strata Cloud Manager Settings
+## Minimal Configuration
 
-These are configured in SCM, **not** the plugin:
+Only `api_key` is required. All other fields use their defaults:
 
-| Setting            | SCM Location         | Description                     |
-| ------------------ | -------------------- | ------------------------------- |
-| Detection services | Security Profiles    | Which threats to detect         |
-| Actions            | Security Profiles    | allow/alert/block per detection |
-| Sensitivity        | Security Profiles    | Detection thresholds            |
-| DLP patterns       | Data Loss Prevention | PII, credential patterns        |
-| URL categories     | URL Filtering        | Allowed/blocked URL categories  |
-| Custom topics      | Topic Guardrails     | Organization policies           |
-
-## Example: Minimal Setup
-
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      api_key: "your-key"
+```json
+{
+  "plugins": {
+    "entries": {
+      "prisma-airs": {
+        "enabled": true,
+        "config": {
+          "api_key": "your-api-key-here"
+        }
+      }
+    }
+  }
+}
 ```
 
-All other settings use sensible defaults.
+## Audit-Only Mode
 
-## Example: Audit Only Mode
+Scan and log every message but disable all enforcement:
 
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      audit_mode: "deterministic"
-      context_injection_mode: "off"
-      outbound_mode: "off"
-      tool_gating_mode: "off"
-      fail_closed: false
+```json
+{
+  "plugins": {
+    "entries": {
+      "prisma-airs": {
+        "config": {
+          "api_key": "your-key",
+          "audit_mode": "deterministic",
+          "context_injection_mode": "off",
+          "outbound_mode": "off",
+          "tool_gating_mode": "off",
+          "inbound_block_mode": "off",
+          "outbound_block_mode": "off",
+          "tool_guard_mode": "off",
+          "prompt_scan_mode": "off",
+          "tool_redact_mode": "off",
+          "llm_audit_mode": "off",
+          "tool_audit_mode": "off",
+          "fail_closed": false
+        }
+      }
+    }
+  }
+}
 ```
 
-## Example: Maximum Local Enforcement
+## Maximum Enforcement
 
-```yaml
-plugins:
-  prisma-airs:
-    config:
-      fail_closed: true
-      dlp_mask_only: false
-      high_risk_tools:
-        - exec
-        - Bash
-        - write
-        - edit
-        - gateway
-        - message
-        - cron
-        - browser
-        - WebFetch
-        - eval
-        - NotebookEdit
+All hooks active, DLP blocks instead of masking, expanded tool list:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "prisma-airs": {
+        "config": {
+          "api_key": "your-key",
+          "fail_closed": true,
+          "dlp_mask_only": false,
+          "high_risk_tools": [
+            "exec", "Bash", "bash", "write", "Write", "edit", "Edit",
+            "gateway", "message", "cron", "browser", "WebFetch",
+            "eval", "NotebookEdit"
+          ]
+        }
+      }
+    }
+  }
+}
 ```
+
+## Source Files
+
+- Config schema: `prisma-airs-plugin/openclaw.plugin.json`
+- Config resolution: `prisma-airs-plugin/src/config.ts`
