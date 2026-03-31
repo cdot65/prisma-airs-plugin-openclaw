@@ -2,7 +2,7 @@
  * Prisma AIRS plugin configuration.
  *
  * Flat boolean config — no tristate modes.
- * Each boolean maps to a hook group (on = deterministic, off = disabled).
+ * Each boolean maps to a hook group (on = enabled, off = disabled).
  */
 
 export interface PrismaAirsConfig {
@@ -11,16 +11,14 @@ export interface PrismaAirsConfig {
   app_name?: string;
   fail_closed?: boolean;
   dlp_mask_only?: boolean;
-  inbound_scanning?: boolean;
-  outbound_scanning?: boolean;
+  prompt_scanning?: boolean;
+  response_scanning?: boolean;
   tool_protection?: boolean;
-  security_context?: boolean;
-  llm_audit?: boolean;
 }
 
 /**
  * Resolve config with defaults applied.
- * Only returns known fields — strips any legacy mode fields.
+ * Only returns known fields — strips any legacy or unknown fields.
  */
 export function resolveConfig(
   raw: Record<string, unknown>
@@ -32,10 +30,8 @@ export function resolveConfig(
     app_name: typeof raw.app_name === "string" ? raw.app_name : "openclaw",
     fail_closed: typeof raw.fail_closed === "boolean" ? raw.fail_closed : true,
     dlp_mask_only: typeof raw.dlp_mask_only === "boolean" ? raw.dlp_mask_only : true,
-    inbound_scanning: typeof raw.inbound_scanning === "boolean" ? raw.inbound_scanning : true,
-    outbound_scanning: typeof raw.outbound_scanning === "boolean" ? raw.outbound_scanning : true,
+    prompt_scanning: typeof raw.prompt_scanning === "boolean" ? raw.prompt_scanning : true,
+    response_scanning: typeof raw.response_scanning === "boolean" ? raw.response_scanning : true,
     tool_protection: typeof raw.tool_protection === "boolean" ? raw.tool_protection : true,
-    security_context: typeof raw.security_context === "boolean" ? raw.security_context : true,
-    llm_audit: typeof raw.llm_audit === "boolean" ? raw.llm_audit : false,
   };
 }
