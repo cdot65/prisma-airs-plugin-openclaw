@@ -125,6 +125,17 @@ export function registerResponseGuardHooks(api: PluginApi, hookCtx: HookCtxFn): 
 
       if (result.action === "allow") return;
 
+      // API error returned as result (not thrown) — respect fail_closed
+      if (result.hasError && result.categories.includes("api_error")) {
+        if (config.failClosed) {
+          return {
+            content:
+              "I apologize, but I'm unable to provide a response at this time due to a security verification issue. Please try again.",
+          };
+        }
+        return;
+      }
+
       if (shouldMaskOnly(result, config.dlpMaskOnly)) {
         const maskedContent = maskSensitiveData(content);
         if (maskedContent !== content) {

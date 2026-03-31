@@ -1,5 +1,5 @@
 /**
- * Prisma AIRS Plugin for OpenClaw (v2.1.0)
+ * Prisma AIRS Plugin for OpenClaw (v2.1.1)
  *
  * AI Runtime Security via Palo Alto Networks.
  *
@@ -105,7 +105,7 @@ export default function register(api: PluginApi): void {
   }
 
   api.logger.info(
-    `Prisma AIRS v2.1.0 (prompt=${config.prompt_scanning}, response=${config.response_scanning}, tools=${config.tool_protection})`
+    `Prisma AIRS v2.1.1 (prompt=${config.prompt_scanning}, response=${config.response_scanning}, tools=${config.tool_protection})`
   );
 
   // Hook context wrapper
@@ -132,7 +132,7 @@ export default function register(api: PluginApi): void {
     const hasApiKey = isConfigured(config.api_key);
     respond(true, {
       plugin: "prisma-airs",
-      version: "2.1.0",
+      version: "2.1.1",
       config: {
         profile_name: config.profile_name,
         app_name: config.app_name,
@@ -204,7 +204,7 @@ export default function register(api: PluginApi): void {
           const hasKey = isConfigured(config.api_key);
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 2.1.0`);
+          console.log(`Version: 2.1.1`);
           console.log(`Profile: ${config.profile_name ?? "(not set)"}`);
           console.log(`App Name: ${config.app_name}`);
           console.log(`Hook Groups:`);
@@ -254,7 +254,7 @@ export default function register(api: PluginApi): void {
 // Plugin metadata
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "2.1.0";
+export const version = "2.1.1";
 
 // Re-exports
 export { scan, isConfigured } from "./src/scanner";

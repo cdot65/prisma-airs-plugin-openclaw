@@ -67,6 +67,18 @@ export function registerToolInputGuardHooks(api: PluginApi, hookCtx: HookCtxFn):
           })
         );
         if (result.action === "allow") return;
+
+        // API error returned as result (not thrown) — respect fail_closed
+        if (result.hasError && result.categories.includes("api_error")) {
+          if (config.failClosed) {
+            return {
+              block: true,
+              blockReason: `Tool '${event.toolName}' blocked: security scan failed (${result.error || "unknown error"}). Try again later.`,
+            };
+          }
+          return;
+        }
+
         const categories = result.categories
           .filter((c) => c !== "safe" && c !== "benign")
           .join(", ");

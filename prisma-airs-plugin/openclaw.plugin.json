@@ -2,7 +2,7 @@
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
   "description": "AI Runtime Security - scan messages, responses, and tool calls via Palo Alto Networks AIRS",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "entrypoint": "index.ts",
   "hooks": ["hooks"],
   "configSchema": {

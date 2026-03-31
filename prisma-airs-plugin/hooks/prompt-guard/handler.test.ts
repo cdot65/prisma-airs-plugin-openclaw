@@ -157,6 +157,49 @@ describe("registerPromptGuardHooks", () => {
     expect(result).toBeUndefined();
   });
 
+  it("injects caution on api_error result when fail_closed", async () => {
+    const { api, handlers } = createMockApi();
+    const hookCtx = (ctx: any) => ({
+      ...ctx,
+      cfg: { plugins: { entries: { "prisma-airs": { config: { fail_closed: true } } } } },
+    });
+    registerPromptGuardHooks(api as any, hookCtx);
+    mockScan.mockResolvedValue({
+      ...allowResult(),
+      action: "warn",
+      categories: ["api_error"],
+      hasError: true,
+      error: "SDK not initialized",
+    } as any);
+    const result = await handlers["before_prompt_build"](
+      { messages: [{ role: "user", content: "hello" }] },
+      createMockCtx()
+    );
+    expect(result).toHaveProperty("prependSystemContext");
+    expect(result.prependSystemContext).toContain("security scan failed");
+  });
+
+  it("returns void on api_error result when fail_open", async () => {
+    const { api, handlers } = createMockApi();
+    const hookCtx = (ctx: any) => ({
+      ...ctx,
+      cfg: { plugins: { entries: { "prisma-airs": { config: { fail_closed: false } } } } },
+    });
+    registerPromptGuardHooks(api as any, hookCtx);
+    mockScan.mockResolvedValue({
+      ...allowResult(),
+      action: "warn",
+      categories: ["api_error"],
+      hasError: true,
+      error: "SDK not initialized",
+    } as any);
+    const result = await handlers["before_prompt_build"](
+      { messages: [{ role: "user", content: "hello" }] },
+      createMockCtx()
+    );
+    expect(result).toBeUndefined();
+  });
+
   it("returns void when no messages in event", async () => {
     const { api, handlers } = createMockApi();
     registerPromptGuardHooks(api as any, (ctx: any) => ctx);

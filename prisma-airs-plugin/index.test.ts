@@ -1,5 +1,5 @@
 /**
- * Tests for v2.1.0 plugin registration.
+ * Tests for v2.1.1 plugin registration.
  *
  * Verifies config resolution, gateway RPC, tool, CLI, and hook registration.
  */

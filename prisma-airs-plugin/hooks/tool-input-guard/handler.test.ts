@@ -172,6 +172,50 @@ describe("registerToolInputGuardHooks", () => {
     expect(result).toBeUndefined();
   });
 
+  it("blocks on api_error result when fail_closed", async () => {
+    const { api, handlers } = createMockApi();
+    const hookCtx = (ctx: any) => ({
+      ...ctx,
+      cfg: { plugins: { entries: { "prisma-airs": { config: { fail_closed: true } } } } },
+    });
+    registerToolInputGuardHooks(api as any, hookCtx);
+    mockScan.mockResolvedValue({
+      ...allowResult(),
+      action: "warn",
+      categories: ["api_error"],
+      hasError: true,
+      error: "SDK not initialized",
+    } as any);
+    const result = await handlers["before_tool_call"](
+      { toolName: "Bash", params: { command: "ls" } },
+      createMockCtx()
+    );
+    expect(result).toEqual(
+      expect.objectContaining({ block: true, blockReason: expect.stringContaining("scan failed") })
+    );
+  });
+
+  it("returns void on api_error result when fail_open", async () => {
+    const { api, handlers } = createMockApi();
+    const hookCtx = (ctx: any) => ({
+      ...ctx,
+      cfg: { plugins: { entries: { "prisma-airs": { config: { fail_closed: false } } } } },
+    });
+    registerToolInputGuardHooks(api as any, hookCtx);
+    mockScan.mockResolvedValue({
+      ...allowResult(),
+      action: "warn",
+      categories: ["api_error"],
+      hasError: true,
+      error: "SDK not initialized",
+    } as any);
+    const result = await handlers["before_tool_call"](
+      { toolName: "Bash", params: { command: "ls" } },
+      createMockCtx()
+    );
+    expect(result).toBeUndefined();
+  });
+
   it("returns void when toolName is missing", async () => {
     const { api, handlers } = createMockApi();
     registerToolInputGuardHooks(api as any, (ctx: any) => ctx);
