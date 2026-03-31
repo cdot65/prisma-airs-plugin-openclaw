@@ -65,10 +65,10 @@ function getConfig(ctx: any): {
 
 // ── Registration ───────────────────────────────────────────────────
 
-export function registerInboundHooks(api: PluginApi, _hookCtx: HookCtxFn): number {
+export function registerInboundHooks(api: PluginApi, hookCtx: HookCtxFn): number {
   // 1. message_received — fire-and-forget audit scan
   api.on("message_received", async (event: MessageReceivedEvent, ctx: any) => {
-    const config = getConfig(ctx);
+    const config = getConfig(hookCtx(ctx));
 
     const content = event.content;
     if (!content || typeof content !== "string" || content.trim().length === 0) {
@@ -153,7 +153,7 @@ export function registerInboundHooks(api: PluginApi, _hookCtx: HookCtxFn): numbe
       return;
     }
 
-    const config = getConfig(ctx);
+    const config = getConfig(hookCtx(ctx));
 
     const content = event.content;
     if (!content || typeof content !== "string" || content.trim().length === 0) {

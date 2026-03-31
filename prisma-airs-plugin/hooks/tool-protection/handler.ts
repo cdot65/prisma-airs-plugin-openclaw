@@ -218,7 +218,7 @@ function getConfig(ctx: any): {
 
 // ── Registration ────────────────────────────────────────────────────
 
-export function registerToolProtectionHooks(api: PluginApi, _hookCtx: HookCtxFn): number {
+export function registerToolProtectionHooks(api: PluginApi, hookCtx: HookCtxFn): number {
   // ─── 1. before_tool_call — cache-based gating (fast, no API call) ───
 
   api.on(
@@ -287,7 +287,7 @@ export function registerToolProtectionHooks(api: PluginApi, _hookCtx: HookCtxFn)
     async (event: BeforeToolCallEvent, ctx: any): Promise<HookResult | void> => {
       if (!event.toolName) return;
 
-      const config = getConfig(ctx);
+      const config = getConfig(hookCtx(ctx));
       const sessionKey = ctx.sessionKey || ctx.conversationId || "unknown";
       const inputStr = event.params ? JSON.stringify(event.params) : undefined;
 
@@ -430,7 +430,7 @@ export function registerToolProtectionHooks(api: PluginApi, _hookCtx: HookCtxFn)
   // ─── 4. after_tool_call — fire-and-forget audit scan ────────────────
 
   api.on("after_tool_call", async (event: AfterToolCallEvent, ctx: any): Promise<void> => {
-    const config = getConfig(ctx);
+    const config = getConfig(hookCtx(ctx));
     const sessionKey = ctx.sessionKey ?? "unknown";
 
     // Serialize tool result

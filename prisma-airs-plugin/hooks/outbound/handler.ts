@@ -167,12 +167,12 @@ function getConfig(ctx: any): {
 
 // ── Registration ─────────────────────────────────────────────────
 
-export function registerOutboundHooks(api: PluginApi, _hookCtx: HookCtxFn): number {
+export function registerOutboundHooks(api: PluginApi, hookCtx: HookCtxFn): number {
   // 1. message_sending — scan outbound response, DLP mask or full block
   api.on(
     "message_sending",
     async (event: MessageSendingEvent, ctx: any): Promise<MessageSendingResult | void> => {
-      const config = getConfig(ctx);
+      const config = getConfig(hookCtx(ctx));
 
       const content = event.content;
       if (!content || typeof content !== "string" || content.trim().length === 0) {
@@ -277,7 +277,7 @@ export function registerOutboundHooks(api: PluginApi, _hookCtx: HookCtxFn): numb
         return;
       }
 
-      const config = getConfig(ctx);
+      const config = getConfig(hookCtx(ctx));
 
       const content = event.content;
       if (!content || typeof content !== "string" || content.trim().length === 0) {
