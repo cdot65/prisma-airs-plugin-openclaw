@@ -15,7 +15,10 @@ import { init } from "@cdot65/prisma-airs-sdk";
 import { scan, isConfigured, type ScanRequest } from "./src/scanner";
 import { resolveConfig, type PrismaAirsConfig } from "./src/config";
 
-// Hook handler imports will be added when handler files are created
+import { registerPromptGuardHooks } from "./hooks/prompt-guard/handler";
+import { registerResponseGuardHooks } from "./hooks/response-guard/handler";
+import { registerToolInputGuardHooks } from "./hooks/tool-input-guard/handler";
+import { registerToolOutputAuditHooks } from "./hooks/tool-output-audit/handler";
 
 // Tool parameter schema
 interface ToolParameterProperty {
@@ -108,8 +111,20 @@ export default function register(api: PluginApi): void {
   // Hook context wrapper
   const hookCtx = (ctx: any) => ({ ...ctx, cfg: api.config });
 
-  // Hook registration will be added when handler files are created
-  void hookCtx;
+  let hookCount = 0;
+
+  if (config.prompt_scanning) {
+    hookCount += registerPromptGuardHooks(api, hookCtx);
+  }
+  if (config.response_scanning) {
+    hookCount += registerResponseGuardHooks(api, hookCtx);
+  }
+  if (config.tool_protection) {
+    hookCount += registerToolInputGuardHooks(api, hookCtx);
+    hookCount += registerToolOutputAuditHooks(api, hookCtx);
+  }
+
+  api.logger.debug(`Prisma AIRS: registered ${hookCount} hook(s)`);
 
   // ── Gateway RPC ───────────────────────────────────────────────────
 
