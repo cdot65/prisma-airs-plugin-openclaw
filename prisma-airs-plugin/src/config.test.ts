@@ -7,24 +7,37 @@ describe("resolveConfig", () => {
     expect(cfg.app_name).toBe("openclaw");
     expect(cfg.fail_closed).toBe(true);
     expect(cfg.dlp_mask_only).toBe(true);
-    expect(cfg.inbound_scanning).toBe(true);
-    expect(cfg.outbound_scanning).toBe(true);
+    expect(cfg.prompt_scanning).toBe(true);
+    expect(cfg.response_scanning).toBe(true);
     expect(cfg.tool_protection).toBe(true);
-    expect(cfg.security_context).toBe(true);
-    expect(cfg.llm_audit).toBe(false);
+  });
+
+  it("does not include removed keys", () => {
+    const cfg = resolveConfig({
+      security_context: true,
+      llm_audit: true,
+      inbound_scanning: true,
+      outbound_scanning: true,
+    });
+    expect((cfg as any).security_context).toBeUndefined();
+    expect((cfg as any).llm_audit).toBeUndefined();
+    expect((cfg as any).inbound_scanning).toBeUndefined();
+    expect((cfg as any).outbound_scanning).toBeUndefined();
   });
 
   it("preserves explicit values", () => {
     const cfg = resolveConfig({
       api_key: "test-key",
       profile_name: "my-profile",
-      inbound_scanning: false,
-      llm_audit: true,
+      prompt_scanning: false,
+      response_scanning: false,
+      tool_protection: false,
     });
     expect(cfg.api_key).toBe("test-key");
     expect(cfg.profile_name).toBe("my-profile");
-    expect(cfg.inbound_scanning).toBe(false);
-    expect(cfg.llm_audit).toBe(true);
+    expect(cfg.prompt_scanning).toBe(false);
+    expect(cfg.response_scanning).toBe(false);
+    expect(cfg.tool_protection).toBe(false);
   });
 
   it("ignores unknown fields", () => {

@@ -1,14 +1,12 @@
 /**
- * Prisma AIRS Plugin for OpenClaw (v2.0.0)
+ * Prisma AIRS Plugin for OpenClaw (v2.1.0)
  *
  * AI Runtime Security via Palo Alto Networks.
  *
- * 5 hook groups, boolean-gated:
- * - inbound_scanning: audit + inbound block
- * - outbound_scanning: outbound scan + outbound block
- * - tool_protection: cache gating + active guard + redact + audit
- * - security_context: guard reminder + context injection
- * - llm_audit: LLM I/O audit + prompt scan
+ * 3 hook groups, boolean-gated:
+ * - prompt_scanning: scan + block inbound prompts
+ * - response_scanning: scan + mask/block outbound responses
+ * - tool_protection: guard, redact, and audit tool I/O
  *
  * Plus: prisma_airs_scan tool (always), gateway RPC, CLI.
  */
@@ -17,12 +15,7 @@ import { init } from "@cdot65/prisma-airs-sdk";
 import { scan, isConfigured, type ScanRequest } from "./src/scanner";
 import { resolveConfig, type PrismaAirsConfig } from "./src/config";
 
-// Hook group registration functions
-import { registerInboundHooks } from "./hooks/inbound/handler";
-import { registerOutboundHooks } from "./hooks/outbound/handler";
-import { registerToolProtectionHooks } from "./hooks/tool-protection/handler";
-import { registerSecurityContextHooks } from "./hooks/security-context/handler";
-import { registerLlmAuditHooks } from "./hooks/llm-audit/handler";
+// Hook handler imports will be added when handler files are created
 
 // Tool parameter schema
 interface ToolParameterProperty {
@@ -109,35 +102,14 @@ export default function register(api: PluginApi): void {
   }
 
   api.logger.info(
-    `Prisma AIRS v2.0.0 (inbound=${config.inbound_scanning}, outbound=${config.outbound_scanning}, tools=${config.tool_protection}, context=${config.security_context}, llm_audit=${config.llm_audit})`
+    `Prisma AIRS v2.1.0 (prompt=${config.prompt_scanning}, response=${config.response_scanning}, tools=${config.tool_protection})`
   );
 
   // Hook context wrapper
   const hookCtx = (ctx: any) => ({ ...ctx, cfg: api.config });
-  let hookCount = 0;
 
-  // Register hook groups
-  if (config.inbound_scanning) {
-    hookCount += registerInboundHooks(api, hookCtx);
-  }
-  if (config.outbound_scanning) {
-    hookCount += registerOutboundHooks(api, hookCtx);
-  }
-  if (config.tool_protection) {
-    hookCount += registerToolProtectionHooks(api, hookCtx);
-  }
-  if (config.security_context) {
-    hookCount += registerSecurityContextHooks(api, hookCtx);
-  }
-  if (config.llm_audit) {
-    hookCount += registerLlmAuditHooks(api, hookCtx);
-  }
-
-  if (hookCount > 0) {
-    api.logger.info(
-      `Registered ${hookCount} hook(s) across ${[config.inbound_scanning, config.outbound_scanning, config.tool_protection, config.security_context, config.llm_audit].filter(Boolean).length} group(s)`
-    );
-  }
+  // Hook registration will be added when handler files are created
+  void hookCtx;
 
   // ── Gateway RPC ───────────────────────────────────────────────────
 
@@ -145,15 +117,13 @@ export default function register(api: PluginApi): void {
     const hasApiKey = isConfigured(config.api_key);
     respond(true, {
       plugin: "prisma-airs",
-      version: "2.0.0",
+      version: "2.1.0",
       config: {
         profile_name: config.profile_name,
         app_name: config.app_name,
-        inbound_scanning: config.inbound_scanning,
-        outbound_scanning: config.outbound_scanning,
+        prompt_scanning: config.prompt_scanning,
+        response_scanning: config.response_scanning,
         tool_protection: config.tool_protection,
-        security_context: config.security_context,
-        llm_audit: config.llm_audit,
         fail_closed: config.fail_closed,
         dlp_mask_only: config.dlp_mask_only,
       },
@@ -219,15 +189,13 @@ export default function register(api: PluginApi): void {
           const hasKey = isConfigured(config.api_key);
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 2.0.0`);
+          console.log(`Version: 2.1.0`);
           console.log(`Profile: ${config.profile_name ?? "(not set)"}`);
           console.log(`App Name: ${config.app_name}`);
           console.log(`Hook Groups:`);
-          console.log(`  Inbound Scanning: ${config.inbound_scanning}`);
-          console.log(`  Outbound Scanning: ${config.outbound_scanning}`);
+          console.log(`  Prompt Scanning: ${config.prompt_scanning}`);
+          console.log(`  Response Scanning: ${config.response_scanning}`);
           console.log(`  Tool Protection: ${config.tool_protection}`);
-          console.log(`  Security Context: ${config.security_context}`);
-          console.log(`  LLM Audit: ${config.llm_audit}`);
           console.log(`Fail Closed: ${config.fail_closed}`);
           console.log(`DLP Mask Only: ${config.dlp_mask_only}`);
           console.log(`API Key: ${hasKey ? "configured" : "MISSING"}`);
@@ -271,7 +239,7 @@ export default function register(api: PluginApi): void {
 // Plugin metadata
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "2.0.0";
+export const version = "2.1.0";
 
 // Re-exports
 export { scan, isConfigured } from "./src/scanner";
