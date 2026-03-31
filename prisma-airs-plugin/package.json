@@ -1,7 +1,7 @@
 {
   "name": "@cdot65/prisma-airs",
-  "version": "2.0.2",
-  "description": "Prisma AIRS (AI Runtime Security) plugin for OpenClaw - Full security suite with audit logging, context injection, outbound blocking, and tool gating",
+  "version": "2.1.0",
+  "description": "Prisma AIRS (AI Runtime Security) plugin for OpenClaw - prompt guard, response guard, tool input guard, and tool output audit via AIRS",
   "type": "module",
   "main": "index.ts",
   "scripts": {

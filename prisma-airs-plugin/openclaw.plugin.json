@@ -2,7 +2,7 @@
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
   "description": "AI Runtime Security - scan messages, responses, and tool calls via Palo Alto Networks AIRS",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "entrypoint": "index.ts",
   "hooks": ["hooks"],
   "configSchema": {
@@ -32,30 +32,20 @@
         "default": true,
         "description": "Mask DLP violations instead of blocking"
       },
-      "inbound_scanning": {
+      "prompt_scanning": {
         "type": "boolean",
         "default": true,
-        "description": "Scan and enforce policy on user messages"
+        "description": "Scan user prompts before LLM inference"
       },
-      "outbound_scanning": {
+      "response_scanning": {
         "type": "boolean",
         "default": true,
-        "description": "Scan assistant responses for data leakage and policy violations"
+        "description": "Scan assistant responses before user sees them"
       },
       "tool_protection": {
         "type": "boolean",
         "default": true,
-        "description": "Scan and gate tool inputs/outputs"
-      },
-      "security_context": {
-        "type": "boolean",
-        "default": true,
-        "description": "Inject security reminders and threat warnings into agent context"
-      },
-      "llm_audit": {
-        "type": "boolean",
-        "default": false,
-        "description": "Deep scan all LLM prompts and responses (expensive, for compliance)"
+        "description": "Scan tool inputs before execution and audit tool outputs"
       }
     }
   },
@@ -82,25 +72,17 @@
       "label": "DLP Mask Only",
       "help": "Mask DLP violations instead of blocking"
     },
-    "inbound_scanning": {
-      "label": "Inbound Scanning",
-      "help": "Scan and enforce policy on user messages"
+    "prompt_scanning": {
+      "label": "Prompt Scanning",
+      "help": "Scan user prompts before LLM inference"
     },
-    "outbound_scanning": {
-      "label": "Outbound Scanning",
-      "help": "Scan assistant responses for data leakage and policy violations"
+    "response_scanning": {
+      "label": "Response Scanning",
+      "help": "Scan assistant responses before user sees them"
     },
     "tool_protection": {
       "label": "Tool Protection",
-      "help": "Scan and gate tool inputs/outputs"
-    },
-    "security_context": {
-      "label": "Security Context",
-      "help": "Inject security reminders and threat warnings into agent context"
-    },
-    "llm_audit": {
-      "label": "LLM Audit",
-      "help": "Deep scan all LLM prompts and responses (expensive, for compliance)"
+      "help": "Scan tool inputs before execution and audit tool outputs"
     }
   },
   "requires": {}
