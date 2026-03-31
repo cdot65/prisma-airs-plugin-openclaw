@@ -1,119 +1,34 @@
-/**
- * Tests for config mode resolution
- */
-
 import { describe, it, expect } from "vitest";
-import { resolveMode, resolveReminderMode, resolveAllModes } from "./config";
+import { resolveConfig } from "./config";
 
-describe("resolveMode", () => {
-  it("returns default when undefined", () => {
-    expect(resolveMode(undefined)).toBe("deterministic");
+describe("resolveConfig", () => {
+  it("returns defaults when no config provided", () => {
+    const cfg = resolveConfig({});
+    expect(cfg.app_name).toBe("openclaw");
+    expect(cfg.fail_closed).toBe(true);
+    expect(cfg.dlp_mask_only).toBe(true);
+    expect(cfg.inbound_scanning).toBe(true);
+    expect(cfg.outbound_scanning).toBe(true);
+    expect(cfg.tool_protection).toBe(true);
+    expect(cfg.security_context).toBe(true);
+    expect(cfg.llm_audit).toBe(false);
   });
 
-  it("returns custom default", () => {
-    expect(resolveMode(undefined, "off")).toBe("off");
-  });
-
-  it("ignores invalid mode string and falls back to default", () => {
-    expect(resolveMode("invalid")).toBe("deterministic");
-  });
-
-  it("accepts all valid mode values", () => {
-    expect(resolveMode("deterministic")).toBe("deterministic");
-    expect(resolveMode("probabilistic")).toBe("probabilistic");
-    expect(resolveMode("off")).toBe("off");
-  });
-});
-
-describe("resolveReminderMode", () => {
-  it("returns default when undefined", () => {
-    expect(resolveReminderMode(undefined)).toBe("on");
-  });
-
-  it("resolves valid mode values", () => {
-    expect(resolveReminderMode("off")).toBe("off");
-    expect(resolveReminderMode("on")).toBe("on");
-  });
-
-  it("ignores invalid mode string", () => {
-    expect(resolveReminderMode("invalid")).toBe("on");
-  });
-});
-
-describe("resolveAllModes", () => {
-  it("returns all defaults for empty config", () => {
-    const modes = resolveAllModes({ fail_closed: false });
-    expect(modes).toEqual({
-      reminder: "on",
-      audit: "deterministic",
-      context: "deterministic",
-      outbound: "deterministic",
-      toolGating: "deterministic",
+  it("preserves explicit values", () => {
+    const cfg = resolveConfig({
+      api_key: "test-key",
+      profile_name: "my-profile",
+      inbound_scanning: false,
+      llm_audit: true,
     });
+    expect(cfg.api_key).toBe("test-key");
+    expect(cfg.profile_name).toBe("my-profile");
+    expect(cfg.inbound_scanning).toBe(false);
+    expect(cfg.llm_audit).toBe(true);
   });
 
-  it("resolves new mode fields", () => {
-    const modes = resolveAllModes({
-      reminder_mode: "off",
-      audit_mode: "probabilistic",
-      context_injection_mode: "off",
-      outbound_mode: "probabilistic",
-      tool_gating_mode: "off",
-      fail_closed: false,
-    });
-    expect(modes).toEqual({
-      reminder: "off",
-      audit: "probabilistic",
-      context: "off",
-      outbound: "probabilistic",
-      toolGating: "off",
-    });
-  });
-
-  it("throws when fail_closed=true with probabilistic audit", () => {
-    expect(() =>
-      resolveAllModes({
-        audit_mode: "probabilistic",
-        fail_closed: true,
-      })
-    ).toThrow("fail_closed=true is incompatible with probabilistic mode");
-  });
-
-  it("throws when fail_closed=true with probabilistic outbound", () => {
-    expect(() =>
-      resolveAllModes({
-        outbound_mode: "probabilistic",
-        fail_closed: true,
-      })
-    ).toThrow("outbound_mode");
-  });
-
-  it("throws listing all probabilistic fields when fail_closed=true", () => {
-    expect(() =>
-      resolveAllModes({
-        audit_mode: "probabilistic",
-        outbound_mode: "probabilistic",
-        fail_closed: true,
-      })
-    ).toThrow("audit_mode, outbound_mode");
-  });
-
-  it("allows deterministic + off with fail_closed=true", () => {
-    expect(() =>
-      resolveAllModes({
-        audit_mode: "deterministic",
-        context_injection_mode: "off",
-        outbound_mode: "deterministic",
-        tool_gating_mode: "off",
-        fail_closed: true,
-      })
-    ).not.toThrow();
-  });
-
-  it("fail_closed defaults to true", () => {
-    // No fail_closed specified → defaults true → probabilistic should throw
-    expect(() => resolveAllModes({ audit_mode: "probabilistic" })).toThrow(
-      "fail_closed=true is incompatible"
-    );
+  it("ignores unknown fields", () => {
+    const cfg = resolveConfig({ audit_mode: "deterministic" } as any);
+    expect((cfg as any).audit_mode).toBeUndefined();
   });
 });
