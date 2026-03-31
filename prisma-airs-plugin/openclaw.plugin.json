@@ -1,126 +1,61 @@
 {
   "id": "prisma-airs",
   "name": "Prisma AIRS Security",
-  "description": "AI Runtime Security - full AIRS detection suite with audit logging, context injection, outbound blocking, and tool gating",
-  "version": "1.1.0",
+  "description": "AI Runtime Security - scan messages, responses, and tool calls via Palo Alto Networks AIRS",
+  "version": "2.0.0",
   "entrypoint": "index.ts",
   "hooks": ["hooks"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
+      "api_key": {
+        "type": "string",
+        "description": "Prisma AIRS API key from Strata Cloud Manager"
+      },
       "profile_name": {
         "type": "string",
-        "default": "default",
-        "description": "Prisma AIRS profile name from Strata Cloud Manager"
+        "description": "AIRS security profile name from Strata Cloud Manager"
       },
       "app_name": {
         "type": "string",
         "default": "openclaw",
-        "description": "Application name for scan metadata"
-      },
-      "reminder_mode": {
-        "type": "string",
-        "enum": ["on", "off"],
-        "default": "on",
-        "description": "Inject security scanning reminder on agent bootstrap"
-      },
-      "audit_mode": {
-        "type": "string",
-        "enum": ["deterministic", "probabilistic", "off"],
-        "default": "deterministic",
-        "description": "Audit logging mode: deterministic (hook, always scan), probabilistic (tool, model decides), or off"
-      },
-      "context_injection_mode": {
-        "type": "string",
-        "enum": ["deterministic", "probabilistic", "off"],
-        "default": "deterministic",
-        "description": "Context injection mode: deterministic (hook, always inject), probabilistic (tool, model decides), or off"
-      },
-      "outbound_mode": {
-        "type": "string",
-        "enum": ["deterministic", "probabilistic", "off"],
-        "default": "deterministic",
-        "description": "Outbound scanning mode: deterministic (hook, always scan), probabilistic (tool, model decides), or off"
-      },
-      "tool_gating_mode": {
-        "type": "string",
-        "enum": ["deterministic", "probabilistic", "off"],
-        "default": "deterministic",
-        "description": "Tool gating mode: deterministic (hook, always gate), probabilistic (tool, model decides), or off"
-      },
-      "inbound_block_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "Inbound blocking mode: deterministic (block non-allow user messages), or off"
-      },
-      "outbound_block_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "Outbound blocking mode: deterministic (block non-allow assistant messages at persistence layer), or off"
-      },
-      "tool_guard_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "Tool guard mode: deterministic (scan tool inputs through AIRS before execution), or off"
-      },
-      "prompt_scan_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "Prompt scan mode: deterministic (scan full conversation context before prompt assembly), or off"
-      },
-      "tool_redact_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "Tool redact mode: deterministic (redact PII/credentials from tool outputs before persistence), or off"
-      },
-      "llm_audit_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "LLM audit mode: deterministic (scan all LLM inputs/outputs through AIRS for audit logging), or off"
-      },
-      "tool_audit_mode": {
-        "type": "string",
-        "enum": ["deterministic", "off"],
-        "default": "deterministic",
-        "description": "Tool audit mode: deterministic (scan tool outputs through AIRS after execution), or off"
+        "description": "Application identifier sent with scan requests"
       },
       "fail_closed": {
         "type": "boolean",
         "default": true,
-        "description": "Block messages when AIRS scan fails (default: true for security)"
+        "description": "Block messages when AIRS API is unreachable"
       },
       "dlp_mask_only": {
         "type": "boolean",
         "default": true,
-        "description": "Mask DLP violations instead of blocking (when no other violations)"
+        "description": "Mask DLP violations instead of blocking"
       },
-      "high_risk_tools": {
-        "type": "array",
-        "items": { "type": "string" },
-        "default": [
-          "exec",
-          "Bash",
-          "bash",
-          "write",
-          "Write",
-          "edit",
-          "Edit",
-          "gateway",
-          "message",
-          "cron"
-        ],
-        "description": "Tools to block on any detected threat"
+      "inbound_scanning": {
+        "type": "boolean",
+        "default": true,
+        "description": "Scan and enforce policy on user messages"
       },
-      "api_key": {
-        "type": "string",
-        "description": "Prisma AIRS API key from Strata Cloud Manager"
+      "outbound_scanning": {
+        "type": "boolean",
+        "default": true,
+        "description": "Scan assistant responses for data leakage and policy violations"
+      },
+      "tool_protection": {
+        "type": "boolean",
+        "default": true,
+        "description": "Scan and gate tool inputs/outputs"
+      },
+      "security_context": {
+        "type": "boolean",
+        "default": true,
+        "description": "Inject security reminders and threat warnings into agent context"
+      },
+      "llm_audit": {
+        "type": "boolean",
+        "default": false,
+        "description": "Deep scan all LLM prompts and responses (expensive, for compliance)"
       }
     }
   },
@@ -132,77 +67,40 @@
       "placeholder": "Enter your PANW AI Security API key"
     },
     "profile_name": {
-      "label": "Profile Name",
-      "help": "AIRS security profile from Strata Cloud Manager",
-      "placeholder": "default"
+      "label": "Security Profile",
+      "help": "AIRS security profile name from Strata Cloud Manager"
     },
     "app_name": {
       "label": "Application Name",
-      "help": "Identifies this application in AIRS scan metadata and audit logs",
-      "placeholder": "openclaw"
-    },
-    "inbound_block_mode": {
-      "label": "Inbound Blocking",
-      "help": "Block user messages unless AIRS returns allow. Hard guardrail at the persistence layer."
-    },
-    "outbound_block_mode": {
-      "label": "Outbound Blocking",
-      "help": "Block assistant messages unless AIRS returns allow. Hard guardrail at the persistence layer."
-    },
-    "outbound_mode": {
-      "label": "Outbound Response Scanning",
-      "help": "Scan outbound responses — blocks or masks content based on AIRS verdict. Supports DLP masking."
-    },
-    "tool_guard_mode": {
-      "label": "Tool Input Scanning",
-      "help": "Scan tool inputs through AIRS before execution. Blocks tools when threats detected."
-    },
-    "tool_gating_mode": {
-      "label": "Tool Gating (Cache-Based)",
-      "help": "Gate tool calls using cached scan results. Blocks high-risk tools when threats detected."
-    },
-    "prompt_scan_mode": {
-      "label": "Full Context Scanning",
-      "help": "Scan assembled conversation context before prompt build. Catches multi-message injection attacks."
-    },
-    "tool_redact_mode": {
-      "label": "Tool Output Redaction",
-      "help": "Redact PII and credentials from tool outputs before session persistence (regex-based)."
-    },
-    "context_injection_mode": {
-      "label": "Context Injection",
-      "help": "Inject security threat warnings into agent context on startup."
-    },
-    "reminder_mode": {
-      "label": "Security Reminder",
-      "help": "Inject a security scanning reminder when the agent starts."
-    },
-    "audit_mode": {
-      "label": "Message Audit Logging",
-      "help": "Scan every inbound message through AIRS and log results. Populates scan cache for other hooks."
-    },
-    "llm_audit_mode": {
-      "label": "LLM I/O Audit Logging",
-      "help": "Scan exact LLM prompts and responses through AIRS. Definitive audit trail at the model boundary."
-    },
-    "tool_audit_mode": {
-      "label": "Tool Output Audit Logging",
-      "help": "Scan tool execution results through AIRS after completion. Complements tool input scanning."
+      "help": "Application identifier sent with scan requests"
     },
     "fail_closed": {
       "label": "Fail Closed",
-      "help": "Block messages when AIRS scan fails. Recommended for production security.",
-      "advanced": true
+      "help": "Block messages when AIRS API is unreachable"
     },
     "dlp_mask_only": {
       "label": "DLP Mask Only",
-      "help": "Mask sensitive data instead of blocking when DLP is the only violation.",
-      "advanced": true
+      "help": "Mask DLP violations instead of blocking"
     },
-    "high_risk_tools": {
-      "label": "High Risk Tools",
-      "help": "Tools that are blocked on any detected threat. Add tool names to expand the list.",
-      "advanced": true
+    "inbound_scanning": {
+      "label": "Inbound Scanning",
+      "help": "Scan and enforce policy on user messages"
+    },
+    "outbound_scanning": {
+      "label": "Outbound Scanning",
+      "help": "Scan assistant responses for data leakage and policy violations"
+    },
+    "tool_protection": {
+      "label": "Tool Protection",
+      "help": "Scan and gate tool inputs/outputs"
+    },
+    "security_context": {
+      "label": "Security Context",
+      "help": "Inject security reminders and threat warnings into agent context"
+    },
+    "llm_audit": {
+      "label": "LLM Audit",
+      "help": "Deep scan all LLM prompts and responses (expensive, for compliance)"
     }
   },
   "requires": {}
