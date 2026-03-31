@@ -1,54 +1,28 @@
 /**
- * Prisma AIRS Plugin for OpenClaw
+ * Prisma AIRS Plugin for OpenClaw (v2.0.0)
  *
- * AI Runtime Security scanning via Palo Alto Networks.
- * Uses @cdot65/prisma-airs-sdk for AIRS API communication.
+ * AI Runtime Security via Palo Alto Networks.
  *
- * All 12 hooks are registered programmatically via api.on() in register().
- * HOOK.md files in hooks/ are retained as documentation only.
+ * 5 hook groups, boolean-gated:
+ * - inbound_scanning: audit + inbound block
+ * - outbound_scanning: outbound scan + outbound block
+ * - tool_protection: cache gating + active guard + redact + audit
+ * - security_context: guard reminder + context injection
+ * - llm_audit: LLM I/O audit + prompt scan
  *
- * This file provides:
- * - SDK initialization (api_key)
- * - Hook registration via api.on() (12 hooks, gated by mode config)
- * - Gateway RPC methods: prisma-airs.status, prisma-airs.scan
- * - Agent tool: prisma_airs_scan (always registered)
- * - Probabilistic tools: prisma_airs_scan_prompt, prisma_airs_scan_response, prisma_airs_check_tool_safety
- * - CLI commands: prisma-airs, prisma-airs-scan
+ * Plus: prisma_airs_scan tool (always), gateway RPC, CLI.
  */
 
 import { init } from "@cdot65/prisma-airs-sdk";
-import { scan, isConfigured, ScanRequest } from "./src/scanner";
-import { resolveAllModes, type RawPluginConfig, type ResolvedModes } from "./src/config";
-import {
-  maskSensitiveData,
-  shouldMaskOnly,
-  buildBlockMessage,
-} from "./hooks/prisma-airs-outbound/handler";
-import { shouldBlockTool, DEFAULT_HIGH_RISK_TOOLS } from "./hooks/prisma-airs-tools/handler";
-import { getCachedScanResult, cacheScanResult, hashMessage } from "./src/scan-cache";
+import { scan, isConfigured, type ScanRequest } from "./src/scanner";
+import { resolveConfig, type PrismaAirsConfig } from "./src/config";
 
-// Hook handlers
-import guardHandler from "./hooks/prisma-airs-guard/handler";
-import auditHandler from "./hooks/prisma-airs-audit/handler";
-import contextHandler from "./hooks/prisma-airs-context/handler";
-import outboundHandler from "./hooks/prisma-airs-outbound/handler";
-import toolsHandler from "./hooks/prisma-airs-tools/handler";
-import inboundBlockHandler from "./hooks/prisma-airs-inbound-block/handler";
-import outboundBlockHandler from "./hooks/prisma-airs-outbound-block/handler";
-import toolGuardHandler from "./hooks/prisma-airs-tool-guard/handler";
-import promptScanHandler from "./hooks/prisma-airs-prompt-scan/handler";
-import toolRedactHandler from "./hooks/prisma-airs-tool-redact/handler";
-import llmAuditHandler from "./hooks/prisma-airs-llm-audit/handler";
-import toolAuditHandler from "./hooks/prisma-airs-tool-audit/handler";
-
-// Plugin config interface
-interface PrismaAirsConfig extends RawPluginConfig {
-  profile_name?: string;
-  app_name?: string;
-  api_key?: string;
-  high_risk_tools?: string[];
-  dlp_mask_only?: boolean;
-}
+// Hook group registration functions
+import { registerInboundHooks } from "./hooks/inbound/handler";
+import { registerOutboundHooks } from "./hooks/outbound/handler";
+import { registerToolProtectionHooks } from "./hooks/tool-protection/handler";
+import { registerSecurityContextHooks } from "./hooks/security-context/handler";
+import { registerLlmAuditHooks } from "./hooks/llm-audit/handler";
 
 // Tool parameter schema
 interface ToolParameterProperty {
@@ -63,15 +37,10 @@ interface ToolParameters {
   required?: string[];
 }
 
-// Tool result format (OpenClaw v2026.2.1+)
 interface ToolResult {
-  content: Array<{
-    type: "text";
-    text: string;
-  }>;
+  content: Array<{ type: "text"; text: string }>;
 }
 
-// Plugin API type (subset of full API)
 interface PluginApi {
   logger: {
     info: (msg: string) => void;
@@ -83,17 +52,12 @@ interface PluginApi {
     plugins?: {
       entries?: {
         "prisma-airs"?: {
-          config?: PrismaAirsConfig;
+          config?: Record<string, unknown>;
         };
       };
     };
   };
-  on: (
-    event: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handler: (...args: any[]) => any,
-    opts?: { priority?: number }
-  ) => void;
+  on: (event: string, handler: (...args: any[]) => any, opts?: { priority?: number }) => void;
   registerGatewayMethod: (
     name: string,
     handler: (
@@ -110,50 +74,34 @@ interface PluginApi {
   registerCli: (setup: (ctx: { program: unknown }) => void, opts: { commands: string[] }) => void;
 }
 
-// Get plugin config from OpenClaw config
-function getPluginConfig(api: PluginApi): PrismaAirsConfig {
-  return api.config?.plugins?.entries?.["prisma-airs"]?.config ?? {};
+function getRawConfig(api: PluginApi): Record<string, unknown> {
+  return (api.config?.plugins?.entries?.["prisma-airs"]?.config as Record<string, unknown>) ?? {};
 }
 
-// Merge plugin config defaults into scan request
 function buildScanRequest(params: ScanRequest | undefined, config: PrismaAirsConfig): ScanRequest {
   return {
     prompt: params?.prompt,
     response: params?.response,
     sessionId: params?.sessionId,
     trId: params?.trId,
-    profileName: params?.profileName ?? config.profile_name ?? "default",
+    profileName: params?.profileName ?? config.profile_name,
     appName: params?.appName ?? config.app_name ?? "openclaw",
     appUser: params?.appUser,
     aiModel: params?.aiModel,
   };
 }
 
-/**
- * Build a text tool result
- */
 function textResult(data: unknown): ToolResult {
-  return {
-    content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-  };
+  return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
 }
 
-// Register the plugin
+// ── Plugin registration ───────────────────────────────────────────────
+
 export default function register(api: PluginApi): void {
-  const config = getPluginConfig(api);
+  const raw = getRawConfig(api);
+  const config = resolveConfig(raw);
 
-  // Resolve modes (may throw on invalid fail_closed + probabilistic combo)
-  let modes: ResolvedModes;
-  try {
-    modes = resolveAllModes(config);
-  } catch (err) {
-    api.logger.error(
-      `Prisma AIRS config error: ${err instanceof Error ? err.message : String(err)}`
-    );
-    throw err;
-  }
-
-  // Initialize SDK once with the API key from plugin config
+  // Initialize SDK
   if (config.api_key) {
     init({ apiKey: config.api_key });
   } else {
@@ -161,369 +109,79 @@ export default function register(api: PluginApi): void {
   }
 
   api.logger.info(
-    `Prisma AIRS plugin loaded (audit=${modes.audit}, context=${modes.context}, outbound=${modes.outbound}, toolGating=${modes.toolGating}, reminder=${modes.reminder})`
+    `Prisma AIRS v2.0.0 (inbound=${config.inbound_scanning}, outbound=${config.outbound_scanning}, tools=${config.tool_protection}, context=${config.security_context}, llm_audit=${config.llm_audit})`
   );
 
-  // ── HOOKS (registered via api.on()) ──────────────────────────────────
-  // Each handler is imported from hooks/*/handler.ts and wired up here.
-  // Handlers receive (event, ctx) where ctx includes cfg: api.config.
-  // HOOK.md files retained as documentation only.
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Hook context wrapper
   const hookCtx = (ctx: any) => ({ ...ctx, cfg: api.config });
   let hookCount = 0;
 
-  // 1. Guard — security reminder injection (before_agent_start)
-  if (config.reminder_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_agent_start", (event: any, ctx: any) => guardHandler(event, hookCtx(ctx)));
-    hookCount++;
+  // Register hook groups
+  if (config.inbound_scanning) {
+    hookCount += registerInboundHooks(api, hookCtx);
   }
-
-  // 2. Audit — inbound message scanning + cache (message_received)
-  if (modes.audit !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("message_received", (event: any, ctx: any) => auditHandler(event, hookCtx(ctx)));
-    hookCount++;
+  if (config.outbound_scanning) {
+    hookCount += registerOutboundHooks(api, hookCtx);
   }
-
-  // 3. Context — threat warning injection (before_agent_start)
-  if (modes.context !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_agent_start", (event: any, ctx: any) => contextHandler(event, hookCtx(ctx)));
-    hookCount++;
+  if (config.tool_protection) {
+    hookCount += registerToolProtectionHooks(api, hookCtx);
   }
-
-  // 4. Outbound — response scanning + DLP masking (message_sending)
-  if (modes.outbound !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("message_sending", (event: any, ctx: any) => outboundHandler(event, hookCtx(ctx)));
-    hookCount++;
+  if (config.security_context) {
+    hookCount += registerSecurityContextHooks(api, hookCtx);
   }
-
-  // 5. Tools — cache-based tool gating (before_tool_call)
-  if (modes.toolGating !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_tool_call", (event: any, ctx: any) => toolsHandler(event, hookCtx(ctx)));
-    hookCount++;
-  }
-
-  // 6. Inbound Block — hard guardrail for user messages (before_message_write)
-  if (config.inbound_block_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_message_write", (event: any, ctx: any) =>
-      inboundBlockHandler(event, hookCtx(ctx))
-    );
-    hookCount++;
-  }
-
-  // 7. Outbound Block — hard guardrail for assistant messages (before_message_write)
-  if (config.outbound_block_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_message_write", (event: any, ctx: any) =>
-      outboundBlockHandler(event, hookCtx(ctx))
-    );
-    hookCount++;
-  }
-
-  // 8. Tool Guard — active AIRS scanning of tool inputs (before_tool_call)
-  if (config.tool_guard_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_tool_call", (event: any, ctx: any) => toolGuardHandler(event, hookCtx(ctx)));
-    hookCount++;
-  }
-
-  // 9. Prompt Scan — full context scanning (before_prompt_build)
-  if (config.prompt_scan_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("before_prompt_build", (event: any, ctx: any) => promptScanHandler(event, hookCtx(ctx)));
-    hookCount++;
-  }
-
-  // 10. Tool Redact — sync regex DLP on tool outputs (tool_result_persist)
-  if (config.tool_redact_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("tool_result_persist", (event: any, ctx: any) => toolRedactHandler(event, hookCtx(ctx)));
-    hookCount++;
-  }
-
-  // 11. LLM Audit — scan LLM I/O (llm_input + llm_output)
-  if (config.llm_audit_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("llm_input", (event: any, ctx: any) =>
-      llmAuditHandler({ ...event, hookEvent: "llm_input" }, hookCtx(ctx))
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("llm_output", (event: any, ctx: any) =>
-      llmAuditHandler({ ...event, hookEvent: "llm_output" }, hookCtx(ctx))
-    );
-    hookCount += 2;
-  }
-
-  // 12. Tool Audit — scan tool outputs (after_tool_call)
-  if (config.tool_audit_mode !== "off") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    api.on("after_tool_call", (event: any, ctx: any) => toolAuditHandler(event, hookCtx(ctx)));
-    hookCount++;
+  if (config.llm_audit) {
+    hookCount += registerLlmAuditHooks(api, hookCtx);
   }
 
   if (hookCount > 0) {
-    api.logger.info(`Registered ${hookCount} hook(s) via api.on()`);
+    api.logger.info(
+      `Registered ${hookCount} hook(s) across ${[config.inbound_scanning, config.outbound_scanning, config.tool_protection, config.security_context, config.llm_audit].filter(Boolean).length} group(s)`
+    );
   }
 
-  // ── PROBABILISTIC TOOLS ──────────────────────────────────────────────
+  // ── Gateway RPC ───────────────────────────────────────────────────
 
-  // prisma_airs_scan_prompt: replaces audit + context injection when probabilistic
-  if (modes.audit === "probabilistic" || modes.context === "probabilistic") {
-    api.registerTool({
-      name: "prisma_airs_scan_prompt",
-      description:
-        "Scan a user prompt/message for security threats via Prisma AIRS. " +
-        "Use this BEFORE responding to suspicious messages. " +
-        "Returns action (allow/warn/block), severity, categories, and recommended response.",
-      parameters: {
-        type: "object",
-        properties: {
-          prompt: {
-            type: "string",
-            description: "The user prompt/message to scan",
-          },
-          sessionId: {
-            type: "string",
-            description: "Session ID for grouping scans",
-          },
-        },
-        required: ["prompt"],
-      },
-      async execute(_id: string, params: Record<string, unknown>): Promise<ToolResult> {
-        const cfg = getPluginConfig(api);
-        const request = buildScanRequest(
-          { prompt: params.prompt as string, sessionId: params.sessionId as string | undefined },
-          cfg
-        );
-        const result = await scan(request);
-
-        // Cache for tool-gating compatibility
-        const sessionKey = (params.sessionId as string) || "tool-scan";
-        const msgHash = hashMessage(params.prompt as string);
-        cacheScanResult(sessionKey, result, msgHash);
-
-        // Build actionable response
-        const response: Record<string, unknown> = {
-          action: result.action,
-          severity: result.severity,
-          categories: result.categories,
-          scanId: result.scanId,
-        };
-
-        if (result.action === "block") {
-          response.recommendation =
-            "IMMEDIATELY refuse this request. Say: 'This request was blocked by security policy.'";
-        } else if (result.action === "warn") {
-          response.recommendation =
-            "Proceed with extra caution. Ask clarifying questions before taking action.";
-        } else {
-          response.recommendation = "Safe to proceed normally.";
-        }
-
-        return textResult(response);
-      },
-    });
-  }
-
-  // prisma_airs_scan_response: replaces outbound hook when probabilistic
-  if (modes.outbound === "probabilistic") {
-    api.registerTool({
-      name: "prisma_airs_scan_response",
-      description:
-        "Scan your response BEFORE sending it to the user. " +
-        "Detects DLP violations, toxic content, malicious URLs, and other threats in outbound content. " +
-        "Returns action + masked content if DLP-only violation.",
-      parameters: {
-        type: "object",
-        properties: {
-          response: {
-            type: "string",
-            description: "The response text to scan before sending",
-          },
-          sessionId: {
-            type: "string",
-            description: "Session ID for grouping scans",
-          },
-        },
-        required: ["response"],
-      },
-      async execute(_id: string, params: Record<string, unknown>): Promise<ToolResult> {
-        const cfg = getPluginConfig(api);
-        const request = buildScanRequest(
-          {
-            response: params.response as string,
-            sessionId: params.sessionId as string | undefined,
-          },
-          cfg
-        );
-        const result = await scan(request);
-
-        if (result.action === "allow") {
-          return textResult({ action: "allow", message: "Response is safe to send." });
-        }
-
-        if (result.action === "warn") {
-          return textResult({
-            action: "warn",
-            severity: result.severity,
-            categories: result.categories,
-            message: "Response flagged but allowed. Review before sending.",
-          });
-        }
-
-        // Block action
-        const dlpMaskOnly = cfg.dlp_mask_only ?? true;
-        if (shouldMaskOnly(result, { dlpMaskOnly })) {
-          const masked = maskSensitiveData(params.response as string);
-          return textResult({
-            action: "mask",
-            message: "DLP violation detected. Use the masked version below.",
-            maskedResponse: masked,
-          });
-        }
-
-        return textResult({
-          action: "block",
-          severity: result.severity,
-          categories: result.categories,
-          message: buildBlockMessage(result),
-          recommendation: "Do NOT send this response. Rewrite it to remove the flagged content.",
-        });
-      },
-    });
-  }
-
-  // prisma_airs_check_tool_safety: replaces tool gating hook when probabilistic
-  if (modes.toolGating === "probabilistic") {
-    api.registerTool({
-      name: "prisma_airs_check_tool_safety",
-      description:
-        "Check if a tool is safe to call given current security context. " +
-        "Reads cached scan results from prior prompt scanning. " +
-        "Returns whether the tool should be blocked and why.",
-      parameters: {
-        type: "object",
-        properties: {
-          toolName: {
-            type: "string",
-            description: "Name of the tool you want to call",
-          },
-          sessionId: {
-            type: "string",
-            description: "Session ID to look up cached scan results",
-          },
-        },
-        required: ["toolName"],
-      },
-      async execute(_id: string, params: Record<string, unknown>): Promise<ToolResult> {
-        const cfg = getPluginConfig(api);
-        const sessionKey = (params.sessionId as string) || "tool-scan";
-        const cachedResult = getCachedScanResult(sessionKey);
-
-        if (!cachedResult) {
-          return textResult({
-            allowed: true,
-            message:
-              "No cached scan result found. Tool allowed (scan prompts first for better security).",
-          });
-        }
-
-        // Check if safe
-        if (
-          cachedResult.action === "allow" &&
-          (cachedResult.severity === "SAFE" ||
-            cachedResult.categories.every((c: string) => c === "safe" || c === "benign"))
-        ) {
-          return textResult({ allowed: true, message: "No active threats. Tool is safe to call." });
-        }
-
-        const highRiskTools = cfg.high_risk_tools ?? DEFAULT_HIGH_RISK_TOOLS;
-        const { block, reason } = shouldBlockTool(
-          params.toolName as string,
-          cachedResult,
-          highRiskTools
-        );
-
-        if (block) {
-          return textResult({
-            allowed: false,
-            toolName: params.toolName,
-            reason,
-            recommendation:
-              "Do NOT call this tool. The current message has active security threats.",
-          });
-        }
-
-        return textResult({
-          allowed: true,
-          toolName: params.toolName,
-          message: "Tool is not in the blocked list for current threats.",
-        });
-      },
-    });
-  }
-
-  const toolCount =
-    (modes.audit === "probabilistic" || modes.context === "probabilistic" ? 1 : 0) +
-    (modes.outbound === "probabilistic" ? 1 : 0) +
-    (modes.toolGating === "probabilistic" ? 1 : 0);
-  if (toolCount > 0) {
-    api.logger.info(`Registered ${toolCount} probabilistic tool(s)`);
-  }
-
-  // ── BASE TOOL (always registered) ────────────────────────────────────
-
-  // Register RPC method for status check
   api.registerGatewayMethod("prisma-airs.status", ({ respond }) => {
-    const cfg = getPluginConfig(api);
-    const hasApiKey = isConfigured(cfg.api_key);
+    const hasApiKey = isConfigured(config.api_key);
     respond(true, {
       plugin: "prisma-airs",
-      version: "1.1.0",
-      modes,
+      version: "2.0.0",
       config: {
-        profile_name: cfg.profile_name ?? "default",
-        app_name: cfg.app_name ?? "openclaw",
+        profile_name: config.profile_name,
+        app_name: config.app_name,
+        inbound_scanning: config.inbound_scanning,
+        outbound_scanning: config.outbound_scanning,
+        tool_protection: config.tool_protection,
+        security_context: config.security_context,
+        llm_audit: config.llm_audit,
+        fail_closed: config.fail_closed,
+        dlp_mask_only: config.dlp_mask_only,
       },
       api_key_set: hasApiKey,
       status: hasApiKey ? "ready" : "missing_api_key",
     });
   });
 
-  // Register RPC method for scanning
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   api.registerGatewayMethod("prisma-airs.scan", (ctx: any) => {
     const { respond, params } = ctx;
-
-    // Wrap in async IIFE to handle promise
     (async () => {
       try {
-        const cfg = getPluginConfig(api);
-        const request = buildScanRequest(params as ScanRequest | undefined, cfg);
-
+        const request = buildScanRequest(params as ScanRequest | undefined, config);
         if (!request.prompt && !request.response) {
           respond(false, { error: "Either prompt or response is required" });
           return;
         }
-
         const result = await scan(request);
         respond(true, result);
       } catch (err) {
         api.logger.error(`prisma-airs.scan error: ${err}`);
-        respond(false, {
-          error: err instanceof Error ? err.message : String(err),
-        });
+        respond(false, { error: err instanceof Error ? err.message : String(err) });
       }
     })();
   });
 
-  // Register agent tool for scanning (always available as manual escape hatch)
+  // ── Agent tool (always registered) ────────────────────────────────
+
   api.registerTool({
     name: "prisma_airs_scan",
     description:
@@ -534,73 +192,54 @@ export default function register(api: PluginApi): void {
     parameters: {
       type: "object",
       properties: {
-        prompt: {
-          type: "string",
-          description: "User prompt/message to scan for threats",
-        },
-        response: {
-          type: "string",
-          description: "AI response to scan (optional)",
-        },
-        sessionId: {
-          type: "string",
-          description: "Session ID for grouping related scans",
-        },
-        trId: {
-          type: "string",
-          description: "Transaction ID for prompt/response correlation",
-        },
+        prompt: { type: "string", description: "User prompt/message to scan for threats" },
+        response: { type: "string", description: "AI response to scan (optional)" },
+        sessionId: { type: "string", description: "Session ID for grouping related scans" },
+        trId: { type: "string", description: "Transaction ID for prompt/response correlation" },
       },
       required: ["prompt"],
     },
     async execute(_id: string, params: Record<string, unknown>): Promise<ToolResult> {
-      const cfg = getPluginConfig(api);
-      const request = buildScanRequest(params as ScanRequest, cfg);
+      const request = buildScanRequest(params as ScanRequest, config);
       const result = await scan(request);
-
       return textResult(result);
     },
   });
 
-  // Register CLI command for status/scanning
+  // ── CLI ────────────────────────────────────────────────────────────
+
   api.registerCli(
     ({ program }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const prog = program as any;
 
-      // Status command
       prog
         .command("prisma-airs")
         .description("Show Prisma AIRS plugin status")
         .action(() => {
-          const cfg = getPluginConfig(api);
-          const hasKey = isConfigured(cfg.api_key);
+          const hasKey = isConfigured(config.api_key);
           console.log("Prisma AIRS Plugin Status");
           console.log("-------------------------");
-          console.log(`Version: 1.1.0`);
-          console.log(`Profile: ${cfg.profile_name ?? "default"}`);
-          console.log(`App Name: ${cfg.app_name ?? "openclaw"}`);
-          console.log(`Modes:`);
-          console.log(`  Reminder: ${modes.reminder}`);
-          console.log(`  Audit: ${modes.audit}`);
-          console.log(`  Context: ${modes.context}`);
-          console.log(`  Outbound: ${modes.outbound}`);
-          console.log(`  Tool Gating: ${modes.toolGating}`);
+          console.log(`Version: 2.0.0`);
+          console.log(`Profile: ${config.profile_name ?? "(not set)"}`);
+          console.log(`App Name: ${config.app_name}`);
+          console.log(`Hook Groups:`);
+          console.log(`  Inbound Scanning: ${config.inbound_scanning}`);
+          console.log(`  Outbound Scanning: ${config.outbound_scanning}`);
+          console.log(`  Tool Protection: ${config.tool_protection}`);
+          console.log(`  Security Context: ${config.security_context}`);
+          console.log(`  LLM Audit: ${config.llm_audit}`);
+          console.log(`Fail Closed: ${config.fail_closed}`);
+          console.log(`DLP Mask Only: ${config.dlp_mask_only}`);
           console.log(`API Key: ${hasKey ? "configured" : "MISSING"}`);
-          if (!hasKey) {
-            console.log("\nSet API key in plugin config");
-          }
         });
 
-      // Scan command
       prog
         .command("prisma-airs-scan <text>")
         .description("Scan text for security threats")
         .option("--json", "Output as JSON")
         .option("--profile <name>", "AIRS profile name")
         .action(async (text: string, opts: Record<string, string>) => {
-          const cfg = getPluginConfig(api);
-          const request = buildScanRequest({ prompt: text, profileName: opts.profile }, cfg);
+          const request = buildScanRequest({ prompt: text, profileName: opts.profile }, config);
           const result = await scan(request);
 
           if (opts.json) {
@@ -615,9 +254,8 @@ export default function register(api: PluginApi): void {
             };
             console.log(`[${emoji[result.severity] ?? "?"}] ${result.severity}`);
             console.log(`Action: ${result.action}`);
-            if (result.categories.length > 0) {
+            if (result.categories.length > 0)
               console.log(`Categories: ${result.categories.join(", ")}`);
-            }
             if (result.scanId) console.log(`Scan ID: ${result.scanId}`);
             if (result.reportId) console.log(`Report ID: ${result.reportId}`);
             console.log(`Profile: ${result.profileName}`);
@@ -630,15 +268,13 @@ export default function register(api: PluginApi): void {
   );
 }
 
-// Export plugin metadata for discovery
+// Plugin metadata
 export const id = "prisma-airs";
 export const name = "Prisma AIRS Security";
-export const version = "1.1.0";
+export const version = "2.0.0";
 
-// Re-export scanner types and functions
+// Re-exports
 export { scan, isConfigured } from "./src/scanner";
 export type { ScanRequest, ScanResult } from "./src/scanner";
-
-// Re-export config types
-export { resolveAllModes, resolveMode, resolveReminderMode } from "./src/config";
-export type { FeatureMode, ReminderMode, ResolvedModes, RawPluginConfig } from "./src/config";
+export { resolveConfig } from "./src/config";
+export type { PrismaAirsConfig } from "./src/config";

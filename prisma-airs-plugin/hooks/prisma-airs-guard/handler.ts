@@ -6,8 +6,43 @@
  * Self-contained: resolves modes from plugin config, no external registration needed.
  */
 
-import type { FeatureMode, ResolvedModes } from "../../src/config.ts";
-import { resolveAllModes, type RawPluginConfig } from "../../src/config.ts";
+// Inlined types — deprecated exports removed from src/config.ts in T8.
+// This entire hook dir is deleted in T10.
+type FeatureMode = "deterministic" | "probabilistic" | "off";
+type ReminderMode = "on" | "off";
+interface ResolvedModes {
+  reminder: ReminderMode;
+  audit: FeatureMode;
+  context: FeatureMode;
+  outbound: FeatureMode;
+  toolGating: FeatureMode;
+}
+interface RawPluginConfig {
+  reminder_mode?: string;
+  audit_mode?: string;
+  context_injection_mode?: string;
+  outbound_mode?: string;
+  tool_gating_mode?: string;
+  fail_closed?: boolean;
+  [key: string]: unknown;
+}
+function resolveMode(v: string | undefined, d: FeatureMode = "deterministic"): FeatureMode {
+  const valid: FeatureMode[] = ["deterministic", "probabilistic", "off"];
+  return v !== undefined && valid.includes(v as FeatureMode) ? (v as FeatureMode) : d;
+}
+function resolveReminderMode(v: string | undefined, d: ReminderMode = "on"): ReminderMode {
+  const valid: ReminderMode[] = ["on", "off"];
+  return v !== undefined && valid.includes(v as ReminderMode) ? (v as ReminderMode) : d;
+}
+function resolveAllModes(config: RawPluginConfig): ResolvedModes {
+  return {
+    reminder: resolveReminderMode(config.reminder_mode),
+    audit: resolveMode(config.audit_mode),
+    context: resolveMode(config.context_injection_mode),
+    outbound: resolveMode(config.outbound_mode),
+    toolGating: resolveMode(config.tool_gating_mode),
+  };
+}
 
 // Hook context from OpenClaw
 interface HookContext {
