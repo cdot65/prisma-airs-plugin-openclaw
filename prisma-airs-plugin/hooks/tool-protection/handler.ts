@@ -320,6 +320,7 @@ export function registerToolProtectionHooks(api: PluginApi, _hookCtx: HookCtxFn)
             categories: result.categories,
             scanId: result.scanId,
             latencyMs: result.latencyMs,
+            ...(result.hasError && { hasError: result.hasError, error: result.error }),
           })
         );
 
@@ -481,6 +482,7 @@ export function registerToolProtectionHooks(api: PluginApi, _hookCtx: HookCtxFn)
         reportId: scanResult.reportId,
         latencyMs: scanResult.latencyMs,
         responseDetected: scanResult.responseDetected,
+        ...(scanResult.hasError && { hasError: scanResult.hasError, error: scanResult.error }),
       })
     );
   });

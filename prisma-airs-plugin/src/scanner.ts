@@ -191,7 +191,7 @@ export async function scan(request: ScanRequest): Promise<ScanResult> {
       responseDetected: defaultResponseDetected(),
       latencyMs: 0,
       timeout: false,
-      hasError: false,
+      hasError: true,
       contentErrors: [],
       error: "SDK not initialized. Call init() before scanning.",
     };

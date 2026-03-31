@@ -221,6 +221,7 @@ export function registerOutboundHooks(api: PluginApi, _hookCtx: HookCtxFn): numb
           reportId: result.reportId,
           latencyMs: result.latencyMs,
           responseDetected: result.responseDetected,
+          ...(result.hasError && { hasError: result.hasError, error: result.error }),
         })
       );
 
@@ -302,6 +303,7 @@ export function registerOutboundHooks(api: PluginApi, _hookCtx: HookCtxFn): numb
             categories: result.categories,
             scanId: result.scanId,
             latencyMs: result.latencyMs,
+            ...(result.hasError && { hasError: result.hasError, error: result.error }),
           })
         );
 

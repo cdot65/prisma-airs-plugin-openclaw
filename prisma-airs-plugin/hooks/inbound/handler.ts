@@ -106,6 +106,7 @@ export function registerInboundHooks(api: PluginApi, _hookCtx: HookCtxFn): numbe
           reportId: result.reportId,
           latencyMs: result.latencyMs,
           promptDetected: result.promptDetected,
+          ...(result.hasError && { hasError: result.hasError, error: result.error }),
         })
       );
     } catch (err) {
@@ -178,6 +179,7 @@ export function registerInboundHooks(api: PluginApi, _hookCtx: HookCtxFn): numbe
           categories: result.categories,
           scanId: result.scanId,
           latencyMs: result.latencyMs,
+          ...(result.hasError && { hasError: result.hasError, error: result.error }),
         })
       );
 

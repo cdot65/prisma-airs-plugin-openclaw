@@ -217,6 +217,7 @@ async function contextHandler(event: any, ctx: any): Promise<{ prependContext?: 
           severity: scanResult.severity,
           categories: scanResult.categories,
           scanId: scanResult.scanId,
+          ...(scanResult.hasError && { hasError: scanResult.hasError, error: scanResult.error }),
         })
       );
     } catch (err) {

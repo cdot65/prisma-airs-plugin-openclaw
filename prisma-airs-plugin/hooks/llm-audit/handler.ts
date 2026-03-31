@@ -70,6 +70,7 @@ async function llmInputHandler(event: any, ctx: any): Promise<void> {
       reportId: result.reportId,
       latencyMs: result.latencyMs,
       promptDetected: result.promptDetected,
+      ...(result.hasError && { hasError: result.hasError, error: result.error }),
     })
   );
 }
@@ -117,6 +118,7 @@ async function llmOutputHandler(event: any, ctx: any): Promise<void> {
       latencyMs: result.latencyMs,
       responseDetected: result.responseDetected,
       usage: event.usage,
+      ...(result.hasError && { hasError: result.hasError, error: result.error }),
     })
   );
 }
@@ -186,6 +188,7 @@ async function promptScanHandler(
         scanId: result.scanId,
         latencyMs: result.latencyMs,
         contextLength: context.length,
+        ...(result.hasError && { hasError: result.hasError, error: result.error }),
       })
     );
 
